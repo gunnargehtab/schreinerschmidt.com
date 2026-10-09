@@ -1,0 +1,82 @@
+/* Phase 0 placeholder styles. Phase 1 replaces this file with the design system (docs/design-system.md). */
+@layer reset, tokens, base, layout, components, utilities, motion;
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+  }
+  img,
+  picture {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+}
+
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+    --paper: light-dark(#fffbf5, #160d07);
+    --ink: light-dark(#2c1403, #f0ebdf);
+    --accent: light-dark(#9e2124, #eb8278);
+    --banner: light-dark(#ebe5d1, #362113);
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    line-height: 1.6;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  a {
+    color: var(--accent);
+    text-underline-offset: 0.15em;
+  }
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+  h1 {
+    line-height: 1.1;
+    letter-spacing: -0.012em;
+  }
+}
+
+@layer layout {
+  .wrap {
+    max-inline-size: 65ch;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+}
+
+@layer components {
+  .demo-banner {
+    background: var(--banner);
+    font-size: 0.9375rem;
+  }
+  .demo-banner p {
+    margin-block: 0;
+    padding-block: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}

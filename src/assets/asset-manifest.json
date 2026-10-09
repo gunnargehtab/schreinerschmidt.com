@@ -1,0 +1,31 @@
+[
+  {
+    "id": "fischgraetparkett-eiche-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef5cff7bbf40487275446_Eiche%20Fischgr%C3%A4tparkett.jpg",
+    "sha256": "e36c2ab2aed9cbd6d77944ef642d2b428bbfe056a026cafc922a1ec46667687a",
+    "original": {
+      "w": 2736,
+      "h": 3648,
+      "bytes": 2369641,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "VOG-L29",
+        "date": "2022:07:08 07:41:03"
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/fischgraetparkett-eiche/01-parkett.jpg",
+      "w": 1800,
+      "h": 2400,
+      "bytes": 393523
+    },
+    "rights": "own",
+    "rightsEvidence": "Company phone photo (EXIF HUAWEI VOG-L29, 2022:07:08 07:41:03); no Copyright/Artist tag naming a third party. Rights group \"own\" per docs/architecture.md §6.",
+    "alt": "Fischgrätparkett aus Eiche in einem Altbauzimmer mit roter Wand, weißen Sockelleisten und Fenster",
+    "category": "boeden",
+    "project": "fischgraetparkett-eiche",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Phase 0 spike migration (one photo). Alt text is a draft; owner to confirm the project."
+  }
+]

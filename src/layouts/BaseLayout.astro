@@ -1,0 +1,55 @@
+---
+import { Font } from 'astro:assets';
+import { PUBLIC_DEMO } from 'astro:env/client';
+import { themeInitScript, vtTypesScript, speculationRulesScript } from '../lib/inline-scripts.mjs';
+import { absolute } from '../lib/url';
+import '../styles/base.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Force noindex (404, danke pages) regardless of the build mode. */
+  noindex?: boolean;
+}
+
+const { title, description, noindex = false } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const robots = PUBLIC_DEMO
+  ? 'noindex, nofollow, noimageindex'
+  : noindex
+    ? 'noindex, follow'
+    : 'index, follow, max-image-preview:large';
+const canonical = !PUBLIC_DEMO && !noindex && Astro.site ? absolute(Astro.url.pathname, Astro.site) : undefined;
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <script is:inline set:html={themeInitScript} />
+    <script is:inline set:html={vtTypesScript(base)} />
+    <script is:inline type="speculationrules" set:html={speculationRulesScript(base)} />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="expect" href="#main" blocking="render" />
+    <Font cssVariable="--font-sans" preload={[{ subset: 'latin' }]} />
+    <Font cssVariable="--font-accent" preload={[{ subset: 'latin' }]} />
+  </head>
+  <body>
+    {PUBLIC_DEMO && (
+      <aside class="demo-banner" aria-label="Hinweis">
+        <p class="wrap">
+          Entwurf – nicht die offizielle Website. Zur
+          <a href="https://www.schreinerschmidt.com/">aktuellen Website der Schreinerei Schmidt</a>.
+        </p>
+      </aside>
+    )}
+    <main id="main" class="wrap">
+      <slot />
+    </main>
+  </body>
+</html>
