@@ -1,0 +1,205 @@
+/*
+ * Form controls (docs/design-system.md §5 "Forms"). Visible labels above the field, >= 2.75rem
+ * tall inputs with a --line-strong border, Blaupause focus ring, icon + text errors.
+ */
+@layer components {
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+  }
+
+  .field__label,
+  .field > label,
+  legend {
+    font-size: var(--step--1);
+    font-weight: var(--weight-ui);
+    line-height: 1.4;
+  }
+
+  .field__required {
+    font-weight: var(--weight-body);
+    color: var(--ink-muted);
+  }
+
+  .field__hint {
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+  }
+
+  .input,
+  .textarea,
+  .select,
+  .field :where(input:not([type='checkbox'], [type='radio'], [type='range'], [type='file']), textarea, select) {
+    inline-size: 100%;
+    min-block-size: 2.75rem;
+    padding: 0.5em 0.75em;
+    font-size: max(1rem, var(--step-0));
+    line-height: 1.4;
+    color: var(--ink);
+    background-color: var(--surface);
+    border: var(--hairline) solid var(--line-strong);
+    border-radius: 0;
+    transition:
+      border-color var(--dur-1),
+      box-shadow var(--dur-1);
+  }
+
+  .input:hover,
+  .textarea:hover,
+  .select:hover,
+  .field :where(input, textarea, select):hover {
+    border-color: var(--ink-muted);
+  }
+
+  .input:focus-visible,
+  .textarea:focus-visible,
+  .select:focus-visible,
+  .field :where(input, textarea, select):focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 2px;
+    border-color: var(--ink);
+  }
+
+  ::placeholder {
+    color: var(--ink-muted);
+    opacity: 1;
+  }
+
+  .textarea,
+  .field textarea {
+    field-sizing: content;
+    min-block-size: 6lh;
+    max-block-size: 20lh;
+    resize: vertical;
+  }
+
+  /* Invalid after interaction, or flagged by JS/server: 2 px error edge without a layout shift. */
+  :is(.input, .textarea, .select, .field :where(input, textarea, select)):is(:user-invalid, [aria-invalid='true']) {
+    border-color: var(--error);
+    box-shadow: inset 0 0 0 1px var(--error);
+  }
+
+  .field__error {
+    display: none;
+    align-items: flex-start;
+    gap: 0.375em;
+    font-size: var(--step--1);
+    font-weight: var(--weight-ui);
+    color: var(--error);
+  }
+
+  /* Icon + text, never colour alone. */
+  .field__error::before {
+    content: '';
+    flex: none;
+    inline-size: 1.25em;
+    block-size: 1.25em;
+    margin-block-start: 0.1em;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 2.5 20h19L12 3z'/%3E%3Cpath d='M12 9v5M12 17.5v.01'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+
+  .field:has(:user-invalid) .field__error,
+  .field:has([aria-invalid='true']) .field__error {
+    display: flex;
+  }
+
+  /* Select: customizable picker where supported, styled native select elsewhere. */
+  @supports (appearance: base-select) {
+    .select,
+    .select::picker(select) {
+      appearance: base-select;
+    }
+
+    .select::picker(select) {
+      margin-block-start: var(--space-3xs);
+      padding: var(--space-3xs);
+      border: var(--rule-strong);
+      border-radius: 0;
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: var(--shadow-paper);
+    }
+
+    .select option {
+      min-block-size: 2.75rem;
+      padding: var(--space-2xs) var(--space-xs);
+    }
+
+    .select option:is(:hover, :focus-visible) {
+      background: var(--accent-tint);
+    }
+
+    .select option:checked {
+      font-weight: var(--weight-ui);
+    }
+
+    .select option::checkmark {
+      color: var(--accent);
+    }
+  }
+
+  /* Checkboxes and radios: 1.25rem, brand accent, the whole label row is the target. */
+  input:is([type='checkbox'], [type='radio']) {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    margin: 0;
+    flex: none;
+    accent-color: var(--accent-fill);
+  }
+
+  .choice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    min-block-size: var(--target-min);
+    padding-block: var(--space-2xs);
+    font-size: var(--step-0);
+    font-weight: var(--weight-body);
+    line-height: var(--leading-body);
+    cursor: pointer;
+  }
+
+  .choice > input {
+    margin-block-start: calc((1lh - 1.25rem) / 2);
+  }
+
+  .choice-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+  }
+
+  .choice-group legend {
+    margin-block-end: var(--space-2xs);
+  }
+
+  /* Status and error summary: hairline paper boxes, icon + text. */
+  .form-status,
+  .error-summary {
+    padding: var(--space-s) var(--space-m);
+    border: var(--rule-strong);
+    border-inline-start-width: 0.25rem;
+    background: var(--surface-alt);
+  }
+
+  .error-summary {
+    border-color: var(--error);
+  }
+
+  .form-status[data-tone='success'] {
+    border-color: var(--success);
+  }
+
+  .error-summary a {
+    color: var(--error);
+  }
+
+  @media (forced-colors: active) {
+    .field__error::before {
+      background-color: CanvasText;
+    }
+  }
+}

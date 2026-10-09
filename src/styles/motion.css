@@ -1,0 +1,375 @@
+/*
+ * Motion (docs/design-system.md §3 "Draw-on", §6).
+ * Rules: base CSS renders the finished state; hidden start states live only inside @keyframes,
+ * gated by prefers-reduced-motion: no-preference and @supports. `animation-timeline` is written
+ * after the `animation` shorthand. Firefox (no scroll-driven animations, no cross-document view
+ * transitions) gets the finished state and instant navigation.
+ */
+
+/* @view-transition stays unlayered. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+@layer motion {
+  /* View-transition names come from src/lib/vt.ts and reach CSS via --vt. */
+  .site-header {
+    view-transition-name: site-header;
+  }
+
+  .page-title {
+    view-transition-name: page-title;
+    view-transition-class: title;
+  }
+
+  .vt-media {
+    view-transition-name: var(--vt, none);
+    view-transition-class: media;
+  }
+
+  .is-filtering .vt-media {
+    view-transition-name: none;
+  }
+
+  .is-filtering > .gallery__item {
+    view-transition-name: match-element;
+    view-transition-class: card;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+
+    :root {
+      interpolate-size: allow-keywords;
+    }
+
+    ::view-transition-group(site-header) {
+      animation: none;
+      z-index: 100;
+    }
+
+    ::view-transition-old(site-header) {
+      display: none;
+    }
+
+    ::view-transition-new(site-header) {
+      animation: none;
+    }
+
+    ::view-transition-group(*.media) {
+      animation-duration: var(--dur-3);
+      animation-timing-function: var(--ease-out);
+      z-index: 50;
+    }
+
+    ::view-transition-old(*.media),
+    ::view-transition-new(*.media) {
+      block-size: 100%;
+      object-fit: cover;
+    }
+
+    ::view-transition-old(*.title),
+    ::view-transition-new(*.title) {
+      inline-size: auto;
+      block-size: auto;
+    }
+
+    html:active-view-transition-type(forward) {
+      &::view-transition-old(root) {
+        animation: var(--dur-2) var(--ease-out) both vt-out-start;
+      }
+
+      &::view-transition-new(root) {
+        animation: var(--dur-3) var(--ease-out) both vt-in-end;
+      }
+    }
+
+    html:active-view-transition-type(back) {
+      &::view-transition-old(root) {
+        animation: var(--dur-2) var(--ease-out) both vt-out-end;
+      }
+
+      &::view-transition-new(root) {
+        animation: var(--dur-3) var(--ease-out) both vt-in-start;
+      }
+    }
+
+    html:active-view-transition-type(lateral) {
+      &::view-transition-new(root) {
+        animation: var(--dur-3) var(--ease-out) both vt-rise-in;
+      }
+    }
+  }
+
+  @keyframes vt-out-start {
+    to {
+      opacity: 0;
+      translate: -2rem 0;
+    }
+  }
+
+  @keyframes vt-in-end {
+    from {
+      opacity: 0;
+      translate: 2rem 0;
+    }
+  }
+
+  @keyframes vt-out-end {
+    to {
+      opacity: 0;
+      translate: 2rem 0;
+    }
+  }
+
+  @keyframes vt-in-start {
+    from {
+      opacity: 0;
+      translate: -2rem 0;
+    }
+  }
+
+  @keyframes vt-rise-in {
+    from {
+      opacity: 0;
+      translate: 0 0.75rem;
+    }
+  }
+
+  /* Sketch draw-on: paths carry pathLength="1"; the dash hides nothing until the keyframe runs. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .sketch[data-draw~='scroll'] {
+        view-timeline: --sketch block;
+      }
+
+      .sketch[data-draw~='scroll'] path {
+        stroke-dasharray: 1 1.1;
+        animation: draw linear both;
+        animation-timeline: --sketch;
+        animation-range: entry 0% cover 30%;
+      }
+
+      .sketch[data-draw~='scroll'] [data-pass='2'] path {
+        animation-range: entry 15% cover 38%;
+      }
+
+      .sketch[data-draw~='scroll'] [data-pass='3'] path {
+        animation-range: entry 30% cover 45%;
+      }
+
+      .sketch[data-draw~='scroll'] [data-pass='4'] path {
+        animation-range: cover 35% cover 50%;
+      }
+    }
+
+    /* Time-based draw, once, at pencil pace (hero annotations, 404 shelf). */
+    .sketch[data-draw~='load'] path {
+      stroke-dasharray: 1 1.1;
+      animation: draw var(--dur-4) var(--ease-pencil) both;
+    }
+
+    .sketch[data-draw~='load'] [data-pass='2'] path {
+      animation-delay: calc(var(--dur-4) * 0.35);
+    }
+
+    .sketch[data-draw~='load'] [data-pass='3'] path {
+      animation-delay: calc(var(--dur-4) * 0.7);
+    }
+
+    .sketch[data-draw~='load'] [data-pass='4'] path {
+      animation-delay: var(--dur-4);
+    }
+
+    @media (hover: hover) {
+      .service-card:hover .sketch [data-pass='4'] path {
+        stroke-dasharray: 1 1.1;
+        animation: draw var(--dur-4) var(--ease-pencil) both;
+      }
+    }
+  }
+
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 1.05;
+    }
+
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Sketch → photo (below the fold only). Finished state = photo. */
+  .sketch-photo {
+    display: grid;
+    aspect-ratio: var(--ar);
+    overflow: clip;
+  }
+
+  .sketch-photo > * {
+    grid-area: 1 / 1;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .sketch-photo__sketch {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .sketch-photo {
+        view-timeline: --sp block;
+      }
+
+      .sketch-photo__sketch {
+        animation: sp-sketch linear both;
+        animation-timeline: --sp;
+        animation-range: entry 0% cover 60%;
+      }
+
+      .sketch-photo__img {
+        animation: sp-photo linear both;
+        animation-timeline: --sp;
+        animation-range: cover 30% cover 55%;
+      }
+    }
+  }
+
+  @keyframes sp-sketch {
+    0%,
+    55% {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes sp-photo {
+    from {
+      opacity: 0;
+      scale: 1.03;
+    }
+  }
+
+  /* Scroll-driven: hero inset → full-bleed, header condense, section reveals with stagger. */
+  .hero__media {
+    clip-path: inset(0 max(var(--gutter), (100% - var(--content)) / 2));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      .hero__media {
+        animation: hero-open linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 50svh;
+      }
+
+      .site-header .wordmark {
+        animation: shrink linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 6rem;
+        transform-origin: left center;
+      }
+    }
+
+    @supports (animation-timeline: view()) {
+      .reveal > * {
+        animation: fade-up linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 30%;
+        animation-range: entry calc(10% + mod(sibling-index() - 1, var(--cols, 3)) * 6%) cover
+          calc(30% + mod(sibling-index() - 1, var(--cols, 3)) * 6%);
+      }
+    }
+  }
+
+  @keyframes hero-open {
+    to {
+      clip-path: inset(0 0);
+    }
+  }
+
+  @keyframes shrink {
+    to {
+      scale: 0.85;
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      translate: 0 1rem;
+    }
+  }
+
+  /* Maßlinie draw-on: the line scales from 0 to 1, the second half follows the first. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .mass[data-draw~='scroll'] {
+        view-timeline: --mass block;
+      }
+
+      .mass[data-draw~='scroll'] .mass__line {
+        animation: mass-draw linear both;
+        animation-timeline: --mass;
+        animation-range: entry 0% cover 35%;
+      }
+
+      .mass[data-draw~='scroll'] .mass__line:last-child {
+        animation-range: entry 15% cover 50%;
+      }
+
+      .mass[data-draw~='scroll'][data-orientation='v'] .mass__line {
+        animation-name: mass-draw-v;
+      }
+    }
+
+    @supports (scale: 1 1) {
+      .mass[data-draw~='load'] .mass__line {
+        animation: mass-draw var(--dur-4) var(--ease-pencil) both;
+      }
+
+      .mass[data-draw~='load'] .mass__line:last-child {
+        animation-delay: calc(var(--dur-4) / 2);
+      }
+
+      .mass[data-draw~='load'][data-orientation='v'] .mass__line {
+        animation-name: mass-draw-v;
+      }
+    }
+  }
+
+  @keyframes mass-draw {
+    from {
+      scale: 0 1;
+    }
+  }
+
+  @keyframes mass-draw-v {
+    from {
+      scale: 1 0;
+    }
+  }
+
+  /* Details: animated open/close where interpolate-size exists; instant elsewhere. */
+  @media (prefers-reduced-motion: no-preference) {
+    details::details-content {
+      block-size: 0;
+      overflow-y: clip;
+      transition:
+        block-size var(--dur-2) var(--ease-out),
+        content-visibility var(--dur-2) allow-discrete;
+    }
+
+    details[open]::details-content {
+      block-size: auto;
+    }
+  }
+}

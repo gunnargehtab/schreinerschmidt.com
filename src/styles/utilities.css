@@ -1,0 +1,116 @@
+/* Utilities (docs/design-system.md §4). Single-purpose classes; no text-transform anywhere. */
+@layer utilities {
+  .visually-hidden {
+    position: absolute !important;
+    inline-size: 1px !important;
+    block-size: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  /* Skip links and similar: hidden until focused. */
+  .visually-hidden--focusable:is(:focus, :focus-within) {
+    position: static !important;
+    inline-size: auto !important;
+    block-size: auto !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    clip-path: none !important;
+    white-space: normal !important;
+  }
+
+  /* "Blatt 02 · Leistungen": 600 + tabular figures, carpenter's-pencil red. */
+  .eyebrow {
+    display: block;
+    font-size: var(--step--1);
+    font-weight: var(--weight-ui);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    color: var(--accent);
+  }
+
+  @supports (text-box: trim-both cap alphabetic) {
+    .eyebrow {
+      text-box: trim-both cap alphabetic;
+    }
+  }
+
+  .text-muted {
+    color: var(--ink-muted);
+  }
+
+  .text-accent {
+    color: var(--accent);
+  }
+
+  .text-small {
+    font-size: var(--step--1);
+  }
+
+  .text-legal {
+    font-size: var(--step--2);
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
+
+  .measure-prose {
+    max-inline-size: var(--measure-prose);
+  }
+
+  .measure-lead {
+    max-inline-size: var(--measure-lead);
+  }
+
+  .measure-caption {
+    max-inline-size: var(--measure-caption);
+  }
+
+  .hairline-top {
+    border-block-start: var(--rule);
+  }
+
+  .hairline-bottom {
+    border-block-end: var(--rule);
+  }
+
+  /* Progressive enhancement hooks: theme-init adds `js` to <html>. */
+  html:not(.js) .js-only {
+    display: none;
+  }
+
+  html.js .no-js-only {
+    display: none;
+  }
+
+  /* Hand-drawn UI icons: 24 px viewBox at stroke 1.5. */
+  .icon {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Below-the-fold rendering hint. Never use above the fold. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto var(--cv-size, 40rem);
+  }
+}

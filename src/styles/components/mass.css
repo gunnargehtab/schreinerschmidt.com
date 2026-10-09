@@ -1,0 +1,188 @@
+/*
+ * Maßlinie: a CSS-only dimension line (docs/design-system.md §3).
+ * <p class="mass" data-orientation="h|v" data-ends="tick|arrow" data-tone="accent|ink" data-draw="scroll|load">
+ *   <span class="mass__line" aria-hidden="true"></span><span class="mass__label">2,40 m</span><span class="mass__line" aria-hidden="true"></span>
+ * </p>
+ * The p's pseudo-elements draw the extension lines, the line spans' pseudo-elements the 45° ticks.
+ * Draw-on (motion.css) scales the lines from 0 to 1; the base state is the finished line.
+ */
+@layer components {
+  .mass {
+    --_tick: 0.5rem;
+    --_ext: 1.25rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-block-size: var(--_ext);
+    margin: 0;
+    color: var(--accent);
+    font-size: var(--step--2);
+    font-weight: var(--weight-ui);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-wrap: nowrap;
+  }
+
+  .mass[data-tone='ink'] {
+    color: var(--sketch);
+  }
+
+  /* Extension lines at both ends, perpendicular to the dimension. */
+  .mass::before,
+  .mass::after {
+    content: '';
+    position: absolute;
+    background: currentColor;
+  }
+
+  .mass:not([data-orientation='v'])::before,
+  .mass:not([data-orientation='v'])::after {
+    inset-block: 0;
+    inline-size: var(--hairline);
+  }
+
+  .mass:not([data-orientation='v'])::before {
+    inset-inline-start: 0;
+  }
+
+  .mass:not([data-orientation='v'])::after {
+    inset-inline-end: 0;
+  }
+
+  .mass__line {
+    position: relative;
+    flex: 1 1 0;
+    min-inline-size: var(--space-m);
+    block-size: var(--hairline);
+    background: currentColor;
+    transform-origin: 0 50%;
+  }
+
+  .mass__label {
+    flex: none;
+    padding-inline: var(--space-3xs);
+  }
+
+  @supports (text-box: trim-both cap alphabetic) {
+    .mass__label {
+      text-box: trim-both cap alphabetic;
+    }
+  }
+
+  /* 45° architect's ticks, centred on the outer end points. */
+  .mass__line:first-child::before,
+  .mass__line:last-child::after {
+    content: '';
+    position: absolute;
+    inline-size: var(--_tick);
+    block-size: var(--hairline);
+    background: currentColor;
+    rotate: -45deg;
+  }
+
+  .mass:not([data-orientation='v']) .mass__line:first-child::before {
+    inset-block-start: 0;
+    inset-inline-start: calc(var(--_tick) / -2);
+  }
+
+  .mass:not([data-orientation='v']) .mass__line:last-child::after {
+    inset-block-start: 0;
+    inset-inline-end: calc(var(--_tick) / -2);
+  }
+
+  /* Arrow heads instead of ticks. */
+  .mass[data-ends='arrow'] .mass__line:first-child::before,
+  .mass[data-ends='arrow'] .mass__line:last-child::after {
+    inline-size: 0.5rem;
+    block-size: 0.375rem;
+    rotate: none;
+  }
+
+  .mass[data-ends='arrow']:not([data-orientation='v']) .mass__line:first-child::before {
+    inset-block-start: calc(var(--hairline) / 2 - 0.1875rem);
+    inset-inline-start: 0;
+    clip-path: polygon(0 50%, 100% 0, 100% 100%);
+  }
+
+  .mass[data-ends='arrow']:not([data-orientation='v']) .mass__line:last-child::after {
+    inset-block-start: calc(var(--hairline) / 2 - 0.1875rem);
+    inset-inline-end: 0;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+
+  /* Vertical orientation: the line runs along the block axis; the label stays upright. */
+  .mass[data-orientation='v'] {
+    flex-direction: column;
+    inline-size: max-content;
+    min-inline-size: var(--_ext);
+    block-size: 100%;
+    min-block-size: 8rem;
+    padding-inline: var(--space-3xs);
+  }
+
+  .mass[data-orientation='v']::before,
+  .mass[data-orientation='v']::after {
+    inset-inline: 0;
+    block-size: var(--hairline);
+  }
+
+  .mass[data-orientation='v']::before {
+    inset-block-start: 0;
+  }
+
+  .mass[data-orientation='v']::after {
+    inset-block-end: 0;
+  }
+
+  .mass[data-orientation='v'] .mass__line {
+    inline-size: var(--hairline);
+    min-inline-size: 0;
+    block-size: auto;
+    min-block-size: var(--space-m);
+    transform-origin: 50% 0;
+  }
+
+  .mass[data-orientation='v'] .mass__line:first-child::before {
+    inset-block-start: 0;
+    inset-inline-start: calc(var(--hairline) / 2 - var(--_tick) / 2);
+  }
+
+  .mass[data-orientation='v'] .mass__line:last-child::after {
+    inset-block-end: 0;
+    inset-inline-start: calc(var(--hairline) / 2 - var(--_tick) / 2);
+  }
+
+  .mass[data-ends='arrow'][data-orientation='v'] .mass__line:first-child::before,
+  .mass[data-ends='arrow'][data-orientation='v'] .mass__line:last-child::after {
+    inline-size: 0.375rem;
+    block-size: 0.5rem;
+    inset-inline-start: calc(var(--hairline) / 2 - 0.1875rem);
+  }
+
+  .mass[data-ends='arrow'][data-orientation='v'] .mass__line:first-child::before {
+    inset-block-start: 0;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+
+  .mass[data-ends='arrow'][data-orientation='v'] .mass__line:last-child::after {
+    inset-block-end: 0;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  @media (forced-colors: active) {
+    .mass,
+    .mass::before,
+    .mass::after,
+    .mass__line,
+    .mass__line::before,
+    .mass__line::after {
+      color: CanvasText;
+      background-color: CanvasText;
+    }
+
+    .mass {
+      background-color: transparent;
+    }
+  }
+}

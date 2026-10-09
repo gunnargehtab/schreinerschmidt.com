@@ -1,82 +1,209 @@
-/* Phase 0 placeholder styles. Phase 1 replaces this file with the design system (docs/design-system.md). */
-@layer reset, tokens, base, layout, components, utilities, motion;
-
-@layer reset {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-  body {
-    margin: 0;
-  }
-  img,
-  picture {
-    display: block;
-    max-inline-size: 100%;
-    block-size: auto;
-  }
-}
-
-@layer tokens {
-  :root {
-    color-scheme: light dark;
-    --paper: light-dark(#fffbf5, #160d07);
-    --ink: light-dark(#2c1403, #f0ebdf);
-    --accent: light-dark(#9e2124, #eb8278);
-    --banner: light-dark(#ebe5d1, #362113);
-  }
-  :root[data-theme='light'] {
-    color-scheme: light;
-  }
-  :root[data-theme='dark'] {
-    color-scheme: dark;
-  }
-}
-
+/*
+ * Base element styles: document, typography, links, focus (docs/design-system.md §2).
+ * Finished state only. Hidden start states live in motion.css keyframes.
+ */
 @layer base {
   html {
     font-family: var(--font-sans);
     font-synthesis: none;
-    line-height: 1.6;
-    background: var(--paper);
+    hyphens: manual;
+    overflow-wrap: break-word;
+    scroll-padding-block-start: calc(var(--header-sticky-h) + var(--space-s));
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--step-0);
+    font-weight: var(--weight-body);
+    line-height: var(--leading-body);
+    color: var(--ink);
+    /* Body background propagates to the canvas, so the grain covers overscroll too. */
+    background: var(--surface) var(--grain);
+    accent-color: var(--accent-fill);
+  }
+
+  main {
+    flex: 1 0 auto;
+  }
+
+  ::selection {
+    background: var(--selection);
     color: var(--ink);
   }
+
+  /* Headings: 600, tight leading, break only at &shy; */
+  :is(h1, h2, h3, h4, h5, h6) {
+    font-weight: var(--weight-heading);
+    line-height: var(--leading-heading);
+    letter-spacing: var(--tracking-heading);
+    hyphens: manual;
+    text-wrap: balance;
+    text-box: trim-both cap alphabetic;
+  }
+
+  h1 {
+    font-size: var(--step-4);
+    line-height: var(--leading-display);
+    max-inline-size: var(--measure-h1);
+  }
+
+  h2 {
+    font-size: var(--step-3);
+    max-inline-size: var(--measure-h2);
+  }
+
+  h3 {
+    font-size: var(--step-2);
+    line-height: 1.15;
+  }
+
+  h4 {
+    font-size: var(--step-1);
+    line-height: var(--leading-tight);
+  }
+
+  :is(h5, h6) {
+    font-size: var(--step-0);
+    line-height: var(--leading-tight);
+  }
+
+  :is(h1, h2) :is(em, .accent) {
+    color: var(--accent);
+  }
+
+  /* Narrow containers (cards, sidebars) may hyphenate headings automatically. */
+  @container (inline-size < 22rem) {
+    :is(h2, h3) {
+      hyphens: auto;
+      hyphenate-limit-chars: 10 4 4;
+    }
+  }
+
+  :is(p, li, dd, figcaption, blockquote) {
+    text-wrap: pretty;
+  }
+
+  :is(strong, b) {
+    font-weight: var(--weight-strong);
+  }
+
+  /* Red Hat Display italic is not loaded: em/i render in Fraunces, the only accent face. */
+  :is(em, i, .accent) {
+    font-family: var(--font-accent);
+    font-style: italic;
+    font-weight: 400;
+    font-size-adjust: 0.5;
+  }
+
+  small {
+    font-size: var(--step--1);
+  }
+
+  :is(ul, ol) {
+    padding-inline-start: 1.25em;
+  }
+
+  ::marker {
+    color: var(--accent);
+  }
+
+  blockquote {
+    font-family: var(--font-accent);
+    font-style: italic;
+    font-weight: 400;
+    font-size: var(--step-1);
+    font-size-adjust: 0.5;
+    line-height: 1.4;
+    max-inline-size: var(--measure-lead);
+  }
+
+  figcaption {
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+    max-inline-size: var(--measure-caption);
+  }
+
+  abbr[title] {
+    text-decoration: underline dotted;
+    text-decoration-thickness: from-font;
+  }
+
+  hr {
+    border-block-start: var(--rule);
+  }
+
+  /* Links */
   a {
     color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 0.0625em;
     text-underline-offset: 0.15em;
+    text-decoration-skip-ink: auto;
+    transition:
+      color var(--dur-1),
+      text-decoration-thickness var(--dur-1);
   }
+
+  a:hover {
+    color: var(--accent-hover);
+    text-decoration-thickness: 0.125em;
+  }
+
+  /* Focus: a separate "Blaupause" blue, offset so it sits on the surface, not the red fill. */
   :focus-visible {
-    outline: 3px solid var(--accent);
-    outline-offset: 3px;
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: var(--focus-offset);
   }
-  h1 {
-    line-height: 1.1;
-    letter-spacing: -0.012em;
-  }
-}
 
-@layer layout {
-  .wrap {
-    max-inline-size: 65ch;
-    margin-inline: auto;
-    padding-inline: 1rem;
+  :target {
+    scroll-margin-block-start: var(--space-s);
   }
-}
 
-@layer components {
-  .demo-banner {
-    background: var(--banner);
-    font-size: 0.9375rem;
+  /* Prose: 65ch measure, German auto-hyphenation, flow spacing. */
+  .prose {
+    max-inline-size: var(--measure-prose);
   }
-  .demo-banner p {
-    margin-block: 0;
-    padding-block: 0.5rem;
-  }
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  @view-transition {
-    navigation: auto;
+  .prose :is(p, li, dd),
+  .card p {
+    hyphens: auto;
+    hyphenate-limit-chars: 8 3 3;
+    -webkit-hyphenate-limit-before: 3;
+    -webkit-hyphenate-limit-after: 3;
+  }
+
+  .prose > * + * {
+    margin-block-start: var(--space-s);
+  }
+
+  .prose > :is(h2, h3, h4) {
+    margin-block-start: var(--space-l);
+  }
+
+  .prose > :is(h2, h3, h4) + * {
+    margin-block-start: var(--space-xs);
+  }
+
+  .prose :is(li + li, dd + dt) {
+    margin-block-start: var(--space-3xs);
+  }
+
+  .lead {
+    font-size: var(--step-1);
+    line-height: 1.4;
+    max-inline-size: var(--measure-lead);
+  }
+
+  @media (prefers-contrast: more) {
+    a {
+      text-decoration-thickness: 2px;
+    }
+  }
+
+  @media (forced-colors: active) {
+    body {
+      background-image: none;
+    }
   }
 }

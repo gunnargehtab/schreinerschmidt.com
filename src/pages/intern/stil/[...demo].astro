@@ -1,0 +1,518 @@
+---
+// Demo-only style sheet for visual QA: tokens, type scale, buttons, form controls, Maßlinie.
+// Rest route so getStaticPaths can skip it: `npm run build:audit` (PUBLIC_DEMO=false) emits no /intern/stil/.
+import { PUBLIC_DEMO } from 'astro:env/client';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { shy } from '../../../lib/shy';
+
+export function getStaticPaths() {
+  return PUBLIC_DEMO ? [{ params: { demo: undefined } }] : [];
+}
+
+const colours = [
+  ['surface', 'Papier'],
+  ['surface-alt', 'Leinen'],
+  ['surface-panel', 'Sand'],
+  ['ink', 'Tinte'],
+  ['ink-muted', 'Tinte, gedämpft'],
+  ['line', 'Haarlinie'],
+  ['line-strong', 'Linie, stark'],
+  ['accent', 'Akzent (Text)'],
+  ['accent-fill', 'Akzent (Fläche)'],
+  ['accent-tint', 'Akzent, Tönung'],
+  ['focus', 'Fokus „Blaupause“'],
+  ['success', 'Erfolg'],
+  ['error', 'Fehler'],
+  ['sketch', 'Skizze'],
+  ['wordmark', 'Wortmarke'],
+] as const;
+
+const steps = [
+  ['5', 'Startseite, Hero'],
+  ['4', 'h1 Unterseiten'],
+  ['3', 'h2'],
+  ['2', 'h3, Kartentitel'],
+  ['1', 'Lead, h4'],
+  ['0', 'Fließtext, Eingaben'],
+  ['-1', 'Meta, Labels, Eyebrow'],
+  ['-2', 'Rechtliches, Maßlinie'],
+] as const;
+---
+
+<BaseLayout
+  title="Stilvorlage | Schreinerei Schmidt"
+  description="Interne Stilvorlage des Entwurfs: Farben, Schrift, Abstände, Schaltflächen, Formulare und Maßlinien."
+  noindex
+>
+  <section class="section">
+    <div class="stack stack--m">
+      <p class="eyebrow">Intern · Blatt 00</p>
+      <h1>Stilvorlage „Werkstatt-Skizzenbuch“</h1>
+      <p class="lead">
+        Cremefarbenes Skizzenpapier, Espresso-Tinte, Zimmermannsbleistift in Rot. Haarlinien, Maßlinien und rechte
+        Winkel.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 01 · Farben</p>
+      <h2>Farbtoken</h2>
+      <p class="lead">Jede Fläche folgt dem Farbschema des Systems oder der Wahl im Umschalter.</p>
+    </div>
+    <ul class="swatches grid hairline-grid list-plain">
+      {colours.map(([token, name]) => (
+        <li class="swatch" data-token={token}>
+          <span class="swatch__chip"></span>
+          <span class="swatch__name">{name}</span>
+          <code class="swatch__token">--{token}</code>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 02 · Schrift</p>
+      <h2>Fließende Schriftgrößen</h2>
+      <p class="lead">Red Hat Display für alles, Fraunces Italic nur für betonte Wörter und Zitate.</p>
+    </div>
+    <ol class="type-scale list-plain">
+      {steps.map(([step, use]) => (
+        <li class="type-sample" data-step={step}>
+          <span class="type-sample__meta">
+            <code>--step-{step}</code> · {use}
+          </span>
+          <span class="type-sample__text" set:html={shy('Hochkantlamellenparkett')} />
+        </li>
+      ))}
+    </ol>
+    <div class="prose stack">
+      <p class="eyebrow">Blatt 02 · Leistungen</p>
+      <h3>
+        Ihr Experte für <em>umweltbewusstes</em> Holzhandwerk
+      </h3>
+      <p>
+        Im Fließtext trennt der Browser lange Wörter wie {shy('Hochkantlamellenparkett')} oder{' '}
+        {shy('Datenschutzerklärung')} selbst. Überschriften brechen nur an weichen Trennstellen. Zahlen und Einheiten
+        bleiben zusammen: 5 m × 60 cm.
+        <strong>Fett gesetzt</strong> ist 650, <em>betont</em> steht kursiv in Fraunces.
+      </p>
+      <blockquote>„Wir haben die Dielen gesehen und sofort gewusst: Das ist es.“</blockquote>
+      <p class="text-muted">Gedämpfter Text für Metaangaben, 7,29 : 1 auf Papier.</p>
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 03 · Schaltflächen</p>
+      <h2>Schaltflächen und Links</h2>
+    </div>
+    <div class="cluster">
+      <a class="btn btn--primary" href="#main">
+        Angebot konfigurieren
+      </a>
+      <a class="btn btn--secondary" href="#main">
+        Referenzen ansehen
+      </a>
+      <a class="btn btn--ghost" href="#main">
+        Mehr erfahren
+      </a>
+      <button class="btn btn--small" type="button">
+        Klein
+      </button>
+      <button class="btn btn--secondary btn--small" type="button">
+        Klein, zweitrangig
+      </button>
+      <button class="btn" type="button" disabled>
+        Deaktiviert
+      </button>
+      <button class="btn btn--secondary btn--icon" type="button" aria-label="Menü">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 7h16M4 12h16M4 17h16"></path>
+        </svg>
+      </button>
+    </div>
+    <p class="prose">
+      Ein <a href="#main">Textlink</a> steht in Akzentrot mit Unterstreichung. Der Fokusring ist blau und sitzt mit 3 px
+      Abstand auf dem Papier.
+    </p>
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 04 · Formulare</p>
+      <h2>Formularfelder</h2>
+      <p class="lead">Sichtbare Beschriftungen, mindestens 2,75 rem hoch, Fehler immer mit Symbol und Text.</p>
+    </div>
+    <form class="form-demo stack stack--m" method="get">
+      <div class="field">
+        <label for="f-name">
+          Name <span class="field__required">(Pflichtfeld)</span>
+        </label>
+        <input class="input" id="f-name" name="name" type="text" autocomplete="name" required />
+      </div>
+      <div class="field">
+        <label for="f-email">
+          E-Mail <span class="field__required">(Pflichtfeld)</span>
+        </label>
+        <input
+          class="input"
+          id="f-email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          required
+          aria-invalid="true"
+          aria-describedby="f-email-error"
+        />
+        <p class="field__error" id="f-email-error">
+          Bitte geben Sie eine gültige E-Mail-Adresse ein.
+        </p>
+      </div>
+      <div class="field">
+        <label for="f-service">Leistung</label>
+        <select class="select" id="f-service" name="leistung">
+          <option value="">Bitte wählen</option>
+          <option value="moebel">Möbel</option>
+          <option value="boeden">Böden</option>
+          <option value="treppen">Treppen</option>
+          <option value="fenster">Fenster und Türen</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-message">Nachricht</label>
+        <textarea
+          class="textarea"
+          id="f-message"
+          name="nachricht"
+          placeholder="Was dürfen wir für Sie bauen?"
+        ></textarea>
+        <p class="field__hint">Die Nachricht wächst mit dem Text, bis zu 20 Zeilen.</p>
+      </div>
+      <fieldset class="choice-group">
+        <legend>Kontakt bevorzugt per</legend>
+        <label class="choice">
+          <input type="radio" name="kanal" value="telefon" checked /> Telefon
+        </label>
+        <label class="choice">
+          <input type="radio" name="kanal" value="email" /> E-Mail
+        </label>
+      </fieldset>
+      <label class="choice">
+        <input type="checkbox" name="datenschutz" value="ja" />
+        Ich habe die Datenschutzerklärung gelesen und bin mit der Verarbeitung meiner Angaben einverstanden.
+      </label>
+      <div class="cluster">
+        <button class="btn btn--primary" type="submit">
+          Anfrage senden
+        </button>
+        <button class="btn btn--secondary" type="reset">
+          Zurücksetzen
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 05 · Maßlinie</p>
+      <h2>Maßlinien</h2>
+      <p class="lead">Reines CSS: Hilfslinien, 45°-Striche oder Pfeile, Beschriftung als echter Text.</p>
+    </div>
+    <div class="stack stack--l mass-demo">
+      <p class="mass" data-orientation="h" data-ends="tick" data-tone="accent">
+        <span class="mass__line" aria-hidden="true"></span>
+        <span class="mass__label">2,40 m</span>
+        <span class="mass__line" aria-hidden="true"></span>
+      </p>
+      <p class="mass" data-orientation="h" data-ends="arrow" data-tone="ink">
+        <span class="mass__line" aria-hidden="true"></span>
+        <span class="mass__label">60 cm</span>
+        <span class="mass__line" aria-hidden="true"></span>
+      </p>
+      <p class="mass" data-orientation="h" data-ends="tick" data-tone="accent" data-draw="load">
+        <span class="mass__line" aria-hidden="true"></span>
+        <span class="mass__label">zeichnet sich beim Laden</span>
+        <span class="mass__line" aria-hidden="true"></span>
+      </p>
+      <figure class="mass-figure frame">
+        <div class="mass-figure__box">
+          <p class="mass" data-orientation="v" data-ends="tick" data-tone="accent">
+            <span class="mass__line" aria-hidden="true"></span>
+            <span class="mass__label">90 cm</span>
+            <span class="mass__line" aria-hidden="true"></span>
+          </p>
+          <div class="mass-figure__panel graph-paper"></div>
+        </div>
+        <figcaption>Schrankelement, 90 cm hoch, auf kariertem Papier. Die Maßlinie läuft senkrecht.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 06 · Raster</p>
+      <h2>Haarlinienraster und Rahmen</h2>
+      <p class="lead">Unvollständige Reihen bleiben offen wie in einer technischen Zeichnung.</p>
+    </div>
+    <ul class="grid hairline-grid cells reveal list-plain">
+      <li class="cell">
+        <h3>Möbel</h3>
+        <p>Einbauschränke, Regale und Sideboards nach Maß.</p>
+      </li>
+      <li class="cell">
+        <h3>Böden</h3>
+        <p>Parkett und Massivholzdielen, verlegt und geölt.</p>
+      </li>
+      <li class="cell">
+        <h3>Treppen</h3>
+        <p>Wangentreppen mit Handlauf aus Massivholz.</p>
+      </li>
+      <li class="cell">
+        <h3>Fenster</h3>
+        <p>Holzfenster mit Sprossen, saniert oder neu.</p>
+      </li>
+      <li class="cell">
+        <h3>Türen</h3>
+        <p>Haustüren mit Oberlicht, Innentüren mit Füllung.</p>
+      </li>
+    </ul>
+    <div class="paper paper-demo stack">
+      <p class="eyebrow">Blatt</p>
+      <p>Ein Blatt Papier mit harter, versatzloser Schlagschattenkante.</p>
+    </div>
+  </section>
+
+  <section class="section band--ink">
+    <div class="section-intro stack">
+      <p class="eyebrow">Blatt 07 · Umkehrband</p>
+      <h2>Dunkles Band für den Aufruf</h2>
+      <p class="lead">Innerhalb des Bandes gilt das dunkle Schema, egal welches Thema gewählt ist.</p>
+      <p class="cluster">
+        <a class="btn btn--primary" href="#main">
+          Angebot konfigurieren
+        </a>
+        <a class="btn btn--secondary" href="#main">
+          Anrufen
+        </a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  @layer components {
+    .swatches {
+      --cols: 2;
+    }
+
+    @container section (inline-size >= 40rem) {
+      .swatches {
+        --cols: 3;
+      }
+    }
+
+    @container section (inline-size >= 64rem) {
+      .swatches {
+        --cols: 5;
+      }
+    }
+
+    .swatch {
+      display: grid;
+      gap: var(--space-2xs);
+      padding: var(--space-s);
+      font-size: var(--step--1);
+    }
+
+    .swatch__chip {
+      display: block;
+      aspect-ratio: 3 / 2;
+      border: var(--rule);
+      background: var(--_c);
+    }
+
+    .swatch[data-token='surface'] {
+      --_c: var(--surface);
+    }
+    .swatch[data-token='surface-alt'] {
+      --_c: var(--surface-alt);
+    }
+    .swatch[data-token='surface-panel'] {
+      --_c: var(--surface-panel);
+    }
+    .swatch[data-token='ink'] {
+      --_c: var(--ink);
+    }
+    .swatch[data-token='ink-muted'] {
+      --_c: var(--ink-muted);
+    }
+    .swatch[data-token='line'] {
+      --_c: var(--line);
+    }
+    .swatch[data-token='line-strong'] {
+      --_c: var(--line-strong);
+    }
+    .swatch[data-token='accent'] {
+      --_c: var(--accent);
+    }
+    .swatch[data-token='accent-fill'] {
+      --_c: var(--accent-fill);
+    }
+    .swatch[data-token='accent-tint'] {
+      --_c: var(--accent-tint);
+    }
+    .swatch[data-token='focus'] {
+      --_c: var(--focus);
+    }
+    .swatch[data-token='success'] {
+      --_c: var(--success);
+    }
+    .swatch[data-token='error'] {
+      --_c: var(--error);
+    }
+    .swatch[data-token='sketch'] {
+      --_c: var(--sketch);
+    }
+    .swatch[data-token='wordmark'] {
+      --_c: var(--wordmark);
+    }
+
+    .swatch__name {
+      font-weight: var(--weight-ui);
+    }
+
+    .swatch__token {
+      font-size: var(--step--2);
+      color: var(--ink-muted);
+    }
+
+    .type-scale {
+      display: grid;
+      gap: var(--space-m);
+      max-inline-size: var(--content);
+    }
+
+    .type-sample {
+      display: grid;
+      gap: var(--space-3xs);
+      padding-block-end: var(--space-s);
+      border-block-end: var(--rule);
+    }
+
+    .type-sample__meta {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .type-sample__text {
+      font-weight: var(--weight-heading);
+      line-height: var(--leading-heading);
+      letter-spacing: var(--tracking-heading);
+      overflow-wrap: anywhere;
+    }
+
+    .type-sample[data-step='5'] .type-sample__text {
+      font-size: var(--step-5);
+      line-height: var(--leading-display);
+    }
+    .type-sample[data-step='4'] .type-sample__text {
+      font-size: var(--step-4);
+      line-height: var(--leading-display);
+    }
+    .type-sample[data-step='3'] .type-sample__text {
+      font-size: var(--step-3);
+    }
+    .type-sample[data-step='2'] .type-sample__text {
+      font-size: var(--step-2);
+    }
+    .type-sample[data-step='1'] .type-sample__text {
+      font-size: var(--step-1);
+      font-weight: var(--weight-body);
+    }
+    .type-sample[data-step='0'] .type-sample__text {
+      font-size: var(--step-0);
+      font-weight: var(--weight-body);
+      line-height: var(--leading-body);
+    }
+    .type-sample[data-step='-1'] .type-sample__text {
+      font-size: var(--step--1);
+      font-weight: var(--weight-body);
+      line-height: var(--leading-body);
+    }
+    .type-sample[data-step='-2'] .type-sample__text {
+      font-size: var(--step--2);
+      font-weight: var(--weight-body);
+      line-height: var(--leading-body);
+    }
+
+    .form-demo {
+      max-inline-size: 36rem;
+    }
+
+    .mass-demo {
+      max-inline-size: 40rem;
+    }
+
+    .mass-figure {
+      --frame-pad: var(--space-m);
+      max-inline-size: 24rem;
+    }
+
+    .mass-figure__box {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-s);
+      block-size: 14rem;
+    }
+
+    .mass-figure__panel {
+      border: var(--rule-strong);
+    }
+
+    .mass-figure figcaption {
+      margin-block-start: var(--space-s);
+    }
+
+    .cells {
+      --cols: 1;
+    }
+
+    @container section (inline-size >= 40rem) {
+      .cells {
+        --cols: 2;
+      }
+    }
+
+    @container section (inline-size >= 64rem) {
+      .cells {
+        --cols: 4;
+      }
+    }
+
+    .cell {
+      display: grid;
+      gap: var(--space-xs);
+      padding: var(--space-m);
+      container: card / inline-size;
+    }
+
+    .cell h3 {
+      font-size: clamp(var(--step-1), 6.5cqi, var(--step-2));
+    }
+
+    .cell p {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+      max-inline-size: var(--measure-card);
+    }
+
+    .paper-demo {
+      max-inline-size: 28rem;
+      padding: var(--space-m);
+    }
+  }
+</style>

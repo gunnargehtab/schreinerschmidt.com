@@ -1,0 +1,107 @@
+/*
+ * Colour tokens (docs/design-system.md §1).
+ * Primitives are OKLCH that round-trip to the brand hex values; semantic tokens use light-dark().
+ * [data-theme] only switches color-scheme. Never register colour tokens with @property.
+ */
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+
+    /* Brand primitives */
+    --cream: oklch(98.95% 0.009 78.3); /* #FFFBF5 */
+    --linen: oklch(96.05% 0.0149 94.2); /* #F5F2E7 */
+    --sand: oklch(92.13% 0.0274 93.1); /* #EBE5D1 */
+    --espresso: oklch(22.23% 0.0487 55); /* #2C1403 */
+    --red-600: oklch(45.89% 0.1608 25.3); /* #9E2124 brand */
+    --red-700: oklch(40.92% 0.1548 24.2); /* #8B101B logo */
+    --mahogany: oklch(39.97% 0.0767 27.7); /* #6B3630 */
+
+    /* Derived primitives */
+    --walnut-950: #160d07;
+    --walnut-850: #362113;
+    --bone-100: #f0ebdf;
+    --taupe-600: #635146;
+    --taupe-300: #c1b1a0;
+    --graphite-light: #513e31;
+    --graphite-dark: #d0c2af;
+    --clay-500: #8c685c;
+    --clay-400: #957a6b;
+    --hair-200: #cdbaab;
+    --hair-800: #503e34;
+    --red-500: #ba2b2b;
+    --red-450: #c7332f;
+    --red-300: #eb8278;
+    --red-200: #f7a597;
+    --blue-600: #1659b5;
+    --blue-300: #86c5fa;
+    --green-700: #236436;
+    --green-300: #7ccd8e;
+    --rust-600: #af2e13;
+    --rust-300: #f6946d;
+
+    /* Semantic tokens */
+    --surface: light-dark(var(--cream), var(--walnut-950));
+    --surface-alt: light-dark(var(--linen), var(--espresso));
+    --surface-panel: light-dark(var(--sand), var(--walnut-850));
+    --ink: light-dark(var(--espresso), var(--bone-100));
+    --ink-muted: light-dark(var(--taupe-600), var(--taupe-300));
+    --line: light-dark(var(--hair-200), var(--hair-800)); /* decorative only */
+    --line-strong: light-dark(var(--clay-500), var(--clay-400)); /* inputs, >= 3:1 */
+    --accent: light-dark(var(--red-600), var(--red-300)); /* text, icons, lines */
+    --accent-hover: light-dark(var(--red-700), var(--red-200));
+    --accent-fill: light-dark(var(--red-600), var(--red-500)); /* button bg */
+    --accent-fill-hover: light-dark(var(--red-700), var(--red-450));
+    --accent-ink: var(--cream);
+    --focus: light-dark(var(--blue-600), var(--blue-300));
+    --success: light-dark(var(--green-700), var(--green-300));
+    --error: light-dark(var(--rust-600), var(--rust-300));
+    --sketch: light-dark(var(--graphite-light), var(--graphite-dark));
+    --wordmark: light-dark(var(--red-700), var(--red-300));
+
+    /* Tints: derived from primitives inside light-dark() (WebKit relative-colour bug). */
+    --accent-tint: light-dark(
+      color-mix(in oklch, var(--red-600) 8%, var(--cream)),
+      color-mix(in oklch, var(--red-300) 14%, var(--walnut-950))
+    );
+    --selection: light-dark(
+      color-mix(in oklch, var(--red-600) 18%, var(--cream)),
+      color-mix(in oklch, var(--red-300) 30%, var(--walnut-950))
+    );
+    --ink-a10: light-dark(oklch(from var(--espresso) l c h / 0.1), oklch(from var(--bone-100) l c h / 0.12));
+    --backdrop: light-dark(oklch(from var(--espresso) l c h / 0.45), oklch(from var(--walnut-950) l c h / 0.7));
+    --shadow-paper: 0.25rem 0.25rem 0 var(--ink-a10); /* hard "stacked sheet" shadow, no blur */
+
+    /* Paper grain: one feTurbulence tile, effective alpha <= 0.05. Off for contrast, forced colours, print. */
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .31 0 0 0 .09 -.02'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  @media (prefers-contrast: more) {
+    :root {
+      --ink: light-dark(oklch(16% 0.03 55), oklch(98% 0.01 85));
+      --surface: light-dark(var(--cream), oklch(12% 0.012 55));
+      --ink-muted: var(--ink);
+      --line-strong: light-dark(var(--taupe-600), oklch(70% 0.03 60));
+      --line: var(--line-strong);
+      --accent: light-dark(var(--red-700), var(--red-200));
+      --focus: light-dark(oklch(40% 0.15 258), oklch(85% 0.09 245));
+      --sketch: var(--ink);
+      --grain: none;
+      --focus-width: 4px;
+    }
+  }
+
+  @media (forced-colors: active) {
+    :root {
+      --grain: none;
+      --shadow-paper: none;
+    }
+  }
+}

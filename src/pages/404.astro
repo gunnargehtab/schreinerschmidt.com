@@ -8,36 +8,29 @@ import { url } from '../lib/url';
   description="Diese Seite gibt es bei der Schreinerei Schmidt in Mannheim nicht oder nicht mehr. Über die Startseite finden Sie alle Leistungen und den Kontakt."
   noindex
 >
-  <section class="not-found">
-    <p class="not-found__code">404</p>
-    <h1>Hier fehlt ein Brett.</h1>
-    <p>Die Seite, die Sie suchen, gibt es nicht oder nicht mehr. Vielleicht wurde sie verschoben.</p>
-    <p>
-      <a class="not-found__home" href={url('')}>
-        Zur Startseite
-      </a>
-    </p>
+  <section class="section not-found">
+    <div class="stack stack--m">
+      <p class="eyebrow">404</p>
+      <h1>Hier fehlt ein Brett.</h1>
+      <p class="lead">Die Seite, die Sie suchen, gibt es nicht oder nicht mehr. Vielleicht wurde sie verschoben.</p>
+      <p>
+        <a class="btn btn--primary" href={url('')}>
+          Zur Startseite
+        </a>
+      </p>
+    </div>
   </section>
 </BaseLayout>
 
 <style>
-  .not-found {
-    padding-block: 4rem;
-  }
-  .not-found__code {
-    margin: 0;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--accent);
-  }
-  .not-found h1 {
-    margin-block: 0.25rem 1rem;
-    font-size: clamp(1.924rem, 1.435rem + 2.175vw, 3.392rem);
-  }
-  .not-found__home {
-    display: inline-block;
-    padding-block: 0.75rem;
-    font-weight: 600;
+  @layer components {
+    .not-found {
+      min-block-size: 60svh;
+      align-content: center;
+    }
+
+    .not-found .eyebrow + h1 {
+      margin-block-start: var(--space-xs);
+    }
   }
 </style>

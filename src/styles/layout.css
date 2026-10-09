@@ -1,0 +1,229 @@
+/*
+ * Layout: page grid, sections, primitives, drawing-board details (docs/design-system.md §3).
+ * Viewport media queries are not used here; component grids respond to the `section` container.
+ */
+@layer layout {
+  /* Page grid: full / breakout (84rem) / content (72rem). */
+  .page-grid,
+  .section {
+    --gutter: var(--space-s-l);
+    --content: 72rem;
+    --breakout: 84rem;
+    --page-columns: [full-start] minmax(var(--gutter), 1fr) [breakout-start]
+      minmax(0, calc((var(--breakout) - var(--content)) / 2)) [content-start]
+      min(100% - 2 * var(--gutter), var(--content)) [content-end]
+      minmax(0, calc((var(--breakout) - var(--content)) / 2)) [breakout-end] minmax(var(--gutter), 1fr) [full-end];
+  }
+
+  .page-grid {
+    display: grid;
+    grid-template-columns: var(--page-columns);
+  }
+
+  .page-grid > * {
+    grid-column: content;
+  }
+
+  .page-grid > .breakout {
+    grid-column: breakout;
+  }
+
+  .page-grid > :is(.full-bleed, .section) {
+    grid-column: full;
+  }
+
+  /*
+   * Sections span the full width and repeat the page columns. Not a subgrid: a `.section` is a
+   * size container (inline-size containment), and a size-contained grid can't be subgridded.
+   * Both grids resolve `100%` against the same width, so the named lines line up exactly.
+   */
+  .page-grid > .section {
+    display: grid;
+    grid-template-columns: var(--page-columns);
+  }
+
+  .section > * {
+    grid-column: content;
+  }
+
+  .section > .breakout {
+    grid-column: breakout;
+  }
+
+  .section > .full-bleed {
+    grid-column: full;
+  }
+
+  .section {
+    container: section / inline-size;
+    padding-block: var(--space-xl-3xl);
+    row-gap: var(--space-l);
+  }
+
+  .section--compact {
+    padding-block: var(--space-l-2xl);
+  }
+
+  .section--alt {
+    background: var(--surface-alt);
+  }
+
+  .section--panel {
+    background: var(--surface-panel);
+  }
+
+  /* Inverse band (CTA only): all tokens flip inside; re-declare color on the band. */
+  .band--ink {
+    color-scheme: dark;
+    background: var(--surface-alt);
+    color: var(--ink);
+  }
+
+  /* Neighbouring sections with the same surface get a hairline between them. */
+  :where(.section:not(.section--alt, .section--panel, .band--ink))
+    + :where(.section:not(.section--alt, .section--panel, .band--ink)),
+  .section--alt + .section--alt,
+  .section--panel + .section--panel {
+    border-block-start: var(--rule);
+  }
+
+  /* Section intro: eyebrow + h2 + lead, max 40rem. */
+  .section-intro {
+    max-inline-size: 40rem;
+  }
+
+  .section-intro > * + * {
+    margin-block-start: var(--space-s);
+  }
+
+  .section-intro > .eyebrow + * {
+    margin-block-start: var(--space-xs);
+  }
+
+  /* Primitives */
+  .wrap {
+    inline-size: min(100% - 2 * var(--gutter), var(--wrap-max, var(--content)));
+    margin-inline: auto;
+  }
+
+  .wrap--narrow {
+    --wrap-max: 48rem;
+  }
+
+  .stack > * + * {
+    margin-block-start: var(--stack-space, var(--space-s));
+  }
+
+  .stack--xs {
+    --stack-space: var(--space-xs);
+  }
+
+  .stack--m {
+    --stack-space: var(--space-m);
+  }
+
+  .stack--l {
+    --stack-space: var(--space-l);
+  }
+
+  .stack--xl {
+    --stack-space: var(--space-xl);
+  }
+
+  .cluster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--cluster-gap, var(--space-s));
+    align-items: var(--cluster-align, center);
+    justify-content: var(--cluster-justify, flex-start);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+    gap: var(--space-l) var(--space-s-m);
+  }
+
+  @container section (inline-size >= 40rem) {
+    .grid {
+      --cols: 8;
+    }
+  }
+
+  @container section (inline-size >= 64rem) {
+    .grid {
+      --cols: 12;
+    }
+  }
+
+  /* Hairline grid: the container draws the start edges, each cell its end edges. Open rows stay open. */
+  .hairline-grid {
+    gap: 0;
+    border-block-start: var(--rule);
+    border-inline-start: var(--rule);
+  }
+
+  .hairline-grid > * {
+    border-inline-end: var(--rule);
+    border-block-end: var(--rule);
+  }
+
+  /* Frame: 8 crop-mark ticks drawn with gradients, no border. */
+  .frame {
+    --_c: var(--frame-color, var(--sketch));
+    --_t: var(--frame-tick, 1rem);
+    padding: var(--frame-pad, var(--space-s));
+    background-color: transparent;
+    background-image:
+      linear-gradient(var(--_c), var(--_c)), linear-gradient(var(--_c), var(--_c)),
+      linear-gradient(var(--_c), var(--_c)), linear-gradient(var(--_c), var(--_c)),
+      linear-gradient(var(--_c), var(--_c)), linear-gradient(var(--_c), var(--_c)),
+      linear-gradient(var(--_c), var(--_c)), linear-gradient(var(--_c), var(--_c));
+    background-repeat: no-repeat;
+    background-size:
+      var(--_t) var(--hairline),
+      var(--hairline) var(--_t),
+      var(--_t) var(--hairline),
+      var(--hairline) var(--_t),
+      var(--_t) var(--hairline),
+      var(--hairline) var(--_t),
+      var(--_t) var(--hairline),
+      var(--hairline) var(--_t);
+    background-position:
+      0 0,
+      0 0,
+      100% 0,
+      100% 0,
+      0 100%,
+      0 100%,
+      100% 100%,
+      100% 100%;
+  }
+
+  /* Graph paper: a 1.5rem grid on the panel surface. */
+  .graph-paper {
+    background-color: var(--surface-panel);
+    background-image:
+      linear-gradient(var(--line) var(--hairline), transparent var(--hairline)),
+      linear-gradient(90deg, var(--line) var(--hairline), transparent var(--hairline));
+    background-size: 1.5rem 1.5rem;
+    background-position: 0 0;
+  }
+
+  .paper {
+    background: var(--surface);
+    border: var(--rule);
+    box-shadow: var(--shadow-paper);
+  }
+
+  @media (forced-colors: active) {
+    .frame,
+    .graph-paper {
+      background-image: none;
+    }
+
+    .frame {
+      outline: 1px solid CanvasText;
+    }
+  }
+}
