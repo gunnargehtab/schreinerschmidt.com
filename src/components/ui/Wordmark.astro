@@ -1,0 +1,28 @@
+---
+// STUB (Phase 1 wave 2): the design-engineer's CSS-mask version replaces this file on merge.
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<span class:list={['wordmark', className]}>
+  <span class="wordmark__text" aria-hidden="true">
+    Schreinerei Schmidt
+  </span>
+  <span class="visually-hidden">Schreinerei Schmidt</span>
+</span>
+
+<style>
+  @layer components {
+    .wordmark {
+      display: inline-block;
+      color: var(--wordmark);
+      font-weight: 750;
+      font-size: var(--step-0);
+      line-height: 1;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+  }
+</style>

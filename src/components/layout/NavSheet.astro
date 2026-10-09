@@ -1,0 +1,211 @@
+---
+// Mobile navigation (docs/design-system.md §5 "NavSheet"): a popover sheet below the header.
+// commandfor + popovertarget on the same button: without JS (and in older Safari) popovertarget opens it.
+// Lists all links incl. Kontakt and the 7 services. Hidden from header inline-size >= 74rem.
+import { url } from '../../lib/url';
+import { CONFIGURATOR_HREF, current, getServiceLinks, getSite, MAIN_LINKS, nbsp, SERVICES_HREF } from './nav-data';
+
+const pathname = Astro.url.pathname;
+const services = await getServiceLinks();
+const site = await getSite();
+---
+
+<button class="menu-button" type="button" commandfor="site-menu" command="toggle-popover" popovertarget="site-menu">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M4 7.5h16M4 12h16M4 16.5h16"></path>
+  </svg>
+  <span>Menü</span>
+</button>
+
+<div id="site-menu" class="nav-sheet" popover>
+  <nav aria-label="Hauptmenü">
+    <ul class="nav-sheet__list list-plain">
+      <li>
+        <a href={url(SERVICES_HREF)} aria-current={current(pathname, SERVICES_HREF)}>
+          Leistungen
+        </a>
+        <ul class="nav-sheet__sub list-plain">
+          {services.map((s) => (
+            <li>
+              <a href={url(s.href)} aria-current={current(pathname, s.href)}>
+                {s.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </li>
+      {MAIN_LINKS.map((l) => (
+        <li>
+          <a href={url(l.href)} aria-current={current(pathname, l.href)}>
+            {l.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+  <div class="nav-sheet__actions">
+    <a class="btn btn--primary" href={url(CONFIGURATOR_HREF)}>
+      Angebot konfigurieren
+    </a>
+    <a class="btn btn--secondary" href={`tel:${site.phone.e164}`}>
+      Anrufen: <span>{nbsp(site.phone.display)}</span>
+    </a>
+    <button
+      class="btn btn--secondary"
+      type="button"
+      commandfor="site-menu"
+      command="hide-popover"
+      popovertarget="site-menu"
+      popovertargetaction="hide"
+    >
+      Menü schließen
+    </button>
+  </div>
+</div>
+
+<script>
+  import '../../scripts/nav-sheet.ts';
+</script>
+
+<style>
+  @layer components {
+    .menu-button {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2xs);
+      min-block-size: var(--target-min);
+      min-inline-size: var(--target-min);
+      padding-inline: var(--space-xs);
+      font: inherit;
+      font-weight: var(--weight-ui);
+      color: var(--ink);
+      background: none;
+      border: var(--rule-strong);
+      border-radius: 0;
+      cursor: pointer;
+    }
+
+    .menu-button:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Narrow headers: icon only (the label stays in the accessible name). */
+    @container header (inline-size < 30rem) {
+      .menu-button {
+        justify-content: center;
+        padding-inline: 0;
+      }
+
+      .menu-button span {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+    }
+
+    @container header (inline-size >= 74rem) {
+      .menu-button {
+        display: none;
+      }
+    }
+
+    .nav-sheet {
+      position: fixed;
+      position-anchor: --site-header-main;
+      inset: anchor(bottom) 0 0 0;
+      margin: 0;
+      inline-size: 100%;
+      max-inline-size: none;
+      block-size: auto;
+      padding: var(--space-m) var(--gutter);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      color: var(--ink);
+      border: 0;
+      border-block-start: var(--rule);
+      background: var(--surface);
+    }
+
+    @supports not (anchor-name: --a) {
+      .nav-sheet {
+        inset: var(--header-sticky-h) 0 0;
+      }
+    }
+
+    /* The sheet never outlives the mobile layout. */
+    @container header (inline-size >= 74rem) {
+      .nav-sheet {
+        display: none;
+      }
+    }
+
+    .nav-sheet a:not(.btn) {
+      display: flex;
+      align-items: center;
+      min-block-size: var(--target-min);
+      color: var(--ink);
+      font-size: var(--step-1);
+      font-weight: var(--weight-ui);
+      text-decoration: none;
+    }
+
+    .nav-sheet a:not(.btn)[aria-current='page'] {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+    }
+
+    .nav-sheet__sub {
+      margin-block-end: var(--space-2xs);
+      border-inline-start: var(--rule);
+    }
+
+    .nav-sheet__sub a:not(.btn) {
+      padding-inline-start: var(--space-s);
+      font-size: var(--step-0);
+      font-weight: var(--weight-body);
+    }
+
+    .nav-sheet__actions {
+      display: grid;
+      gap: var(--space-xs);
+      margin-block-start: var(--space-m);
+      padding-block-start: var(--space-m);
+      border-block-start: var(--rule);
+    }
+
+    :global(html:has(#site-menu:popover-open)) {
+      overflow: hidden;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      @supports (transition-behavior: allow-discrete) {
+        .nav-sheet {
+          opacity: 0;
+          translate: 0 -0.75rem;
+          transition:
+            opacity var(--dur-2),
+            translate var(--dur-2) var(--ease-out),
+            display var(--dur-2) allow-discrete,
+            overlay var(--dur-2) allow-discrete;
+        }
+
+        .nav-sheet:popover-open {
+          opacity: 1;
+          translate: 0;
+        }
+
+        @starting-style {
+          .nav-sheet:popover-open {
+            opacity: 0;
+            translate: 0 -0.75rem;
+          }
+        }
+      }
+    }
+  }
+</style>

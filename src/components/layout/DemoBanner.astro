@@ -1,0 +1,29 @@
+---
+// Demo builds only. Not sticky, so it never covers focused content.
+import { PUBLIC_DEMO } from 'astro:env/client';
+---
+
+{PUBLIC_DEMO && (
+  <aside class="demo-banner" aria-label="Hinweis">
+    <p class="wrap">
+      Entwurf – nicht die offizielle Website. Zur
+      <a href="https://www.schreinerschmidt.com/">aktuellen Website der Schreinerei Schmidt</a>.
+    </p>
+  </aside>
+)}
+
+<style>
+  @layer components {
+    .demo-banner {
+      font-size: var(--step--1);
+      line-height: 1.4;
+      background: var(--surface-panel);
+      border-block-end: var(--rule);
+    }
+
+    .demo-banner p {
+      padding-block: var(--space-2xs);
+      text-wrap: pretty;
+    }
+  }
+</style>

@@ -52,10 +52,7 @@ for (const theme of THEMES) {
 test.describe('keyboard', () => {
   test('the first Tab lands on a skip link to #main that is visible and works', async ({ page }) => {
     await page.goto('');
-    const skip = page.locator('a[href="#main"]');
-    // The skip link arrives with the header in Phase 1 wave 2. Until then this test is skipped;
-    // once the header lands, drop this guard so a missing skip link fails the build.
-    test.fixme((await skip.count()) === 0, 'No skip link yet (Phase 1 wave 2 adds it with the header).');
+    await expect(page.locator('a[href="#main"]')).toHaveCount(1);
 
     await page.keyboard.press('Tab');
     const focused = page.locator(':focus');

@@ -1,0 +1,119 @@
+---
+// Colour scheme picker (docs/design-system.md §5): a 44 px button opens an anchored popover with three
+// radios. Needs JS (`.js-only`, hidden when scripting is off). Nothing is stored until the user picks.
+const options = [
+  { value: 'system', label: 'Wie System' },
+  { value: 'light', label: 'Hell' },
+  { value: 'dark', label: 'Werkstatt bei Nacht' },
+];
+---
+
+<div class="theme-toggle js-only">
+  <button
+    class="theme-toggle__button"
+    type="button"
+    commandfor="theme-menu"
+    command="toggle-popover"
+    popovertarget="theme-menu"
+    aria-label="Farbschema"
+  >
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="8"></circle>
+      <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"></path>
+    </svg>
+  </button>
+  <div id="theme-menu" class="theme-toggle__panel" popover>
+    <fieldset class="choice-group">
+      <legend>Farbschema</legend>
+      {options.map((o) => (
+        <label class="choice">
+          <input type="radio" name="ss-theme" value={o.value} checked={o.value === 'system'} />
+          {o.label}
+        </label>
+      ))}
+    </fieldset>
+  </div>
+</div>
+
+<script>
+  import '../../scripts/theme-toggle.ts';
+</script>
+
+<style>
+  @layer components {
+    @media (scripting: none) {
+      .theme-toggle {
+        display: none;
+      }
+    }
+
+    .theme-toggle__button {
+      display: inline-grid;
+      place-items: center;
+      inline-size: var(--target-min);
+      block-size: var(--target-min);
+      padding: 0;
+      color: var(--ink);
+      background: none;
+      border: var(--rule-strong);
+      border-radius: 0;
+      cursor: pointer;
+      anchor-name: --theme;
+    }
+
+    .theme-toggle__button:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .theme-toggle__panel {
+      position-anchor: --theme;
+      position-area: block-end span-inline-start;
+      position-try-fallbacks: flip-inline;
+      inset: auto;
+      margin: var(--space-2xs) 0 0;
+      padding: var(--space-xs) var(--space-s);
+      color: var(--ink);
+      border: var(--rule-strong);
+      background: var(--surface);
+      box-shadow: var(--shadow-paper);
+    }
+
+    @supports not (anchor-name: --a) {
+      .theme-toggle__panel {
+        inset: var(--header-sticky-h) var(--gutter) auto auto;
+        margin: 0;
+      }
+    }
+
+    .theme-toggle__panel legend {
+      font-weight: var(--weight-ui);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      @supports (transition-behavior: allow-discrete) {
+        .theme-toggle__panel {
+          opacity: 0;
+          translate: 0 -0.25rem;
+          transition:
+            opacity var(--dur-2) var(--ease-out),
+            translate var(--dur-2) var(--ease-out),
+            display var(--dur-2) allow-discrete,
+            overlay var(--dur-2) allow-discrete;
+        }
+
+        .theme-toggle__panel:popover-open {
+          opacity: 1;
+          translate: 0;
+        }
+
+        @starting-style {
+          .theme-toggle__panel:popover-open {
+            opacity: 0;
+            translate: 0 -0.25rem;
+          }
+        }
+      }
+    }
+  }
+</style>

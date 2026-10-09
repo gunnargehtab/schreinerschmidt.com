@@ -1,0 +1,18 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { url } from '../../lib/url';
+---
+
+<PageLayout
+  title="Impressum"
+  description="Impressum der Schreinerei Schmidt in Mannheim mit Anbieterkennzeichnung und Kontaktdaten. Die rechtlichen Angaben werden gerade geprüft und folgen."
+>
+  <section class="section">
+    <div class="prose">
+      <p>Diese Seite entsteht gerade. Die rechtlichen Angaben werden noch geprüft.</p>
+      <p>
+        <a href={url('datenschutz/')}>Datenschutz</a> · <a href={url('kontakt/')}>Kontakt</a>
+      </p>
+    </div>
+  </section>
+</PageLayout>

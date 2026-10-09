@@ -3,26 +3,24 @@
 // index, and the layer statement in global.css has to precede every component's `@layer components`.
 import '../styles/global.css';
 import { Font } from 'astro:assets';
-import { PUBLIC_DEMO } from 'astro:env/client';
+import type { ComponentProps } from 'astro/types';
 import { themeInitScript, vtTypesScript, speculationRulesScript } from '../lib/inline-scripts.mjs';
-import { absolute } from '../lib/url';
+import { vt } from '../lib/vt';
+import Seo from '../components/seo/Seo.astro';
+import DemoBanner from '../components/layout/DemoBanner.astro';
+import SiteFooter from '../components/layout/SiteFooter.astro';
+import SiteHeader from '../components/layout/SiteHeader.astro';
+import SkipLink from '../components/layout/SkipLink.astro';
 
-interface Props {
-  title: string;
-  description: string;
-  /** Force noindex (404, danke pages) regardless of the build mode. */
-  noindex?: boolean;
-}
+// title / description / noindex / canonicalPath / image pass straight to <Seo>. Omit `title` on Home.
+type Props = ComponentProps<typeof Seo>;
 
-const { title, description, noindex = false } = Astro.props;
 const base = import.meta.env.BASE_URL;
-
-const robots = PUBLIC_DEMO
-  ? 'noindex, nofollow, noimageindex'
-  : noindex
-    ? 'noindex, follow'
-    : 'index, follow, max-image-preview:large';
-const canonical = !PUBLIC_DEMO && !noindex && Astro.site ? absolute(Astro.url.pathname, Astro.site) : undefined;
+// Compat: 404.astro (not in this task) still passes the full "… | Schreinerei Schmidt" title; <Seo> appends the site name.
+const { title, ...rest } = Astro.props;
+const pageTitle = title?.replace(/ \| Schreinerei Schmidt$/, '');
+// The header carries `view-transition-name: site-header` by class (motion.css); register it once per page.
+vt(Astro.locals, 'site-header');
 ---
 
 <!doctype html>
@@ -36,42 +34,31 @@ const canonical = !PUBLIC_DEMO && !noindex && Astro.site ? absolute(Astro.url.pa
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFBF5" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#160D07" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <meta name="robots" content={robots} />
-    {canonical && <link rel="canonical" href={canonical} />}
+    <Seo title={pageTitle} {...rest} />
     <link rel="expect" href="#main" blocking="render" />
     <Font cssVariable="--font-sans" preload={[{ subset: 'latin' }]} />
     <Font cssVariable="--font-accent" preload={[{ subset: 'latin' }]} />
+    <slot name="head" />
   </head>
   <body>
-    {PUBLIC_DEMO && (
-      <aside class="demo-banner" aria-label="Hinweis">
-        <p class="wrap">
-          Entwurf – nicht die offizielle Website. Zur
-          <a href="https://www.schreinerschmidt.com/">aktuellen Website der Schreinerei Schmidt</a>.
-        </p>
-      </aside>
-    )}
+    <SkipLink />
+    <DemoBanner />
+    <SiteHeader />
     <main id="main" class="page-grid">
       <slot />
     </main>
+    <SiteFooter />
   </body>
 </html>
 
-<style>
+<style is:global>
   @layer components {
-    /* Phase 1 wave 2 replaces this with the DemoBanner component. Not sticky. */
-    .demo-banner {
-      font-size: var(--step--1);
-      line-height: 1.4;
-      background: var(--surface-panel);
-      border-block-end: var(--rule);
-    }
-
-    .demo-banner p {
-      padding-block: var(--space-2xs);
-      text-wrap: pretty;
+    /*
+     * Workaround: base.css (`:is(ul, ol) { padding-inline-start: 1.25em }`) sits in a later layer than
+     * reset.css and so beats the `.list-plain` reset. Remove once src/styles/reset.css is fixed.
+     */
+    :is(ul, ol).list-plain {
+      padding-inline-start: 0;
     }
   }
 </style>

@@ -1,0 +1,21 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { url } from '../../lib/url';
+---
+
+<PageLayout
+  title="Referenzen"
+  description="Referenzen der Schreinerei Schmidt aus Mannheim: Möbel nach Maß, Böden, Treppen, Fenster und Türen. Die Projektübersicht entsteht gerade."
+>
+  <p class="lead" slot="lead">
+    Ausgewählte Arbeiten aus Mannheim und Umgebung.
+  </p>
+  <section class="section">
+    <div class="prose">
+      <p>Diese Seite entsteht gerade.</p>
+      <p>
+        <a href={url('leistungen/')}>Zu den Leistungen</a> · <a href={url('kontakt/')}>Kontakt</a>
+      </p>
+    </div>
+  </section>
+</PageLayout>

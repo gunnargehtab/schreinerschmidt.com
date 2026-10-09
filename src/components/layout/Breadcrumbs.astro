@@ -1,0 +1,57 @@
+---
+// <nav aria-label="Brotkrumen"> with "Startseite" first; the last crumb is the current page.
+import { url } from '../../lib/url';
+
+interface Crumb {
+  label: string;
+  /** Site-relative path. Omit on the last (current) crumb. */
+  href?: string;
+}
+interface Props {
+  /** Crumbs after "Startseite". */
+  trail: Crumb[];
+}
+
+const { trail } = Astro.props;
+const items: Crumb[] = [{ label: 'Startseite', href: '' }, ...trail];
+---
+
+<nav class="breadcrumbs" aria-label="Brotkrumen">
+  <ol class="list-plain">
+    {items.map((item, i) => (
+      <li>
+        {i < items.length - 1 && item.href !== undefined ? (
+          <a href={url(item.href)}>{item.label}</a>
+        ) : (
+          <span aria-current="page">{item.label}</span>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  @layer components {
+    .breadcrumbs {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+
+    .breadcrumbs ol {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 var(--space-2xs);
+    }
+
+    .breadcrumbs li + li::before {
+      content: '/';
+      content: '/' / '';
+      margin-inline-end: var(--space-2xs);
+    }
+
+    .breadcrumbs :is(a, [aria-current]) {
+      display: inline-block;
+      padding-block: var(--space-3xs);
+    }
+  }
+</style>

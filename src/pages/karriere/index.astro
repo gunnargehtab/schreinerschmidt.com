@@ -1,0 +1,21 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { url } from '../../lib/url';
+---
+
+<PageLayout
+  title="Karriere"
+  description="Karriere bei der Schreinerei Schmidt in Mannheim: offene Stellen für Bauschreiner und Parkettleger. Die Seite mit allen Details entsteht gerade."
+>
+  <p class="lead" slot="lead">
+    Offene Stellen in der Werkstatt und auf der Baustelle.
+  </p>
+  <section id="bewerbung" class="section">
+    <div class="prose">
+      <p>Diese Seite entsteht gerade.</p>
+      <p>
+        <a href={url('ueber-uns/')}>Über uns</a> · <a href={url('kontakt/')}>Kontakt</a>
+      </p>
+    </div>
+  </section>
+</PageLayout>

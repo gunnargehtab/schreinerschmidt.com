@@ -1,0 +1,168 @@
+---
+// Header (docs/design-system.md §5): utility row (>= 48rem) + main row. Sticky: the utility row scrolls
+// away, the main row stays. Nav and menu button switch together at header inline-size >= 74rem.
+import Wordmark from '../ui/Wordmark.astro';
+import { url } from '../../lib/url';
+import NavDesktop from './NavDesktop.astro';
+import NavSheet from './NavSheet.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import { formatHours, getSite, nbsp, TAGLINE } from './nav-data';
+
+const site = await getSite();
+const hours = formatHours(site.hours.value);
+const phone = nbsp(site.phone.display);
+---
+
+<header class="site-header">
+  <div class="site-header__utility">
+    <div class="wrap site-header__utility-inner">
+      <p>{TAGLINE}</p>
+      <p data-review={site.hours.status}>
+        <span class="visually-hidden">Öffnungszeiten:</span>
+        {hours.map((h) => `${h.days} ${h.time}`).join(', ')}
+      </p>
+    </div>
+  </div>
+  <div class="site-header__main">
+    <div class="wrap site-header__main-inner">
+      <a class="site-header__home" href={url('')}>
+        <Wordmark />
+      </a>
+      <NavDesktop />
+      <div class="site-header__actions">
+        <a class="phone" href={`tel:${site.phone.e164}`}>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"></path>
+          </svg>
+          <span class="visually-hidden">Anrufen:</span>
+          <span class="phone__number">{phone}</span>
+        </a>
+        <ThemeToggle />
+        <NavSheet />
+      </div>
+    </div>
+  </div>
+</header>
+
+<style>
+  @layer components {
+    .site-header {
+      position: sticky;
+      inset-block-start: calc(-1 * var(--utility-h));
+      z-index: 100;
+      container: header / inline-size;
+      background: var(--surface) var(--grain);
+      border-block-end: var(--rule);
+    }
+
+    .site-header__utility {
+      display: none;
+      block-size: var(--utility-h);
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+      background: var(--surface-alt);
+      border-block-end: var(--rule);
+    }
+
+    @media (width >= 48rem) {
+      .site-header__utility {
+        display: block;
+      }
+    }
+
+    .site-header__utility-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-s);
+      block-size: 100%;
+    }
+
+    .site-header__main {
+      block-size: var(--main-h);
+      anchor-name: --site-header-main;
+    }
+
+    .site-header__main-inner {
+      --wrap-max: var(--breakout);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      block-size: 100%;
+    }
+
+    .site-header__home {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--target-min);
+      text-decoration: none;
+    }
+
+    .site-header__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2xs);
+      margin-inline-start: auto;
+    }
+
+    /* Phone: 44 x 44 icon button below 74rem, number as text above. The number stays in the accessible name. */
+    .phone {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2xs);
+      min-inline-size: var(--target-min);
+      min-block-size: var(--target-min);
+      color: var(--ink);
+      font-weight: var(--weight-ui);
+      text-decoration: none;
+      border: var(--rule-strong);
+    }
+
+    .phone:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .phone__number {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /* Below 360 px there is no room for a third icon; the menu sheet carries a phone link instead. */
+    @container header (inline-size < 22.5rem) {
+      .phone {
+        display: none;
+      }
+    }
+
+    @container header (inline-size >= 74rem) {
+      .site-header__main-inner {
+        gap: var(--space-m);
+      }
+
+      .phone {
+        padding-inline: var(--space-xs);
+        border-color: transparent;
+      }
+
+      .phone__number {
+        position: static;
+        inline-size: auto;
+        block-size: auto;
+        overflow: visible;
+        clip-path: none;
+      }
+
+      .site-header__actions {
+        gap: var(--space-xs);
+      }
+    }
+  }
+</style>
