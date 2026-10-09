@@ -1,0 +1,11 @@
+dist
+.astro
+.cache
+node_modules
+package-lock.json
+playwright-report
+test-results
+lighthouse-reports
+docs
+CLAUDE.md
+.claude
