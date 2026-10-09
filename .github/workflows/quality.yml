@@ -1,0 +1,51 @@
+name: Weekly quality audit
+# Lighthouse on the audit build (BASE_PATH=/, production robots/canonical) plus an external link
+# check (docs/architecture.md §10–§11). Never deploys.
+on:
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: quality
+  cancel-in-progress: true
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Restore Astro cache
+        uses: actions/cache@v6
+        with:
+          path: .cache/astro
+          key: "astro-${{ runner.os }}-${{ hashFiles('package-lock.json','astro.config.mjs') }}-${{ hashFiles('src/assets/**') }}"
+          restore-keys: 'astro-${{ runner.os }}-'
+      - name: Build (audit mode)
+        run: npm run build:audit
+      # Uses the runner's Google Chrome; scripts/lighthouse.mjs serves dist/ itself on port 4173.
+      - name: Lighthouse (mobile, median of 3)
+        run: npm run lighthouse
+      # External links included; reported, never blocking. The audit SITE (localhost:4173)
+      # only appears in canonical/OG URLs and is not served here, so it is skipped.
+      - name: Link check including external links
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: npx linkinator dist --recurse --retry --timeout 20000 --skip '^https?://localhost'
+      - name: Upload Lighthouse reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-reports
+          path: lighthouse-reports/
+          retention-days: 30
+          if-no-files-found: warn

@@ -6,7 +6,6 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
 import { satteri } from '@astrojs/markdown-satteri';
-import { legacyRedirects } from './src/data/redirects.mjs';
 import { cspHash, themeInitScript, vtTypesScript, speculationRulesScript } from './src/lib/inline-scripts.mjs';
 import { basePathLinks } from './src/lib/markdown/base-path-links.mjs';
 
@@ -18,8 +17,6 @@ const DEMO = process.env['PUBLIC_DEMO'] !== 'false';
 const FORM = process.env['PUBLIC_FORM_ENDPOINT'] || '';
 if (!DEMO && !FORM) throw new Error('Production build needs PUBLIC_FORM_ENDPOINT');
 const formSrc = FORM ? ` ${new URL(FORM).origin}` : '';
-/** @param {string} to */
-const withBase = (to) => (/^https?:/.test(to) ? to : BASE + to.replace(/^\//, ''));
 
 const JSDELIVR = /^https:\/\/cdn\.jsdelivr\.net\/npm\/((?:@[^/]+\/)?[^@/]+)@[^/]+\/(.+)$/;
 const SUBSET = /-((?:latin|cyrillic|greek|vietnamese)(?:-ext)?)-wght-(?:normal|italic)\.woff2$/;
@@ -117,7 +114,6 @@ export default defineConfig({
   cacheDir: './.cache/astro',
   prefetch: false,
   scopedStyleStrategy: 'where',
-  redirects: Object.fromEntries(legacyRedirects.map(([from, to]) => [from, withBase(to)])),
   image: {
     layout: 'constrained',
     responsiveStyles: true,

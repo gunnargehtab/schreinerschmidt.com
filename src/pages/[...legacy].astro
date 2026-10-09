@@ -1,0 +1,41 @@
+---
+// Meta-refresh pages for the legacy Webflow URLs (docs/plan.md §3.1). They replace Astro's
+// `redirects` pages, which have English copy, no lang, no charset and a canonical even in demo
+// mode. Deliberately minimal and without BaseLayout: no inline scripts, never indexed.
+import type { GetStaticPaths } from 'astro';
+import { legacyRedirects } from '../data/redirects.mjs';
+import { url } from '../lib/url';
+
+export const getStaticPaths = (() =>
+  legacyRedirects.map(([from, to]) => ({
+    params: { legacy: from.replace(/^\/+|\/+$/g, '') },
+    props: { to },
+  }))) satisfies GetStaticPaths;
+
+interface Props {
+  to: string;
+}
+
+const { to } = Astro.props;
+// Keeps `?query` and `#hash` (e.g. `/karriere/#bewerbung`); external targets pass through.
+const target = /^https?:\/\//.test(to) ? to : url(to);
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <meta name="robots" content="noindex" />
+    <title>Seite umgezogen | Schreinerei Schmidt</title>
+  </head>
+  <body>
+    <main>
+      <h1>Diese Seite ist umgezogen.</h1>
+      <p>
+        <a href={target}>Weiter zu {target}</a>
+      </p>
+    </main>
+  </body>
+</html>
