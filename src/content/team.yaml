@@ -1,0 +1,10 @@
+# Schema fixture (wave 1).
+ulf-schmidt:
+  name: Ulf Schmidt
+  role: Schreinermeister und Inhaber
+  since: 2010
+  publicationConsent: ausstehend
+  review:
+    status: needs-review
+    source: docs/content-inventory.md
+    note: Einwilligung zur Veröffentlichung von Name und Foto klären.

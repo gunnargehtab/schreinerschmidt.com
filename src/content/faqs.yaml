@@ -1,0 +1,9 @@
+# Schema fixture (wave 1).
+platzhalter-frage:
+  question: Platzhalter-Frage für das Schema?
+  answer: Platzhalter-Antwort, wird in Welle 2 durch den echten Text ersetzt.
+  topics: [boeden]
+  order: 1
+  review:
+    status: placeholder
+    note: Schema-Fixture.
