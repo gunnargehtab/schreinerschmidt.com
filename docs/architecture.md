@@ -4,7 +4,9 @@ This document is the authoritative technical reference. It complements `docs/pla
 
 ## 0. Findings that shape the build
 1. **PaX AG photos.** `_MG_2703_RGB_web.jpg`, `_MG_2939_RGB_web.jpg` and `Fenster Detail 13_1.jpg` carry the EXIF copyright "PaX AG", a window maker. **Exclude them.** The Fenster page then has only `balkontur_im_altbau` from the owner.
-2. **KOWA Haustür is the company's own.** It was shot on the same Huawei VOG-L29 as `Team1.jpg`, on 28.01.2023.
+   - The Phase 1 migration found two more: the Braubachstraße facade and `stadthaus-altbau-neorenaissance-haustür.jpg` (both `Copyright: PaX AG`). Also excluded.
+   - The Admonter photos carry Artist/Copyright "Peter Burgstaller", which confirms that exclusion.
+2. **KOWA Haustür is the company's own.** It was shot on the same Huawei VOG-L29 as `Team1.jpg`. It was taken on 2021-03-11 and edited on 28.01.2023; Team1 was taken on 2022-09-12.
 3. **Two groups of photos.**
    - Company phones, 2018–2023, at 2736–4000 px.
    - An Oct-2022 upload batch: Fujifilm photos from about 2010–2012 at **800×600**. `2019-09-20.jpg` is only 540×420.
@@ -248,6 +250,12 @@ Also **archive the originals** outside git, because the Webflow CDN dies when th
 | 13 | altbau-eichendielen | Eichendielen im Altbau | IMG_20200527 | Böden, Altbau | no |
 | 14 | fischgraetparkett-eiche | Fischgrätparkett in Eiche | 1 | Böden | no |
 | 15 | draussen-mit-holz | Sonnenplatz, Gartentor & Zaun | Sonnenplatze + zaun ×2 (confirm) | Terrassen | yes |
+
+Photos without a project live in `src/assets/services/<key>/` (Phase 1 migration), e.g. `boeden/01-massivdielen-kiefer.jpg` and `fenster/01-balkontuer-altbau.jpg`.
+
+Not migrated, pending the owner:
+- `eiche_fischgratparkett.jpeg` is a different photo (Fujifilm 2011, 800×600), not a duplicate of the 2022 Fischgrät.
+- `Treppe Eiche Massivholz naturgeölt.jpg` is a crop of IMG_20230203, so only the original is migrated.
 
 Where the remaining photos go:
 - Kiefer-Landhausdielen: illustrates the Böden type "Massivdielen".

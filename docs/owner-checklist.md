@@ -8,7 +8,8 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Do the draft groupings of the 15 reference projects belong together? (`docs/architecture.md` §6)
 - [ ] Team photo (Team1.jpg): consent from the people shown.
 - [ ] Portrait ulf_schmidt.jpg: may it be used?
-- [ ] PaX AG photos (3): does he have marketing rights as a dealer? Default: excluded.
+- [ ] PaX AG photos (5, incl. Braubachstraße and the Neorenaissance Haustür): does he have marketing rights as a dealer? Default: excluded.
+- [ ] `eiche_fischgratparkett.jpeg` (Fujifilm 2011): his project? Currently not migrated.
 - [ ] Testimonials (Biggi N., Christian E., Alexander H.): source, and permission to quote them.
 - [ ] Vector logo, if one exists (sign makers usually have it).
 - [ ] New photos: windows, terraces, Altbau, workshop, team.
