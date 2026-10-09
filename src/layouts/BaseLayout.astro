@@ -7,6 +7,7 @@ import type { ComponentProps } from 'astro/types';
 import { themeInitScript, vtTypesScript, speculationRulesScript } from '../lib/inline-scripts.mjs';
 import { vt } from '../lib/vt';
 import Seo from '../components/seo/Seo.astro';
+import SiteJsonLd from '../components/seo/SiteJsonLd.astro';
 import DemoBanner from '../components/layout/DemoBanner.astro';
 import SiteFooter from '../components/layout/SiteFooter.astro';
 import SiteHeader from '../components/layout/SiteHeader.astro';
@@ -38,6 +39,7 @@ vt(Astro.locals, 'site-header');
     <link rel="expect" href="#main" blocking="render" />
     <Font cssVariable="--font-sans" preload={[{ subset: 'latin' }]} />
     <Font cssVariable="--font-accent" preload={[{ subset: 'latin' }]} />
+    <SiteJsonLd />
     <slot name="head" />
   </head>
   <body>

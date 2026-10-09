@@ -9,7 +9,6 @@
 // hours or salary data, unless ALLOW_PLACEHOLDERS=true (env/audit.env).
 import { PUBLIC_DEMO } from 'astro:env/client';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import SiteJsonLd from '../../../components/seo/SiteJsonLd.astro';
 import { groupByArea, type ReviewItem } from '../../../lib/review';
 import { isKnownPage, loadReviewItems, runProductionGuard } from '../../../lib/review-content';
 import { url } from '../../../lib/url';
@@ -53,7 +52,6 @@ const blockingCount = items.filter(blocks).length;
   description="Interne Prüfliste des Entwurfs: alle offenen Angaben, Platzhalter, Einwilligungen, Bildrechte und Werbeaussagen vor der Freigabe."
   noindex
 >
-  <SiteJsonLd />
   <section class="section">
     <div class="stack stack--m">
       <p class="eyebrow">Intern</p>
