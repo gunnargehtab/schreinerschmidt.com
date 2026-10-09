@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig, envField, fontProviders } from 'astro/config';
 import { existsSync } from 'node:fs';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
@@ -60,6 +61,48 @@ function fontsourceLocal() {
         return [{ ...rest, src, meta: { ...font.meta, ...(subset ? { subset } : {}) } }];
       });
       return { fonts };
+    },
+  };
+}
+
+/** A whole `<meta …>` tag; quoted attribute values may contain `>`. */
+const META_TAG = /<meta\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
+const IS_CSP_META = /\shttp-equiv\s*=\s*(["']?)content-security-policy\1(?=[\s/>])/i;
+/** Tested on the tag with quoted values blanked, so `content="…; charset=…"` does not count. */
+const IS_CHARSET_META = /\scharset\s*=/i;
+const isCharsetMeta = (/** @type {string} */ tag) => IS_CHARSET_META.test(tag.replace(/"[^"]*"|'[^']*'/g, '""'));
+
+/**
+ * Astro injects the CSP `<meta>` at the end of `<head>`, after our inline scripts, the font styles
+ * and preloads. A meta policy only governs content parsed after it, so move it directly behind
+ * `<meta charset>`. Pages without a CSP meta (Astro's redirect pages) stay untouched.
+ * @returns {import('astro').AstroIntegration}
+ */
+function cspMetaFirst() {
+  return {
+    name: 'csp-meta-first',
+    hooks: {
+      'astro:build:done': async ({ dir, logger }) => {
+        const root = fileURLToPath(dir);
+        const files = (await readdir(root, { recursive: true })).filter((f) => f.endsWith('.html'));
+        let moved = 0;
+        for (const file of files) {
+          const path = join(root, file);
+          const html = await readFile(path, 'utf8');
+          const csp = [...html.matchAll(META_TAG)].filter((m) => IS_CSP_META.test(m[0]));
+          const [meta] = csp;
+          if (!meta) continue;
+          if (csp.length > 1) throw new Error(`csp-meta-first: ${file} has ${csp.length} CSP <meta> tags`);
+          const [tag] = meta;
+          const rest = html.slice(0, meta.index) + html.slice(meta.index + tag.length);
+          const charset = [...rest.matchAll(META_TAG)].find((m) => isCharsetMeta(m[0]));
+          if (!charset) throw new Error(`csp-meta-first: ${file} has a CSP <meta> but no <meta charset>`);
+          const end = charset.index + charset[0].length;
+          await writeFile(path, rest.slice(0, end) + tag + rest.slice(end));
+          moved++;
+        }
+        logger.info(`moved the CSP <meta> behind <meta charset> in ${moved} page(s)`);
+      },
     },
   };
 }
@@ -155,5 +198,5 @@ export default defineConfig({
       },
     },
   },
-  integrations: DEMO ? [] : [sitemap({ filter: (p) => !p.endsWith('/danke/') })],
+  integrations: [cspMetaFirst(), ...(DEMO ? [] : [sitemap({ filter: (p) => !p.endsWith('/danke/') })])],
 });

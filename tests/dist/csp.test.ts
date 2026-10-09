@@ -14,10 +14,39 @@ function inlineScripts(page: DistPage): HTMLElement[] {
 const inlineStyles = (page: DistPage): HTMLElement[] =>
   page.root.querySelectorAll('style').filter((s) => s.rawText.trim() !== '');
 
+// Raw-HTML patterns for the head order check (a meta CSP only governs content parsed after it).
+const CSP_META = /<meta\b[^>]*\shttp-equiv\s*=\s*["']?content-security-policy\b/gi;
+const CHARSET_META = /<meta\s+charset\s*=[^>]*>/i;
+const INLINE_SCRIPT = /<script\b(?![^>]*\ssrc\s*=)[^>]*>/i;
+const STYLE = /<style\b/i;
+const PRELOAD = /<link\b[^>]*\srel\s*=\s*["']?preload\b/i;
+
 describeDist('CSP meta and inline hashes', () => {
   it('has pages to check', () => {
     expect(pages.length).toBeGreaterThan(0);
   });
+
+  it.each(pages.map((p) => [p.rel, p] as const))(
+    '%s: CSP meta follows <meta charset> and precedes inline scripts, styles and preloads',
+    (_rel, page) => {
+      const csp = [...page.html.matchAll(CSP_META)];
+      expect(csp, 'exactly one CSP meta tag').toHaveLength(1);
+      const at = csp[0]?.index ?? -1;
+      const charset = CHARSET_META.exec(page.html);
+      expect(charset, '<meta charset>').not.toBeNull();
+      expect(at, 'CSP meta after <meta charset>').toBeGreaterThanOrEqual((charset?.index ?? 0) + (charset?.[0].length ?? 0));
+      const script = page.html.search(INLINE_SCRIPT);
+      expect(script, 'an inline script (BaseLayout theme init)').toBeGreaterThan(-1);
+      expect(at, 'CSP meta before the first inline <script>').toBeLessThan(script);
+      for (const [what, re] of [
+        ['<style>', STYLE],
+        ['<link rel="preload">', PRELOAD],
+      ] as const) {
+        const first = page.html.search(re);
+        if (first >= 0) expect(at, `CSP meta before the first ${what}`).toBeLessThan(first);
+      }
+    },
+  );
 
   it.each(pages.map((p) => [p.rel, p] as const))('%s: every inline script hash is in script-src', (_rel, page) => {
     const csp = cspOf(page.root);
