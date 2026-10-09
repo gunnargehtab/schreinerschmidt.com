@@ -1,0 +1,34 @@
+---
+// Site-wide JSON-LD (docs/architecture.md §7): HomeAndConstructionBusiness + WebSite from the
+// settings entry. jsonld.ts drops everything that isn't confirmed, so with today's unconfirmed
+// settings the business node is sparse on purpose. Plain settings fields (address, phone, e-mail,
+// owner) have no fact() of their own; they carry the entry's review status instead.
+import { getEntry } from 'astro:content';
+import JsonLd from './JsonLd.astro';
+import { businessJsonLd, websiteJsonLd, type BusinessInput, type Fact } from '../../lib/jsonld';
+import { absolute, url } from '../../lib/url';
+
+const entry = await getEntry('settings', 'site');
+if (!entry) throw new Error('SiteJsonLd: settings entry "site" is missing (src/content/settings.yaml)');
+const s = entry.data;
+const site = Astro.site;
+if (!site) throw new Error('SiteJsonLd: `site` must be set in astro.config.mjs');
+
+const home = absolute(url(''), site);
+const asEntryFact = <T,>(value: T): Fact<T> => ({ value, status: s.review.status });
+
+const input: BusinessInput = {
+  name: s.name,
+  legalName: s.legalName,
+  owner: asEntryFact({ name: s.owner.name, title: s.owner.title }),
+  address: asEntryFact(s.address),
+  geo: s.geo,
+  phone: asEntryFact({ e164: s.phone.e164 }),
+  email: asEntryFact(s.email),
+  hours: s.hours,
+  areaServed: s.areaServed,
+  profileUrl: s.rating.profileUrl,
+};
+---
+
+<JsonLd data={[businessJsonLd(input, home), websiteJsonLd({ name: s.name, home })]} />
