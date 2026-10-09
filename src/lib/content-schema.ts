@@ -27,7 +27,8 @@ export const ServiceKey = z.enum(['moebel', 'boeden', 'treppen', 'fenster', 'tue
 export type ServiceKey = z.infer<typeof ServiceKey>;
 
 export const Seo = z.object({
-  title: z.string().max(45),
+  // 38 + " | Schreinerei Schmidt" (22) = the 60-character title limit (architecture §7).
+  title: z.string().max(38),
   description: z.string().min(110).max(158),
 });
 

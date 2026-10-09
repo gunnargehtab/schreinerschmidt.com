@@ -245,7 +245,7 @@ The shop and template leftovers (`/checkout`, `/paypal-checkout`, `/order-confir
 ### 3.2 Content model (`src/content.config.ts`, loaders + zod from `astro/zod`)
 | Collection | Format | Fields |
 |---|---|---|
-| **services** | md | key, title, order, teaser, `seo{title ≤45, description 110–158}`, `hero{src, alt, sketch}`, `types[]` (e.g. 6 floor types), references to woods/faqs/projects, schemaServiceType |
+| **services** | md | key, title, order, teaser, `seo{title ≤38, description 110–158}`, `hero{src, alt, sketch}`, `types[]` (e.g. 6 floor types), references to woods/faqs/projects, schemaServiceType |
 | **projects** | md | title, summary, `categories[]` (first = primary), woods, location (district only), year, cover and gallery (alt ≥ 12 chars), optional `beforeAfter`, `detailPage`, `featured` |
 | **testimonials** | yaml | verbatim quote, source, permission flag |
 | **team** | yaml | `publicationConsent` |

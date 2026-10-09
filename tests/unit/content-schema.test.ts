@@ -28,9 +28,9 @@ describe('fact()', () => {
 describe('Seo', () => {
   const ok = { title: 'Holzböden in Mannheim', description: 'x'.repeat(120) };
   it('accepts valid values', () => expect(Seo.safeParse(ok).success).toBe(true));
-  it('limits the title to 45 characters', () => {
-    expect(Seo.safeParse({ ...ok, title: 'x'.repeat(45) }).success).toBe(true);
-    expect(Seo.safeParse({ ...ok, title: 'x'.repeat(46) }).success).toBe(false);
+  it('limits the title to 38 characters (60 with the site suffix)', () => {
+    expect(Seo.safeParse({ ...ok, title: 'x'.repeat(38) }).success).toBe(true);
+    expect(Seo.safeParse({ ...ok, title: 'x'.repeat(39) }).success).toBe(false);
   });
   it('limits the description to 110–158 characters', () => {
     expect(Seo.safeParse({ ...ok, description: 'x'.repeat(109) }).success).toBe(false);

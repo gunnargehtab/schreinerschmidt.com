@@ -184,7 +184,8 @@ const Status = z.enum(['confirmed', 'needs-review', 'placeholder']);
 const review = z.object({ status: Status, note: z.string().optional(), source: z.string().optional() }).default({ status: 'needs-review' });
 const fact = <T extends z.ZodType>(value: T) => z.object({ value, status: Status, note: z.string().optional(), source: z.string().optional() });
 const ServiceKey = z.enum(['moebel', 'boeden', 'treppen', 'fenster', 'tueren', 'altbau', 'terrassen']);
-const Seo = z.object({ title: z.string().max(45), description: z.string().min(110).max(158) });
+const Seo = z.object({ title: z.string().max(38), description: z.string().min(110).max(158) });
+// seo.title ≤ 38: with " | Schreinerei Schmidt" (22 chars) the full title stays ≤ 60 (§7).
 // services (md): key, title, order, teaser ≤180, seo, hero{src,alt≥12,sketch?}, types[{name,text,highlight?,image?,alt?}], woods[], faqs[], projects[], schemaServiceType, review
 // projects (md): title, summary ≤200, categories[ServiceKey]≥1, woods[], location?, year?, cover{src,alt≥12,caption?}, gallery[], beforeAfter?{before,after}, detailPage, featured, review
 // testimonials (yaml): author, quote, source enum(google|alte-website|direkt), date?, project?, review
