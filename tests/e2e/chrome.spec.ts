@@ -136,14 +136,56 @@ test.describe('mobile sheet', () => {
     await expect(page.getByRole('navigation', { name: 'Hauptnavigation' })).toBeVisible();
   });
 
-  test('the phone link is a 44 px target with an accessible name', async ({ page }) => {
+  test('the phone link is a 44 px target with an accessible name from 400 px up', async ({ page }) => {
+    await page.setViewportSize({ width: 430, height: 844 });
     await page.goto('');
     const phone = page.locator('.site-header .phone');
     const box = await phone.boundingBox();
-    expect(box && box.width >= 44 && box.height >= 44).toBe(true);
+    expect(box && box.width >= 43.9 && box.height >= 43.9).toBe(true);
     await expect(phone).toHaveAttribute('href', /^tel:\+49/);
     await expect(phone).toHaveAccessibleName(/\+49/);
   });
+
+  test('below 400 px the phone icon is hidden and the sheet keeps an Anrufen link', async ({ page }) => {
+    await page.goto('');
+    await expect(page.locator('.site-header .phone')).toBeHidden();
+    await page.locator('.menu-button').click();
+    await expect(page.locator('#site-menu').getByRole('link', { name: /Anrufen/ })).toHaveAttribute(
+      'href',
+      /^tel:\+49/,
+    );
+  });
+});
+
+test.describe('header reflow (WCAG 1.4.10) @cross-engine', () => {
+  for (const width of [320, 360, 390, 768]) {
+    for (const path of ['', 'kontakt/']) {
+      test(`no horizontal overflow at ${width} px on /${path}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 800 });
+        await page.goto(path);
+        const overflow = () =>
+          page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+        const closed = await overflow();
+        expect(closed.sw, 'closed').toBeLessThanOrEqual(closed.iw);
+
+        const button = page.locator('.menu-button');
+        const inside = async () => {
+          const b = await button.boundingBox();
+          expect(b && b.x >= 0 && b.x + b.width <= width, 'menu button inside viewport').toBe(true);
+          expect(b && b.width >= 43.9 && b.height >= 43.9, `menu button >= 44 px: ${JSON.stringify(b)}`).toBe(true);
+        };
+        await inside();
+        const logo = await page.locator('.site-header__home').boundingBox();
+        expect(logo && logo.width >= 119.9 && logo.height >= 43.9, 'wordmark link legible and 44 px tall').toBe(true);
+
+        await button.click();
+        await expect(page.locator('#site-menu')).toBeVisible();
+        const open = await overflow();
+        expect(open.sw, 'sheet open').toBeLessThanOrEqual(open.iw);
+        await inside();
+      });
+    }
+  }
 });
 
 test.describe('theme toggle', () => {

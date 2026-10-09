@@ -92,7 +92,8 @@ const phone = nbsp(site.phone.display);
     }
 
     .site-header__home {
-      flex: none;
+      flex: 0 1 auto;
+      min-inline-size: 7.5rem; /* the wordmark shrinks to this, never below */
       display: inline-flex;
       align-items: center;
       min-block-size: var(--target-min);
@@ -135,8 +136,9 @@ const phone = nbsp(site.phone.display);
       white-space: nowrap;
     }
 
-    /* Below 360 px there is no room for a third icon; the menu sheet carries a phone link instead. */
-    @container header (inline-size < 22.5rem) {
+    /* Below 25rem (400 px) wordmark, theme toggle, menu button and a phone icon do not fit side by side
+       at a legible wordmark size; the menu sheet carries an "Anrufen" link instead. */
+    @container header (inline-size < 25rem) {
       .phone {
         display: none;
       }
