@@ -1,9 +1,11 @@
 ---
+// global.css must stay the FIRST import: Astro orders a page's stylesheets by cumulative import
+// index, and the layer statement in global.css has to precede every component's `@layer components`.
+import '../styles/global.css';
 import { Font } from 'astro:assets';
 import { PUBLIC_DEMO } from 'astro:env/client';
 import { themeInitScript, vtTypesScript, speculationRulesScript } from '../lib/inline-scripts.mjs';
 import { absolute } from '../lib/url';
-import '../styles/base.css';
 
 interface Props {
   title: string;
@@ -31,6 +33,9 @@ const canonical = !PUBLIC_DEMO && !noindex && Astro.site ? absolute(Astro.url.pa
     <script is:inline set:html={vtTypesScript(base)} />
     <script is:inline type="speculationrules" set:html={speculationRulesScript(base)} />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFBF5" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#160D07" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="robots" content={robots} />
@@ -48,8 +53,25 @@ const canonical = !PUBLIC_DEMO && !noindex && Astro.site ? absolute(Astro.url.pa
         </p>
       </aside>
     )}
-    <main id="main" class="wrap">
+    <main id="main" class="page-grid">
       <slot />
     </main>
   </body>
 </html>
+
+<style>
+  @layer components {
+    /* Phase 1 wave 2 replaces this with the DemoBanner component. Not sticky. */
+    .demo-banner {
+      font-size: var(--step--1);
+      line-height: 1.4;
+      background: var(--surface-panel);
+      border-block-end: var(--rule);
+    }
+
+    .demo-banner p {
+      padding-block: var(--space-2xs);
+      text-wrap: pretty;
+    }
+  }
+</style>

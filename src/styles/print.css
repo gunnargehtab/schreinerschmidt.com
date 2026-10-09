@@ -1,0 +1,76 @@
+/* Print: plain paper, no grain, no chrome, URLs for external links. Unlayered so it wins. */
+@media print {
+  :root {
+    color-scheme: light;
+    --grain: none;
+    --shadow-paper: none;
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .demo-banner,
+  .skip-link,
+  .site-header .nav,
+  .site-header .menu-button,
+  .theme-toggle,
+  .btn--icon,
+  [data-print='hide'] {
+    display: none !important;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  :is(h1, h2, h3, h4) {
+    break-after: avoid;
+  }
+
+  :is(p, li, dd) {
+    orphans: 3;
+    widows: 3;
+  }
+
+  :is(img, picture, figure, table, .mass) {
+    break-inside: avoid;
+  }
+
+  .section {
+    padding-block: 1.5em;
+    background: none !important;
+    border: 0 !important;
+  }
+
+  .band--ink {
+    color-scheme: light;
+  }
+
+  .mass,
+  .mass::before,
+  .mass::after,
+  .mass__line {
+    color: #000;
+  }
+
+  .btn {
+    box-shadow: none;
+    color: #000;
+    background: none;
+    border: 1px solid #000;
+  }
+}

@@ -1,0 +1,37 @@
+/*
+ * Type tokens (docs/design-system.md §2).
+ * --font-sans / --font-accent are set on :root by Astro's <Font> components.
+ * Fluid scale 360 -> 1440 px; max/min <= 1.98 so 200 % zoom stays safe.
+ */
+@layer tokens {
+  :root {
+    --step--2: clamp(0.8125rem, 0.7917rem + 0.0926vw, 0.875rem); /* 13→14 legal, Maßlinie labels */
+    --step--1: clamp(0.9375rem, 0.9167rem + 0.0926vw, 1rem); /* 15→16 meta, labels, eyebrow */
+    --step-0: clamp(1.0625rem, 1.0208rem + 0.1852vw, 1.1875rem); /* 17→19 body, inputs */
+    --step-1: clamp(1.232rem, 1.129rem + 0.4611vw, 1.544rem); /* lead, h4 */
+    --step-2: clamp(1.43rem, 1.237rem + 0.8551vw, 2.007rem); /* h3, card titles */
+    --step-3: clamp(1.658rem, 1.342rem + 1.408vw, 2.609rem); /* h2 */
+    --step-4: clamp(1.924rem, 1.435rem + 2.175vw, 3.392rem); /* h1 inner pages */
+    --step-5: clamp(2.232rem, 1.506rem + 3.226vw, 4.409rem); /* home hero */
+
+    --leading-body: 1.6;
+    --leading-tight: 1.2;
+    --leading-heading: 1.1;
+    --leading-display: 1.05;
+    --tracking-heading: -0.012em;
+
+    --weight-body: 400;
+    --weight-strong: 650;
+    --weight-ui: 600;
+    --weight-heading: 600;
+
+    /* Measures */
+    --measure-prose: 65ch;
+    --measure-lead: 48ch;
+    --measure-caption: 50ch;
+    --measure-card: 40ch;
+    --measure-h1: 22ch;
+    --measure-h2: 26ch;
+    --measure-hero: 18ch;
+  }
+}

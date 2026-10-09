@@ -9,22 +9,42 @@ import parkett from '../assets/projects/fischgraetparkett-eiche/01-parkett.jpg';
   title="Schreinerei Schmidt Mannheim | Möbel, Böden, Treppen"
   description="Schreinerei Schmidt in Mannheim: Möbel nach Maß, Böden, Fenster und Türen vom Schreinermeister. Beratung, Aufmaß und Montage aus einer Hand."
 >
-  <h1>Schreinerei Schmidt</h1>
-  <p>Diese Startseite ist ein technischer Platzhalter. Die richtigen Inhalte folgen in den nächsten Schritten.</p>
-  <ul>
-    <li>
-      <a href={url('leistungen/boeden/')}>Böden</a>
-    </li>
-    <li>
-      <a href={url('kontakt/')}>Kontakt</a>
-    </li>
-  </ul>
-  <Picture
-    src={parkett}
-    alt="Fischgrätparkett aus Eiche in einem Altbauzimmer mit roter Wand, weißen Sockelleisten und Fenster"
-    sizes="(min-width: 40rem) 36rem, 100vw"
-    width={960}
-    loading="eager"
-    fetchpriority="high"
-  />
+  <section class="section">
+    <div class="stack stack--m">
+      <h1>Schreinerei Schmidt</h1>
+      <p class="lead">
+        Diese Startseite ist ein technischer Platzhalter. Die richtigen Inhalte folgen in den nächsten Schritten.
+      </p>
+      <ul class="cluster list-plain">
+        <li>
+          <a class="btn btn--secondary" href={url('leistungen/boeden/')}>
+            Böden
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--primary" href={url('kontakt/')}>
+            Kontakt
+          </a>
+        </li>
+      </ul>
+    </div>
+    <figure class="frame home-figure">
+      <Picture
+        src={parkett}
+        alt="Fischgrätparkett aus Eiche in einem Altbauzimmer mit roter Wand, weißen Sockelleisten und Fenster"
+        sizes="(min-width: 40rem) 36rem, 100vw"
+        width={960}
+        loading="eager"
+        fetchpriority="high"
+      />
+    </figure>
+  </section>
 </BaseLayout>
+
+<style>
+  @layer components {
+    .home-figure {
+      max-inline-size: 36rem;
+    }
+  }
+</style>
