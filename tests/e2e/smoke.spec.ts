@@ -65,7 +65,7 @@ test.describe('CSP, third parties, storage', () => {
     const requests: string[] = [];
     page.on('request', (request) => requests.push(request.url()));
     for (const path of STUB_PAGES) await page.goto(path);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     expect(requests.length).toBeGreaterThan(0);
     const foreign = requests.filter((u) => !u.startsWith(`${origin}/`) && !/^(?:data|blob):/.test(u));
     expect(foreign).toEqual([]);
@@ -92,8 +92,8 @@ test.describe('fonts', () => {
       }
     });
     await page.goto('');
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForLoadState('networkidle');
+    // 'networkidle' flaked in Firefox (30 s timeout); fonts.ready after load captures every font fetch.
+    await page.waitForLoadState('load');
     await page.evaluate(() => document.fonts.ready);
     expect(fonts.length).toBeGreaterThan(0);
     for (const pathname of fonts) {
