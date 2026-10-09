@@ -1,0 +1,21 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { url } from '../../lib/url';
+---
+
+<PageLayout
+  title="Über uns"
+  description="Über die Schreinerei Schmidt in Mannheim: Schreinermeister Ulf Schmidt und sein Team über ihre Arbeitsweise. Die Seite entsteht gerade."
+>
+  <p class="lead" slot="lead">
+    Schreinermeister Ulf Schmidt und sein Team.
+  </p>
+  <section class="section">
+    <div class="prose">
+      <p>Diese Seite entsteht gerade.</p>
+      <p>
+        <a href={url('karriere/')}>Karriere</a> · <a href={url('kontakt/')}>Kontakt</a>
+      </p>
+    </div>
+  </section>
+</PageLayout>

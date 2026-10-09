@@ -1,0 +1,45 @@
+---
+// Inner pages: BaseLayout + PageHero area (breadcrumbs, h1 .page-title, lead slot).
+// global.css must stay the FIRST import (see BaseLayout).
+import '../styles/global.css';
+import type { ComponentProps } from 'astro/types';
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/layout/Breadcrumbs.astro';
+import { shy } from '../lib/shy';
+import { vt } from '../lib/vt';
+
+interface Props extends Omit<ComponentProps<typeof BaseLayout>, 'title'> {
+  /** Page part of the <title>; the site name is appended. */
+  title: string;
+  /** h1 text; defaults to `title`. Soft hyphens are inserted automatically. */
+  heading?: string;
+  /** Crumbs after "Startseite"; the last one is the current page and has no href. */
+  crumbs?: ComponentProps<typeof Breadcrumbs>['trail'];
+}
+
+const { heading, crumbs, ...seo } = Astro.props;
+const h1 = heading ?? seo.title;
+const trail = crumbs ?? [{ label: h1 }];
+// The h1 carries `view-transition-name: page-title` by class (motion.css); register it once per page.
+vt(Astro.locals, 'page-title');
+---
+
+<BaseLayout {...seo}>
+  <slot name="head" slot="head" />
+  <section class="section page-hero">
+    <div class="stack stack--m">
+      <Breadcrumbs trail={trail} />
+      <h1 class="page-title">{shy(h1)}</h1>
+      <slot name="lead" />
+    </div>
+  </section>
+  <slot />
+</BaseLayout>
+
+<style>
+  @layer components {
+    .page-hero {
+      padding-block: var(--space-l-2xl) var(--space-m-xl);
+    }
+  }
+</style>

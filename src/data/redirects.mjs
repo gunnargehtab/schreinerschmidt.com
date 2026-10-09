@@ -6,12 +6,11 @@
 /** @type {ReadonlyArray<readonly [from: string, to: string]>} */
 export const legacyRedirects = [
   ['/leistungen/boden', '/leistungen/boeden/'],
-  // Enable when the target page exists:
-  // ['/leistungen/leistung', '/leistungen/'],
-  // ['/leistungen/mobel', '/leistungen/moebel/'],
-  // ['/leistungen/turen', '/leistungen/tueren/'],
-  // ['/team-karriere', '/ueber-uns/'],
-  // ['/bewerben', '/karriere/#bewerbung'],
-  // ['/home-no-cart', '/'],
-  // ['/search', '/'],
+  ['/leistungen/leistung', '/leistungen/'],
+  ['/leistungen/mobel', '/leistungen/moebel/'],
+  ['/leistungen/turen', '/leistungen/tueren/'],
+  ['/team-karriere', '/ueber-uns/'],
+  ['/bewerben', '/karriere/#bewerbung'],
+  ['/home-no-cart', '/'],
+  ['/search', '/'],
 ];

@@ -1,0 +1,214 @@
+---
+// Footer (docs/design-system.md §5): wordmark + tagline, NAP, hours, navigation in two columns, legal row.
+// On desktop the columns share rows via subgrid, so the column titles align.
+import Wordmark from '../ui/Wordmark.astro';
+import { url } from '../../lib/url';
+import {
+  current,
+  formatHours,
+  getServiceLinks,
+  getSite,
+  LEGAL_LINKS,
+  MAIN_LINKS,
+  nbsp,
+  SERVICES_HREF,
+  TAGLINE,
+} from './nav-data';
+
+const pathname = Astro.url.pathname;
+const site = await getSite();
+const services = await getServiceLinks();
+const hours = formatHours(site.hours.value);
+const { address } = site;
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="site-footer__cols">
+      <div class="site-footer__col">
+        <div class="site-footer__title">
+          <a class="site-footer__home" href={url('')}>
+            <Wordmark />
+          </a>
+        </div>
+        <p class="site-footer__body">{TAGLINE}</p>
+      </div>
+      <section class="site-footer__col" aria-labelledby="footer-kontakt">
+        <h2 id="footer-kontakt" class="site-footer__title">
+          Kontakt
+        </h2>
+        <address class="site-footer__body">
+          {site.name}
+          <br />
+          {address.street}
+          <br />
+          {address.postalCode}
+          {address.city}
+          <br />
+          <a href={`tel:${site.phone.e164}`}>{nbsp(site.phone.display)}</a>
+          <br />
+          <a href={`mailto:${site.email}`}>{site.email}</a>
+        </address>
+      </section>
+      <section class="site-footer__col" aria-labelledby="footer-zeiten">
+        <h2 id="footer-zeiten" class="site-footer__title">
+          Öffnungszeiten
+        </h2>
+        <dl class="site-footer__body site-footer__hours" data-review={site.hours.status}>
+          {hours.map((h) => (
+            <>
+              <dt>{h.days}</dt>
+              <dd>{h.time}</dd>
+            </>
+          ))}
+        </dl>
+      </section>
+      <section class="site-footer__col site-footer__nav" aria-labelledby="footer-nav">
+        <h2 id="footer-nav" class="site-footer__title">
+          Seiten
+        </h2>
+        <div class="site-footer__body site-footer__lists">
+          <nav aria-label="Leistungen">
+            <ul class="list-plain">
+              {services.map((s) => (
+                <li>
+                  <a href={url(s.href)} aria-current={current(pathname, s.href)}>
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+              <li>
+                <a href={url(SERVICES_HREF)} aria-current={current(pathname, SERVICES_HREF)}>
+                  Alle Leistungen
+                </a>
+              </li>
+            </ul>
+          </nav>
+          <nav aria-label="Unternehmen">
+            <ul class="list-plain">
+              {MAIN_LINKS.map((l) => (
+                <li>
+                  <a href={url(l.href)} aria-current={current(pathname, l.href)}>
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </section>
+    </div>
+    <div class="site-footer__legal">
+      <p>
+        © {year} {site.name}
+      </p>
+      <ul class="cluster list-plain">
+        {LEGAL_LINKS.map((l) => (
+          <li>
+            <a href={url(l.href)} aria-current={current(pathname, l.href)}>
+              {l.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<style>
+  @layer components {
+    .site-footer {
+      container: footer / inline-size;
+      margin-block-start: var(--space-xl-3xl);
+      padding-block: var(--space-xl) var(--space-m);
+      font-size: var(--step--1);
+      background: var(--surface-alt);
+      border-block-start: var(--rule);
+    }
+
+    .site-footer__cols {
+      display: grid;
+      gap: var(--space-l) var(--space-m);
+    }
+
+    .site-footer__col {
+      display: grid;
+      align-content: start;
+      gap: var(--space-xs);
+    }
+
+    .site-footer__title {
+      margin: 0;
+      max-inline-size: none;
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+      color: var(--ink-muted);
+    }
+
+    .site-footer__home {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--target-min);
+      text-decoration: none;
+    }
+
+    .site-footer__body {
+      font-style: normal;
+    }
+
+    .site-footer a {
+      display: inline-block;
+      padding-block: var(--space-3xs);
+      color: var(--ink);
+    }
+
+    .site-footer a:hover {
+      color: var(--accent);
+    }
+
+    .site-footer a[aria-current='page'] {
+      color: var(--accent);
+      text-decoration-thickness: 2px;
+    }
+
+    .site-footer__hours {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-3xs) var(--space-xs);
+    }
+
+    .site-footer__lists {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-s);
+    }
+
+    .site-footer__legal {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: var(--space-xs) var(--space-m);
+      margin-block-start: var(--space-l);
+      padding-block-start: var(--space-s);
+      color: var(--ink-muted);
+      border-block-start: var(--rule);
+    }
+
+    .site-footer__legal a {
+      color: var(--ink);
+    }
+
+    @container footer (inline-size >= 56rem) {
+      .site-footer__cols {
+        grid-template-columns: 1fr 1fr 0.8fr 2fr;
+        grid-template-rows: auto 1fr;
+      }
+
+      .site-footer__col {
+        grid-row: span 2;
+        grid-template-rows: subgrid;
+      }
+    }
+  }
+</style>

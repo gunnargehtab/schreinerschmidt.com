@@ -1,0 +1,172 @@
+import { expect, test } from '@playwright/test';
+
+// Site chrome: header navigation, Leistungen disclosure, mobile sheet, theme toggle.
+// Navigate relative to baseURL (goto('kontakt/')); the base path contains a dot.
+
+const DESKTOP = { width: 1440, height: 900 };
+const MOBILE = { width: 390, height: 844 };
+const SERVICE_KEYS = ['moebel', 'boeden', 'treppen', 'fenster', 'tueren', 'altbau', 'terrassen'];
+const NAV_PAGES = ['leistungen/', 'referenzen/', 'ueber-uns/', 'karriere/', 'kontakt/'];
+
+test.describe('desktop header', () => {
+  test.use({ viewport: DESKTOP });
+  test.skip(({ isMobile }) => isMobile, 'desktop layout is checked in the desktop project');
+
+  test('nav links resolve and mark the current page', async ({ page }) => {
+    await page.goto('');
+    const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
+    await expect(nav).toBeVisible();
+    await expect(page.locator('.menu-button')).toBeHidden();
+    for (const target of ['Referenzen', 'Über uns', 'Karriere', 'Kontakt']) {
+      await page.goto('');
+      await nav.getByRole('link', { name: target, exact: true }).click();
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(
+        page.getByRole('navigation', { name: 'Hauptnavigation' }).getByRole('link', { name: target }),
+      ).toHaveAttribute('aria-current', 'page');
+    }
+  });
+
+  test('every nav target page exists with one h1', async ({ page }) => {
+    for (const path of [...NAV_PAGES, 'konfigurator/', 'impressum/', 'datenschutz/']) {
+      const response = await page.goto(path);
+      expect(response?.status(), path).toBe(200);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    }
+  });
+
+  test('the Leistungen disclosure opens, closes with a click and with Escape', async ({ page }) => {
+    await page.goto('');
+    const trigger = page.getByRole('button', { name: 'Leistungen' });
+    const panel = page.locator('#menu-leistungen');
+    await expect(panel).toBeHidden();
+
+    await trigger.click();
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole('link')).toHaveCount(SERVICE_KEYS.length + 1);
+
+    await trigger.click();
+    await expect(panel).toBeHidden();
+
+    await trigger.click();
+    await expect(panel).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+  });
+
+  test('the Leistungen panel links to the service pages', async ({ page }) => {
+    await page.goto('');
+    await page.getByRole('button', { name: 'Leistungen' }).click();
+    await page.locator('#menu-leistungen').getByRole('link', { name: 'Böden' }).click();
+    await expect(page).toHaveURL(/leistungen\/boeden\/$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Böden' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Brotkrumen' }).locator('[aria-current="page"]')).toHaveText(
+      'Böden',
+    );
+  });
+
+  test('keyboard: Tab moves from the trigger into the open panel', async ({ page }) => {
+    await page.goto('');
+    const trigger = page.getByRole('button', { name: 'Leistungen' });
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#menu-leistungen')).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toHaveText('Böden');
+  });
+
+  test('footer shows NAP and hours', async ({ page }) => {
+    await page.goto('');
+    const footer = page.locator('footer');
+    await expect(footer.locator('address')).toContainText('Andreas-Hofer-Str. 33');
+    await expect(footer.locator('address')).toContainText('68259 Mannheim');
+    await expect(footer.locator('dl')).toContainText('Mo–Fr');
+    await expect(footer.locator('dl')).toContainText('7–17');
+    await expect(footer.getByRole('link', { name: 'Impressum' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Datenschutz' })).toBeVisible();
+  });
+});
+
+test.describe('mobile sheet', () => {
+  test.use({ viewport: MOBILE });
+
+  test('opens, lists all links incl. Kontakt, and closes with the close button and Escape', async ({ page }) => {
+    await page.goto('');
+    const button = page.locator('.menu-button');
+    const sheet = page.locator('#site-menu');
+    await expect(page.getByRole('navigation', { name: 'Hauptnavigation' })).toBeHidden();
+    await expect(sheet).toBeHidden();
+
+    await button.click();
+    await expect(sheet).toBeVisible();
+    const menu = sheet.getByRole('navigation', { name: 'Hauptmenü' });
+    for (const name of ['Leistungen', 'Referenzen', 'Über uns', 'Karriere', 'Kontakt']) {
+      await expect(menu.getByRole('link', { name, exact: true })).toBeVisible();
+    }
+    await expect(sheet.getByRole('link', { name: 'Angebot konfigurieren' })).toBeVisible();
+    // The menu button stays reachable above the sheet.
+    const [b, s] = await Promise.all([button.boundingBox(), sheet.boundingBox()]);
+    expect(b && s && b.y + b.height <= s.y + 1, 'sheet starts below the button').toBe(true);
+
+    await sheet.getByRole('button', { name: 'Menü schließen' }).click();
+    await expect(sheet).toBeHidden();
+
+    await button.click();
+    await expect(sheet).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+  });
+
+  test('closes when focus leaves the sheet and the button', async ({ page }) => {
+    await page.goto('');
+    await page.locator('.menu-button').click();
+    await expect(page.locator('#site-menu')).toBeVisible();
+    // Shift+Tab from the button goes to the previous focusable element, outside sheet and button.
+    await page.locator('.menu-button').focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.locator('#site-menu')).toBeHidden();
+  });
+
+  test('closes when the viewport reaches desktop width', async ({ page }) => {
+    await page.goto('');
+    await page.locator('.menu-button').click();
+    await expect(page.locator('#site-menu')).toBeVisible();
+    await page.setViewportSize(DESKTOP);
+    await expect(page.locator('#site-menu')).toBeHidden();
+    await expect(page.getByRole('navigation', { name: 'Hauptnavigation' })).toBeVisible();
+  });
+
+  test('the phone link is a 44 px target with an accessible name', async ({ page }) => {
+    await page.goto('');
+    const phone = page.locator('.site-header .phone');
+    const box = await phone.boundingBox();
+    expect(box && box.width >= 44 && box.height >= 44).toBe(true);
+    await expect(phone).toHaveAttribute('href', /^tel:\+49/);
+    await expect(phone).toHaveAccessibleName(/\+49/);
+  });
+});
+
+test.describe('theme toggle', () => {
+  test('flips data-theme, persists after reload, and storage is empty before a click', async ({ page }) => {
+    await page.goto('');
+    expect(await page.evaluate(() => localStorage.getItem('ss-theme'))).toBeNull();
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+
+    await page.getByRole('button', { name: 'Farbschema' }).click();
+    await page.getByLabel('Werkstatt bei Nacht').check();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    expect(await page.evaluate(() => localStorage.getItem('ss-theme'))).toBe('dark');
+
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.getByRole('button', { name: 'Farbschema' }).click();
+    await expect(page.getByLabel('Werkstatt bei Nacht')).toBeChecked();
+
+    await page.getByLabel('Hell', { exact: true }).check();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+    await page.getByLabel('Wie System').check();
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+    expect(await page.evaluate(() => localStorage.getItem('ss-theme'))).toBeNull();
+  });
+});

@@ -1,0 +1,196 @@
+---
+// Desktop navigation (docs/design-system.md §5 "SiteHeader"). Shown from header inline-size >= 74rem.
+// "Leistungen" is a disclosure (popover), not an ARIA menu. It works without JS via popovertarget.
+import { url } from '../../lib/url';
+import { current, getServiceLinks, inSection, MAIN_LINKS, SERVICES_HREF } from './nav-data';
+
+const pathname = Astro.url.pathname;
+const services = await getServiceLinks();
+const inServices = inSection(pathname, SERVICES_HREF);
+---
+
+<nav class="nav" aria-label="Hauptnavigation">
+  <ul class="nav__list list-plain">
+    <li class="nav__item">
+      <button
+        class="nav__trigger"
+        type="button"
+        commandfor="menu-leistungen"
+        command="toggle-popover"
+        popovertarget="menu-leistungen"
+        data-section={inServices ? 'current' : undefined}
+      >
+        Leistungen
+        <svg class="icon nav__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 9.5l6 6 6-6"></path>
+        </svg>
+      </button>
+      <div id="menu-leistungen" class="nav__panel" popover>
+        <ul class="nav__services list-plain">
+          {services.map((s) => (
+            <li>
+              <a href={url(s.href)} aria-current={current(pathname, s.href)}>
+                {s.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <a class="nav__all" href={url(SERVICES_HREF)} aria-current={current(pathname, SERVICES_HREF)}>
+          Alle Leistungen
+        </a>
+      </div>
+    </li>
+    {MAIN_LINKS.map((l) => (
+      <li class="nav__item">
+        <a class="nav__link" href={url(l.href)} aria-current={current(pathname, l.href)}>
+          {l.label}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  @layer components {
+    .nav {
+      display: none;
+    }
+
+    @container header (inline-size >= 74rem) {
+      .nav {
+        display: block;
+      }
+    }
+
+    .nav__list {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3xs);
+    }
+
+    .nav__link,
+    .nav__trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3xs);
+      min-block-size: var(--target-min);
+      padding-inline: var(--space-2xs);
+      font: inherit;
+      font-weight: var(--weight-ui);
+      color: var(--ink);
+      background: none;
+      border: 0;
+      border-radius: 0;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .nav__link:hover,
+    .nav__trigger:hover {
+      color: var(--accent);
+    }
+
+    .nav__link[aria-current='page'],
+    .nav__trigger[data-section='current'] {
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 0.45em;
+    }
+
+    .nav__trigger {
+      anchor-name: --leistungen;
+    }
+
+    .nav__chevron {
+      inline-size: 1.125rem;
+      block-size: 1.125rem;
+      transition: rotate var(--dur-1) var(--ease-out);
+    }
+
+    .nav__trigger:has(+ .nav__panel:popover-open) .nav__chevron {
+      rotate: 180deg;
+    }
+
+    .nav__panel {
+      position-anchor: --leistungen;
+      position-area: block-end span-inline-end;
+      position-try-fallbacks: flip-inline;
+      inset: auto;
+      margin: var(--space-2xs) 0 0;
+      inline-size: min(36rem, 100vw - 2 * var(--gutter));
+      padding: var(--space-s) var(--space-m);
+      color: var(--ink);
+      border: var(--rule-strong);
+      background: var(--surface);
+      box-shadow: var(--shadow-paper);
+    }
+
+    @supports not (anchor-name: --a) {
+      .nav__panel {
+        inset: var(--header-sticky-h) var(--gutter) auto auto;
+        margin: 0;
+      }
+    }
+
+    .nav__services {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 var(--space-m);
+    }
+
+    .nav__services a,
+    .nav__all {
+      display: flex;
+      align-items: center;
+      min-block-size: var(--target-min);
+      color: var(--ink);
+      font-weight: var(--weight-ui);
+      text-decoration: none;
+    }
+
+    .nav__services a:hover,
+    .nav__all:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    .nav__services a[aria-current='page'],
+    .nav__all[aria-current='page'] {
+      color: var(--accent);
+    }
+
+    .nav__all {
+      margin-block-start: var(--space-2xs);
+      border-block-start: var(--rule);
+    }
+
+    /* Open/close: fade and drop in. Closed popovers are display:none, so base CSS shows no hidden state. */
+    @media (prefers-reduced-motion: no-preference) {
+      @supports (transition-behavior: allow-discrete) {
+        .nav__panel {
+          opacity: 0;
+          translate: 0 -0.25rem;
+          transition:
+            opacity var(--dur-2) var(--ease-out),
+            translate var(--dur-2) var(--ease-out),
+            display var(--dur-2) allow-discrete,
+            overlay var(--dur-2) allow-discrete;
+        }
+
+        .nav__panel:popover-open {
+          opacity: 1;
+          translate: 0;
+        }
+
+        @starting-style {
+          .nav__panel:popover-open {
+            opacity: 0;
+            translate: 0 -0.25rem;
+          }
+        }
+      }
+    }
+  }
+</style>

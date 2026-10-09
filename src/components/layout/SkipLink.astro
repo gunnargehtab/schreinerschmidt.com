@@ -1,0 +1,31 @@
+---
+// First focusable element. Off-screen until focused; the target is <main id="main">.
+---
+
+<a class="skip-link" href="#main">
+  Zum Inhalt springen
+</a>
+
+<style>
+  @layer components {
+    .skip-link {
+      position: fixed;
+      inset-block-start: var(--space-2xs);
+      inset-inline-start: var(--space-2xs);
+      z-index: 200;
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--target-min);
+      padding-inline: var(--space-s);
+      font-weight: var(--weight-ui);
+      color: var(--accent-ink);
+      background: var(--accent-fill);
+      text-decoration: none;
+      translate: 0 -200%;
+    }
+
+    .skip-link:focus {
+      translate: none;
+    }
+  }
+</style>
