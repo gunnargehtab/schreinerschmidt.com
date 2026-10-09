@@ -1,0 +1,198 @@
+---
+// Owner checklist (docs/architecture.md §5, plan §3.1): every unconfirmed fact, entry, consent,
+// photo and generic green claim. Demo-only: getStaticPaths returns [] when PUBLIC_DEMO is off.
+//
+// Production guard: this rest route exists in every build, so Astro always runs its
+// getStaticPaths, after the content layer has loaded and with getCollection() available. That makes
+// it the one place that sees all collections in every build mode (an integration hook can't read
+// collections). In non-demo builds runProductionGuard() throws on placeholders in legal, contact,
+// hours or salary data, unless ALLOW_PLACEHOLDERS=true (env/audit.env).
+import { PUBLIC_DEMO } from 'astro:env/client';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SiteJsonLd from '../../../components/seo/SiteJsonLd.astro';
+import { groupByArea, type ReviewItem } from '../../../lib/review';
+import { isKnownPage, loadReviewItems, runProductionGuard } from '../../../lib/review-content';
+import { url } from '../../../lib/url';
+
+export async function getStaticPaths() {
+  await runProductionGuard(PUBLIC_DEMO);
+  return PUBLIC_DEMO ? [{ params: { demo: undefined } }] : [];
+}
+
+const items = await loadReviewItems();
+const groups = groupByArea(items);
+
+const STATUS: Record<ReviewItem['status'], string> = {
+  placeholder: 'Platzhalter',
+  'needs-review': 'Prüfen',
+  confirmed: 'Bestätigt',
+};
+
+const KIND: Record<ReviewItem['kind'], string> = {
+  entry: 'Eintrag',
+  fact: 'Angabe',
+  consent: 'Einwilligung',
+  asset: 'Bild',
+  'green-claim': 'Umweltaussage',
+};
+
+const slug = (area: string): string =>
+  area
+    .toLowerCase()
+    .replace(/&/g, 'und')
+    .replace(/[()]/g, '')
+    .replace(/[^a-z0-9äöüß]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+const blocks = (i: ReviewItem): boolean => i.guard !== undefined && i.status === 'placeholder';
+const blockingCount = items.filter(blocks).length;
+---
+
+<BaseLayout
+  title="Prüfliste | Schreinerei Schmidt"
+  description="Interne Prüfliste des Entwurfs: alle offenen Angaben, Platzhalter, Einwilligungen, Bildrechte und Werbeaussagen vor der Freigabe."
+  noindex
+>
+  <SiteJsonLd />
+  <section class="section">
+    <div class="stack stack--m">
+      <p class="eyebrow">Intern</p>
+      <h1>Prüfliste für die Freigabe</h1>
+      <p class="lead measure-lead">
+        Diese Liste entsteht beim Bauen der Demo aus den Prüfvermerken der Inhalte, der Bildliste und dem Quelltext.
+        Jeder Punkt wird vor dem Livegang bestätigt, ergänzt oder gestrichen.
+      </p>
+      <p class="measure-prose">
+        {items.length} offene Punkte, davon {blockingCount} mit Platzhaltern in Rechtlichem, Kontakt, Zeiten oder
+        Gehalt. Solche Platzhalter verhindern den Livegang: Der Bau der Live-Website bricht dann ab.
+      </p>
+      <nav aria-label="Bereiche der Prüfliste">
+        <ul class="pruef-toc list-plain">
+          {groups.map(({ area, items: list }) => (
+            <li>
+              <a href={`#${slug(area)}`}>{area}</a> <span class="text-muted tabular">({list.length})</span>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  </section>
+
+  {groups.map(({ area, items: list }) => (
+    <section class="section section--compact" aria-labelledby={slug(area)}>
+      <h2 id={slug(area)}>
+        {area} <span class="text-muted tabular">({list.length})</span>
+      </h2>
+      {list.length === 0 ? (
+        <p>Keine offenen Punkte.</p>
+      ) : (
+        <section class="pruef-scroll" aria-label={`Tabelle ${area}`} tabindex="0">
+          <table class="pruef-table text-small">
+            <caption class="visually-hidden">Offene Punkte: {area}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Status</th>
+                <th scope="col">Fundstelle</th>
+                <th scope="col">Hinweis</th>
+                <th scope="col">Quelle</th>
+                <th scope="col">Seite</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((item) => (
+                <tr>
+                  <td>
+                    <strong
+                      class:list={['pruef-status', { 'pruef-status--placeholder': item.status === 'placeholder' }]}
+                    >
+                      {STATUS[item.status]}
+                    </strong>
+                    <span class="pruef-kind text-muted">{KIND[item.kind]}</span>
+                    {blocks(item) && <span class="pruef-block">Blockiert den Livegang</span>}
+                  </td>
+                  <td>
+                    <code>{item.path}</code>
+                  </td>
+                  <td>{item.note ?? '–'}</td>
+                  <td>{item.source ?? '–'}</td>
+                  <td>
+                    {isKnownPage(item.page) ? (
+                      <a href={url(item.page)}>/{item.page}</a>
+                    ) : item.page !== undefined ? (
+                      <span class="text-muted">/{item.page} (noch nicht gebaut)</span>
+                    ) : (
+                      '–'
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+    </section>
+  ))}
+</BaseLayout>
+
+<style>
+  @layer components {
+    .pruef-toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2xs) var(--space-m);
+    }
+
+    .pruef-toc a {
+      display: inline-block;
+      min-block-size: 44px;
+      padding-block: var(--space-2xs);
+    }
+
+    .pruef-scroll {
+      overflow-x: auto;
+    }
+
+    .pruef-scroll:focus-visible {
+      outline: var(--focus-width) solid var(--focus);
+      outline-offset: var(--focus-offset);
+    }
+
+    .pruef-table {
+      inline-size: 100%;
+      min-inline-size: 56rem;
+      border-collapse: collapse;
+      text-align: start;
+    }
+
+    .pruef-table :is(th, td) {
+      padding: var(--space-2xs) var(--space-xs);
+      border-block-end: var(--rule);
+      vertical-align: top;
+      text-align: start;
+      overflow-wrap: anywhere;
+    }
+
+    .pruef-table thead th {
+      border-block-end: var(--rule-strong);
+    }
+
+    .pruef-table td:first-child {
+      inline-size: 10rem;
+    }
+
+    .pruef-table td:nth-child(2) {
+      inline-size: 16rem;
+    }
+
+    .pruef-status,
+    .pruef-kind,
+    .pruef-block {
+      display: block;
+    }
+
+    .pruef-status--placeholder,
+    .pruef-block {
+      color: var(--error);
+    }
+  }
+</style>
