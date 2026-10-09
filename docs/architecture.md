@@ -406,6 +406,10 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' "${URL}gibt-es-nicht/")" = 404
           curl -s -o /dev/null -w 'POST -> %{http_code} (expect 405)\n' -X POST "$URL"
 ```
+- **Without Pages** (the repo is private and Pages is not enabled yet):
+  - `configure-pages` runs with `continue-on-error`, and the build falls back to `env/pages.env`.
+  - All tests still run.
+  - The artifact upload and the deploy and smoke jobs are skipped until Pages exists: `steps.pages.outcome` and the build job's output `pages`.
 - **`quality.yml`** (weekly + manual): `build:audit` → serve → Lighthouse, plus external link checks; reports uploaded.
 - **`dependabot.yml`:** npm weekly (Astro packages grouped, `typescript >= 7` ignored); Actions monthly.
 - **One-time setup** (after user confirmation):
