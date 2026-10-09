@@ -1,0 +1,9 @@
+# Schema fixture (wave 1). Quotes stay verbatim once migrated.
+platzhalter:
+  author: Platzhalter
+  quote: Platzhalter-Zitat, wird durch das Original aus dem Inventar ersetzt.
+  source: alte-website
+  project: fischgraetparkett-eiche
+  review:
+    status: placeholder
+    note: Schema-Fixture. Veröffentlichungserlaubnis klären.

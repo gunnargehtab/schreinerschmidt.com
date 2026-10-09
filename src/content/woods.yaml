@@ -1,0 +1,11 @@
+# Schema fixture (wave 1). Replaced by the content-editor in wave 2.
+eiche:
+  name: Eiche
+  latin: Quercus
+  origin: heimisch
+  certification: []
+  uses: [boeden, treppen]
+  description: 'Platzhalter: Beschreibung der Eiche folgt.'
+  review:
+    status: placeholder
+    note: Schema-Fixture, Text und Zertifizierung vom Inhaber bestätigen lassen.

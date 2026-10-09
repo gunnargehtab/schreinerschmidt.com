@@ -1,0 +1,64 @@
+# Schema fixture (wave 1). Facts from docs/content-inventory.md, all unconfirmed.
+site:
+  name: Schreinerei Schmidt
+  legalName:
+    value: Schreinerei Schmidt
+    status: placeholder
+    note: Rechtlicher Firmenname laut Handwerksrolle/Impressum klären.
+  owner:
+    name: Ulf Schmidt
+    title: Schreinermeister
+    masterSince: 2010
+  address:
+    street: Andreas-Hofer-Str. 33
+    postalCode: '68259'
+    city: Mannheim
+    region: Baden-Württemberg
+    country: DE
+  phone:
+    display: +49 179 9467822
+    e164: '+491799467822'
+  email: info@schreinerschmidt.com
+  hours:
+    value:
+      - days: [Mo, Di, Mi, Do, Fr]
+        opens: '07:00'
+        closes: '17:00'
+    status: needs-review
+    source: werkenntdenbesten (Drittquelle)
+  areaServed:
+    value: [Mannheim]
+    status: placeholder
+    note: Einzugsgebiet vom Inhaber festlegen lassen.
+  employees:
+    value: '1–10'
+    status: needs-review
+    source: join.com
+  stats:
+    projects:
+      value: 1000
+      status: needs-review
+      source: Altseite („1.000+ Projekte“)
+      note: Projektzahl vom Inhaber bestätigen lassen.
+  rating:
+    value: 5.0
+    count: 115
+    snapshotDate: '2026-09-30'
+    profileUrl:
+      value: https://example.invalid/google-profil
+      status: placeholder
+      note: Link zum Google-Profil fehlt.
+  legal:
+    craftsRegisterNo:
+      value: Platzhalter
+      status: placeholder
+      note: Handwerksrollen-Nr. vom Inhaber.
+    professionalTitle: Schreinermeister
+    chamber:
+      name: Handwerkskammer Mannheim Rhein-Neckar-Odenwald
+      address: B 1, 1–2, 68159 Mannheim
+      url: https://www.hwk-mannheim.de
+  review:
+    status: needs-review
+    source: docs/content-inventory.md
+    note: Quelle sind Altseite und Drittportale. Rechtsangaben fehlen.
