@@ -16,6 +16,16 @@ import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
 
+/**
+ * One archived file as written to index.json.
+ * @typedef {{ url: string, file: string, bytes?: number, contentType?: string | null, sha256?: string, fetchedAt?: string }} ArchiveRecord
+ */
+
+/**
+ * Outcome of downloading one URL.
+ * @typedef {{ status: 'downloaded' | 'skipped' | 'failed', record: ArchiveRecord, error?: string }} DownloadResult
+ */
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INVENTORY = path.join(ROOT, 'docs', 'content-inventory.md');
 const CACHE_DIR = path.join(ROOT, '.cache');
@@ -53,6 +63,10 @@ const hexIdRe = /^[0-9a-f]{24}_/i;
 const mediaExtRe = new RegExp(`\\.(?:${MEDIA_EXT})$`, 'i');
 const variantRe = /-p-\d+(?=\.[A-Za-z0-9]+$)/;
 
+/**
+ * @param {string} s
+ * @returns {string}
+ */
 const safeDecode = (s) => {
   try {
     return decodeURIComponent(s);
@@ -61,7 +75,17 @@ const safeDecode = (s) => {
   }
 };
 
-/** Returns the full CDN URL for a path or URL, with the -p-NNN variant suffix removed. */
+/**
+ * @param {unknown} err
+ * @returns {string}
+ */
+const errorMessage = (err) => (err instanceof Error ? err.message : String(err));
+
+/**
+ * Returns the full CDN URL for a path or URL, with the -p-NNN variant suffix removed.
+ * @param {string} raw
+ * @returns {string | null}
+ */
 function normalizeCdnUrl(raw) {
   let u = raw.replace(/\\\//g, '/').replace(/&amp;/g, '&').trim();
   u = u.replace(/[?#].*$/, '');
@@ -77,12 +101,21 @@ function normalizeCdnUrl(raw) {
   return CDN_BASE + name.replace(variantRe, '');
 }
 
+/**
+ * @param {string} url
+ * @returns {string}
+ */
 const fileNameOf = (url) => safeDecode(url.slice(CDN_BASE.length)).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
 
 // ---------------------------------------------------------------------------
 // 1. Inventory extraction
 // ---------------------------------------------------------------------------
+/**
+ * @param {string} text
+ * @returns {{ urls: Set<string>, names: string[], pages: string[] }}
+ */
 function parseInventory(text) {
+  /** @type {Set<string>} */
   const urls = new Set();
   const fullRe = new RegExp(`[0-9a-f]{24}_[^\\s\`"<>]*?\\.(?:${MEDIA_EXT})(?![A-Za-z0-9])`, 'gi');
   for (const m of text.matchAll(fullRe)) {
@@ -91,10 +124,11 @@ function parseInventory(text) {
   }
 
   // Names that are not fully qualified: extension-bearing spans without a hex ID.
+  /** @type {Set<string>} */
   const names = new Set();
   const spanRe = /`([^`\n]+)`|"([^"\n]+)"/g;
   for (const m of text.matchAll(spanRe)) {
-    const span = (m[1] ?? m[2]).replace(/^…/, '').trim();
+    const span = (m[1] ?? m[2] ?? '').replace(/^…/, '').trim();
     if (mediaExtRe.test(span) && !hexIdRe.test(span) && !/^https?:|\s{2,}/.test(span)) {
       names.add(span);
     }
@@ -103,14 +137,22 @@ function parseInventory(text) {
     if (text.includes(hint)) names.add(hint);
   }
 
+  /** @type {Set<string>} */
   const pages = new Set(['/']);
-  for (const m of text.matchAll(/^## `(\/[^`\s]*)`/gm)) pages.add(m[1]);
+  for (const m of text.matchAll(/^## `(\/[^`\s]*)`/gm)) {
+    if (m[1]) pages.add(m[1]);
+  }
   return { urls, names: [...names], pages: [...pages] };
 }
 
 // ---------------------------------------------------------------------------
 // 2. Crawl the old site (HTML/CSS only)
 // ---------------------------------------------------------------------------
+/**
+ * @param {string} url
+ * @param {string[]} allowedHosts
+ * @returns {Promise<string>}
+ */
 async function fetchText(url, allowedHosts) {
   const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), redirect: 'follow' });
   if (!allowedHosts.includes(new URL(res.url).host)) throw new Error(`redirected to ${res.url}`);
@@ -124,6 +166,11 @@ const cdnUrlRe = new RegExp(
   'gi',
 );
 
+/**
+ * @param {string} text
+ * @param {Set<string>} into
+ * @returns {void}
+ */
 function collectCdnUrls(text, into) {
   for (const m of text.matchAll(cdnUrlRe)) {
     const url = normalizeCdnUrl(m[0]);
@@ -131,10 +178,17 @@ function collectCdnUrls(text, into) {
   }
 }
 
+/**
+ * @param {string[]} pages
+ * @returns {Promise<{ found: Set<string>, warnings: string[] }>}
+ */
 async function crawlSite(pages) {
+  /** @type {Set<string>} */
   const found = new Set();
+  /** @type {Set<string>} */
   const cssUrls = new Set();
   const siteHosts = [new URL(SITE_ORIGIN).host, 'schreinerschmidt.com'];
+  /** @type {string[]} */
   const warnings = [];
   for (const p of pages) {
     const pageUrl = SITE_ORIGIN + p;
@@ -142,13 +196,13 @@ async function crawlSite(pages) {
       const html = await fetchText(pageUrl, siteHosts);
       collectCdnUrls(html, found);
       for (const m of html.matchAll(/<link[^>]+href=["']([^"']+\.css[^"']*)["']/gi)) {
-        const href = m[1].replace(/&amp;/g, '&');
+        const href = (m[1] ?? '').replace(/&amp;/g, '&');
         if (href.startsWith(`https://${CDN_HOST}/62e8c86393d73a7acebb0e1f/`)) cssUrls.add(href);
       }
       console.log(`crawl ok   ${pageUrl}`);
     } catch (err) {
-      warnings.push(`${pageUrl}: ${err.message}`);
-      console.log(`crawl FAIL ${pageUrl} (${err.message})`);
+      warnings.push(`${pageUrl}: ${errorMessage(err)}`);
+      console.log(`crawl FAIL ${pageUrl} (${errorMessage(err)})`);
     }
   }
   for (const css of cssUrls) {
@@ -156,7 +210,7 @@ async function crawlSite(pages) {
       collectCdnUrls(await fetchText(css, [CDN_HOST]), found);
       console.log(`crawl ok   ${css}`);
     } catch (err) {
-      warnings.push(`${css}: ${err.message}`);
+      warnings.push(`${css}: ${errorMessage(err)}`);
     }
   }
   return { found, warnings };
@@ -165,15 +219,24 @@ async function crawlSite(pages) {
 // ---------------------------------------------------------------------------
 // 3. Download
 // ---------------------------------------------------------------------------
+/**
+ * @param {string} file
+ * @returns {Promise<string>}
+ */
 async function sha256File(file) {
   const hash = createHash('sha256');
   await pipeline(createReadStream(file), hash);
   return hash.digest('hex');
 }
 
+/**
+ * @param {string} url
+ * @returns {Promise<DownloadResult>}
+ */
 async function download(url) {
   const file = fileNameOf(url);
   const target = path.join(OUT_DIR, file);
+  /** @type {ArchiveRecord} */
   const record = { url, file };
 
   if (!FORCE && existsSync(target)) {
@@ -201,6 +264,8 @@ async function download(url) {
     await res.body?.cancel();
     return { status: 'failed', error: `too large (${declared} bytes)`, record };
   }
+  const body = res.body;
+  if (!body) throw new Error(`empty response body for ${url}`);
 
   const tmp = `${target}.part`;
   const hash = createHash('sha256');
@@ -214,10 +279,14 @@ async function download(url) {
     },
   });
   try {
-    await pipeline(Readable.fromWeb(res.body), meter, createWriteStream(tmp));
+    await pipeline(
+      Readable.fromWeb(/** @type {import('node:stream/web').ReadableStream} */ (body)),
+      meter,
+      createWriteStream(tmp),
+    );
   } catch (err) {
     await rm(tmp, { force: true });
-    return { status: 'failed', error: err.message, record };
+    return { status: 'failed', error: errorMessage(err), record };
   }
   await rename(tmp, target);
   return {
@@ -232,14 +301,21 @@ async function download(url) {
   };
 }
 
+/**
+ * @template T, R
+ * @param {T[]} items
+ * @param {(item: T) => Promise<R>} worker
+ * @returns {Promise<R[]>}
+ */
 async function runPool(items, worker) {
+  /** @type {R[]} */
   const results = new Array(items.length);
   let next = 0;
   await Promise.all(
     Array.from({ length: Math.min(CONCURRENCY, items.length) }, async () => {
       while (next < items.length) {
         const i = next++;
-        results[i] = await worker(items[i]);
+        results[i] = await worker(/** @type {T} */ (items[i]));
       }
     }),
   );
@@ -249,6 +325,10 @@ async function runPool(items, worker) {
 // ---------------------------------------------------------------------------
 // 4. Main
 // ---------------------------------------------------------------------------
+/**
+ * @param {string} s
+ * @returns {string}
+ */
 const norm = (s) =>
   safeDecode(s)
     .toLowerCase()
@@ -262,6 +342,7 @@ async function main() {
     `inventory: ${inventory.urls.size} fully-qualified URLs, ${inventory.names.length} unresolved-candidate names`,
   );
 
+  /** @type {string[]} */
   let crawlWarnings = [];
   if (FROM_SITE) {
     const { found, warnings } = await crawlSite(inventory.pages);
@@ -286,19 +367,24 @@ async function main() {
       console.log(`${r.status.padEnd(10)} ${r.record.file}${r.error ? ` (${r.error})` : ''}`);
       return r;
     } catch (err) {
-      console.log(`failed     ${fileNameOf(url)} (${err.message})`);
-      return { status: 'failed', error: err.message, record: { url, file: fileNameOf(url) } };
+      console.log(`failed     ${fileNameOf(url)} (${errorMessage(err)})`);
+      return { status: 'failed', error: errorMessage(err), record: { url, file: fileNameOf(url) } };
     }
   });
 
+  /** @type {ArchiveRecord[]} */
   const ok = results.filter((r) => r.status !== 'failed').map((r) => r.record);
   ok.sort((a, b) => a.file.localeCompare(b.file));
   await writeFile(path.join(OUT_DIR, 'SHA256SUMS'), ok.map((r) => `${r.sha256}  ${r.file}`).join('\n') + '\n');
   await writeFile(path.join(OUT_DIR, 'index.json'), JSON.stringify(ok, null, 2) + '\n');
 
+  /**
+   * @param {string} s
+   * @returns {number}
+   */
   const count = (s) => results.filter((r) => r.status === s).length;
   const failed = results.filter((r) => r.status === 'failed');
-  const totalBytes = ok.reduce((n, r) => n + r.bytes, 0);
+  const totalBytes = ok.reduce((n, r) => n + (r.bytes ?? 0), 0);
 
   let zipInfo = 'not created';
   try {
@@ -309,7 +395,7 @@ async function main() {
     execFileSync(tar, ['-a', '-c', '-f', ZIP_PATH, '-C', CACHE_DIR, 'asset-originals'], { stdio: 'pipe' });
     zipInfo = `${path.relative(ROOT, ZIP_PATH)} (${(await stat(ZIP_PATH)).size} bytes)`;
   } catch (err) {
-    zipInfo = `FAILED: ${err.message.split('\n')[0]}`;
+    zipInfo = `FAILED: ${errorMessage(err).split('\n')[0]}`;
   }
 
   console.log('\n--- summary ---');
