@@ -100,7 +100,8 @@
     font-size: var(--step--1);
   }
 
-  :is(ul, ol) {
+  /* Plain lists (.list-plain, role=list) keep the reset's zero padding; this layer would otherwise win. */
+  :is(ul, ol):not([role='list'], .list-plain) {
     padding-inline-start: 1.25em;
   }
 

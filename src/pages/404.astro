@@ -1,23 +1,52 @@
 ---
+// 404 (docs/design-system.md §8): the shelf sketch draws itself, one board is missing and a
+// Maßlinie asks „? cm“ as live text over the gap. Links only point at pages that exist; the four
+// section links (Leistungen, Referenzen, Über uns, Kontakt) arrive with the Phase 2 pages.
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Sketch from '../components/ui/Sketch.astro';
 import { url } from '../lib/url';
 ---
 
 <BaseLayout
-  title="Seite nicht gefunden | Schreinerei Schmidt"
+  title="Seite nicht gefunden"
   description="Diese Seite gibt es bei der Schreinerei Schmidt in Mannheim nicht oder nicht mehr. Über die Startseite finden Sie alle Leistungen und den Kontakt."
   noindex
 >
   <section class="section not-found">
-    <div class="stack stack--m">
-      <p class="eyebrow">404</p>
-      <h1>Hier fehlt ein Brett.</h1>
-      <p class="lead">Die Seite, die Sie suchen, gibt es nicht oder nicht mehr. Vielleicht wurde sie verschoben.</p>
-      <p>
-        <a class="btn btn--primary" href={url('')}>
-          Zur Startseite
-        </a>
-      </p>
+    <div class="not-found__layout">
+      <div class="stack stack--m not-found__text">
+        <p class="eyebrow">Fehler 404</p>
+        <h1>Hier fehlt ein Brett.</h1>
+        <p class="lead">Die Seite, die Sie suchen, gibt es nicht oder nicht mehr. Vielleicht wurde sie verschoben.</p>
+        <ul class="cluster list-plain">
+          <li>
+            <a class="btn btn--primary" href={url('')}>
+              Zur Startseite
+            </a>
+          </li>
+          <li>
+            <a class="btn btn--secondary" href={url('leistungen/boeden/')}>
+              Böden
+            </a>
+          </li>
+          <li>
+            <a class="btn btn--secondary" href={url('kontakt/')}>
+              Kontakt
+            </a>
+          </li>
+        </ul>
+      </div>
+      <figure class="not-found__figure">
+        <Sketch name="regal-404" draw="load" />
+        <p class="mass not-found__mass" data-orientation="h" data-ends="tick" data-tone="accent" data-draw="load">
+          <span class="mass__line" aria-hidden="true"></span>
+          <span class="mass__label">? cm</span>
+          <span class="mass__line" aria-hidden="true"></span>
+        </p>
+        <figcaption class="visually-hidden">
+          Skizze eines Regals mit drei Böden; der dritte Boden fehlt, und eine Maßlinie fragt nach seiner Länge.
+        </figcaption>
+      </figure>
     </div>
   </section>
 </BaseLayout>
@@ -29,8 +58,39 @@ import { url } from '../lib/url';
       align-content: center;
     }
 
+    .not-found__layout {
+      display: grid;
+      gap: var(--space-l) var(--space-xl);
+      align-items: center;
+    }
+
+    @container section (inline-size >= 48rem) {
+      .not-found__layout {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      }
+    }
+
     .not-found .eyebrow + h1 {
       margin-block-start: var(--space-xs);
+    }
+
+    .not-found__text .cluster {
+      margin-block-start: var(--space-l);
+    }
+
+    /* The figure keeps the 4:3 box of the drawing so the Maßlinie can sit on viewBox coordinates. */
+    .not-found__figure {
+      position: relative;
+      inline-size: min(100%, 40rem);
+      margin-inline: auto;
+    }
+
+    /* Gap between the uprights (x 166–474 of 640) under the missing board (y ≈ 286 of 480). */
+    .not-found__mass {
+      position: absolute;
+      inset-inline: 25.9%;
+      inset-block-start: 59.6%;
+      translate: 0 -50%;
     }
   }
 </style>

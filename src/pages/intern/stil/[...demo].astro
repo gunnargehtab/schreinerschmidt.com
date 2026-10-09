@@ -3,7 +3,12 @@
 // Rest route so getStaticPaths can skip it: `npm run build:audit` (PUBLIC_DEMO=false) emits no /intern/stil/.
 import { PUBLIC_DEMO } from 'astro:env/client';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Sketch from '../../../components/ui/Sketch.astro';
+import SketchPhoto from '../../../components/ui/SketchPhoto.astro';
+import Wordmark from '../../../components/ui/Wordmark.astro';
 import { shy } from '../../../lib/shy';
+import schrankwand from '../../../assets/projects/einbauschrankwand/01-geschlossen.jpg';
+import schrankwandSketch from '../../../assets/sketches/einbauschrankwand-01.jpg';
 
 export function getStaticPaths() {
   return PUBLIC_DEMO ? [{ params: { demo: undefined } }] : [];
@@ -285,6 +290,82 @@ const steps = [
     </div>
   </section>
 
+  <section class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 08 · Skizzen</p>
+      <h2>Skizzen aus dem Bauplan</h2>
+      <p class="lead">
+        Vier Striche: Hilfslinien mit Überstand, Umrisse, Schraffur, ein roter Akzent. Gezeichnet beim Scrollen, fertig
+        ohne Bewegung.
+      </p>
+    </div>
+    <ul class="sketches grid hairline-grid list-plain">
+      <li class="sketch-cell">
+        <Sketch name="moebel" draw="scroll" size="8rem" />
+        <h3>Möbel</h3>
+        <p>Einbauschrank mit offener Tür, Schwenkbogen in Rot.</p>
+      </li>
+      <li class="sketch-cell">
+        <Sketch name="boeden" draw="scroll" size="8rem" />
+        <h3>Böden</h3>
+        <p>Fischgrät in Perspektive, das nächste Brett in Rot.</p>
+      </li>
+      <li class="sketch-cell sketch-cell--wide">
+        <Sketch name="regal-404" draw="scroll" />
+        <h3>Regal (Seite 404)</h3>
+        <p>Ein Brett fehlt; die Maßlinie „? cm“ steht als echter Text auf der Fehlerseite.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 09 · Skizze → Foto</p>
+      <h2>Vom Entwurf zum Werkstück</h2>
+      <p class="lead">
+        Unterhalb der ersten Bildschirmhöhe: Die Bleistiftfassung erscheint zuerst, das Foto blendet beim Scrollen ein.
+        Ohne Scroll-Animationen steht sofort das Foto.
+      </p>
+    </div>
+    <figure class="sketch-photo-demo frame">
+      <SketchPhoto
+        photo={schrankwand}
+        sketch={schrankwandSketch}
+        alt="Raumhohe weiße Einbauschrankwand mit acht Türen und schmalen Griffen, davor Eichendielen"
+        sizes="(min-width: 64rem) 56rem, 100vw"
+        width={896}
+      />
+      <figcaption>Einbauschrankwand, Foto und Bleistiftfassung pixelgenau übereinander.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 10 · Wortmarke</p>
+      <h2>Wortmarke als Maske</h2>
+      <p class="lead">
+        Die alte Wortmarke als Alphamaske, gefüllt mit dem Token <code>--wordmark</code>. Die Zeile „Umweltbewusstes
+        Holzhandwerk“ ist echter Text.
+      </p>
+    </div>
+    <div class="theme-pair">
+      <div class="theme-panel" data-scheme="light">
+        <p class="theme-panel__label">Hell</p>
+        <a class="wordmark-link" href="#main">
+          <Wordmark />
+        </a>
+        <p class="tagline">Umweltbewusstes Holzhandwerk</p>
+      </div>
+      <div class="theme-panel" data-scheme="dark">
+        <p class="theme-panel__label">Werkstatt bei Nacht</p>
+        <a class="wordmark-link" href="#main">
+          <Wordmark />
+        </a>
+        <p class="tagline">Umweltbewusstes Holzhandwerk</p>
+      </div>
+    </div>
+  </section>
+
   <section class="section band--ink">
     <div class="section-intro stack">
       <p class="eyebrow">Blatt 07 · Umkehrband</p>
@@ -513,6 +594,101 @@ const steps = [
     .paper-demo {
       max-inline-size: 28rem;
       padding: var(--space-m);
+    }
+
+    /* Blatt 08: sketches */
+    .sketches {
+      --cols: 1;
+    }
+
+    @container section (inline-size >= 40rem) {
+      .sketches {
+        --cols: 2;
+      }
+    }
+
+    .sketch-cell {
+      display: grid;
+      gap: var(--space-xs);
+      align-content: start;
+      padding: var(--space-m);
+    }
+
+    @container section (inline-size >= 40rem) {
+      .sketch-cell--wide {
+        grid-column: span 2;
+      }
+    }
+
+    .sketch-cell h3 {
+      font-size: var(--step-1);
+    }
+
+    .sketch-cell p {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+      max-inline-size: var(--measure-card);
+    }
+
+    /* The SVG comes from set:html, so it has no scope class. */
+    .sketch-cell--wide :global(.sketch) {
+      max-inline-size: 40rem;
+    }
+
+    /* Blatt 09: sketch → photo */
+    .sketch-photo-demo {
+      --frame-pad: var(--space-s);
+      max-inline-size: 58rem;
+    }
+
+    .sketch-photo-demo figcaption {
+      margin-block-start: var(--space-s);
+    }
+
+    /* Blatt 10: wordmark in both themes, side by side */
+    .theme-pair {
+      display: grid;
+      gap: var(--space-s);
+    }
+
+    @container section (inline-size >= 40rem) {
+      .theme-pair {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .theme-panel {
+      display: grid;
+      gap: var(--space-xs);
+      padding: var(--space-m);
+      border: var(--rule);
+      background: var(--surface);
+      color: var(--ink);
+    }
+
+    .theme-panel[data-scheme='light'] {
+      color-scheme: light;
+    }
+
+    .theme-panel[data-scheme='dark'] {
+      color-scheme: dark;
+    }
+
+    .theme-panel__label {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+
+    .wordmark-link {
+      display: inline-block;
+      inline-size: fit-content;
+      --wordmark-size: 16rem;
+    }
+
+    .tagline {
+      font-size: var(--step--1);
+      letter-spacing: 0.08em;
+      color: var(--ink-muted);
     }
   }
 </style>
