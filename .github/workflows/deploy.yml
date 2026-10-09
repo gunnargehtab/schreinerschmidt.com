@@ -1,0 +1,108 @@
+name: Build, test, deploy
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: read
+    concurrency:
+      group: 'build-${{ github.ref }}'
+      cancel-in-progress: true
+    env:
+      PUBLIC_DEMO: "${{ vars.PUBLIC_DEMO || 'true' }}"
+      PUBLIC_FORM_ENDPOINT: '${{ vars.PUBLIC_FORM_ENDPOINT }}'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v6
+      - name: Export site origin and base path
+        run: |
+          echo "SITE=${{ steps.pages.outputs.origin }}" >> "$GITHUB_ENV"
+          echo "BASE_PATH=${{ steps.pages.outputs.base_path }}" >> "$GITHUB_ENV"
+      - name: Install dependencies
+        run: npm ci
+      - name: Restore Astro cache
+        uses: actions/cache@v6
+        with:
+          path: .cache/astro
+          key: "astro-${{ runner.os }}-${{ hashFiles('package-lock.json','astro.config.mjs') }}-${{ hashFiles('src/assets/**') }}"
+          restore-keys: 'astro-${{ runner.os }}-'
+      - name: Check formatting
+        run: npm run format:check
+      - name: Type check
+        run: npm run check
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Build
+        run: npm run build
+      - name: Test dist output
+        run: npm run test:dist
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v6
+        with:
+          path: '~/.cache/ms-playwright'
+          key: "pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}"
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: End-to-end tests
+        run: npm run test:e2e
+      - name: Link check
+        run: npm run test:links
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: '${{ steps.deployment.outputs.page_url }}'
+    outputs:
+      url: '${{ steps.deployment.outputs.page_url }}'
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+  smoke:
+    needs: deploy
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Smoke test deployed site
+        env:
+          URL: '${{ needs.deploy.outputs.url }}'
+        run: |
+          set -eu
+          curl -fsS "$URL" | grep -q 'name="robots" content="noindex'
+          test "$(curl -s -o /dev/null -w '%{http_code}' "${URL%/}")" = 301
+          test "$(curl -s -o /dev/null -w '%{http_code}' "${URL}gibt-es-nicht/")" = 404
+          curl -s -o /dev/null -w 'POST -> %{http_code} (expect 405)\n' -X POST "$URL"

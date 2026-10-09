@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      astro:
+        patterns:
+          - 'astro'
+          - '@astrojs/*'
+    ignore:
+      - dependency-name: 'typescript'
+        versions:
+          - '>= 7'
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
