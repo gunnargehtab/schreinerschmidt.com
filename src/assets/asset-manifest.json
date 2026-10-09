@@ -1,5 +1,549 @@
 [
   {
+    "id": "altbau-eichendielen-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef60dbc50fe04527e110a_IMG_20200527_150359.jpg",
+    "sha256": "86080b11ba978e30635734b548e781f0f625db6372d50ffa01d218aa24083abf",
+    "original": {
+      "w": 3456,
+      "h": 4608,
+      "bytes": 3809045,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "ANE-LX1",
+        "date": "2020:05:27 15:04:02",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/altbau-eichendielen/01-eichendielen.jpg",
+      "w": 1800,
+      "h": 2400,
+      "bytes": 406432,
+      "sha256": "428dc0c7f77ecce0d77cef4a27dd561d09501387e37762db906aedc90fef76a6"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera HUAWEI ANE-LX1, 2020:05:27 15:04:02; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "boeden",
+    "project": "altbau-eichendielen",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": ""
+  },
+  {
+    "id": "arbeitszimmer-wohnwand-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/6346804d98f82c10e74543f8_DSCF3091.jpeg",
+    "sha256": "41a909a9e46af6ed7b9d0a98d3add9933b9a10b7acb94d82c849ad9393d33bd3",
+    "original": {
+      "w": 800,
+      "h": 600,
+      "bytes": 112719,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2012:01:08 05:27:44",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/arbeitszimmer-wohnwand/01-schreibtisch.jpg",
+      "w": 800,
+      "h": 600,
+      "bytes": 73002,
+      "sha256": "0d90f1ce4ce027265dc1593f25cba2ec47f3c38e9e13352dadedf82328818c67"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2012:01:08 05:27:44; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "moebel",
+    "project": "arbeitszimmer-wohnwand",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Grouping with DSCF3084 to confirm."
+  },
+  {
+    "id": "arbeitszimmer-wohnwand-02",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/634680681f0d7778f093c9e8_DSCF3084.jpeg",
+    "sha256": "49e73db4435c6524ef3d3f27841f2e666fb51008acba7db23dfbfeb512012c8b",
+    "original": {
+      "w": 800,
+      "h": 600,
+      "bytes": 83954,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2012:01:08 05:23:10",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/arbeitszimmer-wohnwand/02-tv-moebel.jpg",
+      "w": 800,
+      "h": 600,
+      "bytes": 52601,
+      "sha256": "323ca32f5d4b1202688740432eca7db0d194b3c2605bebee89e9629070f48a7c"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2012:01:08 05:23:10; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "moebel",
+    "project": "arbeitszimmer-wohnwand",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Grouping with DSCF3091 to confirm."
+  },
+  {
+    "id": "bad-nach-mass-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/6346804ca336aa361286ad0c_badgestaltung_DSCF2263.jpeg",
+    "sha256": "5cfc02baea6730a1f4f15472933043dfaadd22dd88f667b07b7ab8507a6c827e",
+    "original": {
+      "w": 800,
+      "h": 650,
+      "bytes": 88916,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix F30",
+        "date": "2010:07:11 08:43:55",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/bad-nach-mass/01-waschtisch.jpg",
+      "w": 800,
+      "h": 650,
+      "bytes": 55849,
+      "sha256": "b759cd29884eea22ce63d914a79322f593a8e0681d04a25166aa55080850d939"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix F30, 2010:07:11 08:43:55; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "moebel",
+    "project": "bad-nach-mass",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Grouping with auf_engstem_raum to confirm."
+  },
+  {
+    "id": "bad-nach-mass-02",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63467f5e3618be799c845a22_auf_engstem_raum.jpeg",
+    "sha256": "9c5897afa75a0c95fab7259f96dc785d506d0d5c6cf4a26e12b5936a35cbb727",
+    "original": {
+      "w": 800,
+      "h": 1067,
+      "bytes": 119017,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2011:02:18 17:50:43",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/bad-nach-mass/02-tueren.jpg",
+      "w": 800,
+      "h": 1067,
+      "bytes": 77377,
+      "sha256": "0b260059fe928e6f86525d089913919f4dd21d87f872af907aa0e0ec598f769e"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2011:02:18 17:50:43; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "moebel",
+    "project": "bad-nach-mass",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Grouping with badgestaltung to confirm."
+  },
+  {
+    "id": "boeden-massivdielen-kiefer",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/634682a827d32783761a486b_kiefer_landhausdielen_geolt__gewachst.jpeg",
+    "sha256": "7a417d8ca4a88a9cfa64206e83587c0a1482f8dfd173f2c91e0a2c71bf83bd53",
+    "original": {
+      "w": 800,
+      "h": 1067,
+      "bytes": 150368,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix F30",
+        "date": "2011:06:01 14:03:40",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/services/boeden/01-massivdielen-kiefer.jpg",
+      "w": 800,
+      "h": 1067,
+      "bytes": 105605,
+      "sha256": "51b5a77d20a6911b824d3a43ca4dee14fcc92b376328835abf601f835bf006ce"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix F30, 2011:06:01 14:03:40; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "boeden",
+    "project": null,
+    "role": "type",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Illustrates the Böden type \"Massivdielen\"."
+  },
+  {
+    "id": "brand-logo-reference",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/62fdeca9bdc81d826ce7fa07_Logo.png",
+    "sha256": "1f57637215897cdada5ea2d8d680019ef67eb0f88f68322082acb5db305ba22c",
+    "original": {
+      "w": 702,
+      "h": 107,
+      "bytes": 16225,
+      "exif": {
+        "make": null,
+        "model": null,
+        "date": null,
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/brand/logo-reference.png",
+      "w": 702,
+      "h": 107,
+      "bytes": 10862,
+      "sha256": "75a435c8a3a8ec1bdf567b87836cb3cbc1d92c603f079ee78da1530c437e3569"
+    },
+    "cardOnly": true,
+    "rights": "own",
+    "rightsEvidence": "No EXIF camera data; no Copyright/Artist tag. Company logo from the old site (reference only, docs/architecture.md §6).",
+    "alt": "",
+    "category": null,
+    "project": null,
+    "role": "brand-reference",
+    "privacyCheck": "pending",
+    "notes": "Old 702×107 PNG wordmark. Input for the Phase 1 wordmark mask only; never render it as a photo."
+  },
+  {
+    "id": "dachausbau-dielen-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef58d9f99bd2e50f024b1_2019-09-20.jpg",
+    "sha256": "8574aaee322a02cb430121149fcb07972101fdb4df4a7b4e56f550aa3a371eec",
+    "original": {
+      "w": 540,
+      "h": 420,
+      "bytes": 49730,
+      "exif": {
+        "make": null,
+        "model": null,
+        "date": null,
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/dachausbau-dielen/01-dachausbau.jpg",
+      "w": 540,
+      "h": 420,
+      "bytes": 38043,
+      "sha256": "3d318852cc804f961f128b96dbaf3324178e55d940fff18d392a211e51626af0"
+    },
+    "cardOnly": true,
+    "rights": "own-unverified",
+    "rightsEvidence": "No EXIF camera data; no Copyright/Artist tag. Rights group \"own-unverified\" (docs/architecture.md §6). Origin pending owner confirmation.",
+    "alt": "",
+    "category": "boeden",
+    "project": "dachausbau-dielen",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Unverified origin, only 540×420 px (card only). Owner to confirm it is a Schreinerei Schmidt project."
+  },
+  {
+    "id": "draussen-mit-holz-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/634680f898f82cf4dd45475d_Sonnenplatze.jpeg",
+    "sha256": "3e6ca7e0ab4857872bf610afd97cc3f9ab3332edd70fd23de30cce8c7d3e230d",
+    "original": {
+      "w": 800,
+      "h": 1067,
+      "bytes": 167129,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix F30",
+        "date": "2009:04:02 21:50:31",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/draussen-mit-holz/01-sonnenplatz.jpg",
+      "w": 800,
+      "h": 1067,
+      "bytes": 118573,
+      "sha256": "5fe03e56edb02e253c1ae8e967bdb3b8642de0bdd955379f348e331698b4a3ef"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix F30, 2009:04:02 21:50:31; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "terrassen",
+    "project": "draussen-mit-holz",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Grouping with the zaunanlage photos to confirm."
+  },
+  {
+    "id": "draussen-mit-holz-02",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/634680f861ca47c38c7aae91_zaunanlage_DSCF2820.jpeg",
+    "sha256": "a1b11352f77ca52ea85ed281ca09b9a9a89d926cd2b618000aab24850c97307c",
+    "original": {
+      "w": 800,
+      "h": 1067,
+      "bytes": 168879,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2011:01:31 06:35:25",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/draussen-mit-holz/02-gartentor.jpg",
+      "w": 800,
+      "h": 1067,
+      "bytes": 122398,
+      "sha256": "a5af4f64c46523d4c471c96a5856e1081d73992da7f66944906821cae8e097af"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2011:01:31 06:35:25; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "terrassen",
+    "project": "draussen-mit-holz",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Grouping to confirm."
+  },
+  {
+    "id": "draussen-mit-holz-03",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/634681233030a169126749e5_zaunanlage_DSCF2815.jpeg",
+    "sha256": "af989c267d8569b59fe1b31bf63df379907f205fa0cbb4eaec34bbb51623ddeb",
+    "original": {
+      "w": 800,
+      "h": 600,
+      "bytes": 141476,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2011:01:31 06:33:31",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/draussen-mit-holz/03-zaun.jpg",
+      "w": 800,
+      "h": 600,
+      "bytes": 96685,
+      "sha256": "58fad89370edee891f5ad1a0245c7a24f0c66df4513cbbbede11fa70bd4e61e1"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2011:01:31 06:33:31; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "terrassen",
+    "project": "draussen-mit-holz",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Grouping to confirm."
+  },
+  {
+    "id": "eichentreppe-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/6405e88edd1f951832d788d3_IMG_20230203_125350.jpg",
+    "sha256": "f20eed33bce128fe035ecb8080e34700e6c12bc253574d703bef2e04c81e9385",
+    "original": {
+      "w": 2736,
+      "h": 3648,
+      "bytes": 1950108,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "VOG-L29",
+        "date": "2023:02:03 12:53:51",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/eichentreppe/01-treppe.jpg",
+      "w": 1800,
+      "h": 2400,
+      "bytes": 329763,
+      "sha256": "daab5b8291f976f35327cb6cfc848d81a62bb117c8214202b09a5bb4faa41a73"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera HUAWEI VOG-L29, 2023:02:03 12:53:51; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "treppen",
+    "project": "eichentreppe",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Sketch→photo candidate. \"Treppe Eiche Massivholz naturgeölt.jpg\" is the same photo and is not migrated."
+  },
+  {
+    "id": "einbauschrankwand-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/655a0e39754b348afe09d381_20230914_150222_1.jpg",
+    "sha256": "2caf59b0a19b8bcaa8bac4c6a3c9312877d32bd7be4209c5ad8ed819f4fa932c",
+    "original": {
+      "w": 4000,
+      "h": 3000,
+      "bytes": 1895475,
+      "exif": {
+        "make": "samsung",
+        "model": "Galaxy S23 Ultra",
+        "date": "2023:09:14 15:02:22",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/einbauschrankwand/01-geschlossen.jpg",
+      "w": 2400,
+      "h": 1800,
+      "bytes": 370173,
+      "sha256": "dd4f0c60a20ef8145d9a986b66b47b35c8b59d561ea03866f2a6227e3c70ef7f"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera samsung Galaxy S23 Ultra, 2023:09:14 15:02:22; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "moebel",
+    "project": "einbauschrankwand",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Closed state of the open/closed toggle. Sketch→photo candidate."
+  },
+  {
+    "id": "einbauschrankwand-02",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/655a0e6c3fb524b2a9228233_20230914_150410_1.jpg",
+    "sha256": "1562dff2bc2a412aa170e205b32a0e650e6c5fb0128c2ae548863bd97f898107",
+    "original": {
+      "w": 4000,
+      "h": 3000,
+      "bytes": 2155329,
+      "exif": {
+        "make": "samsung",
+        "model": "Galaxy S23 Ultra",
+        "date": "2023:09:14 15:04:10",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/einbauschrankwand/02-offen.jpg",
+      "w": 2400,
+      "h": 1800,
+      "bytes": 509673,
+      "sha256": "94b54c29210f5a98b5cf31a1d1a06c17c6b16fb5fa6e98af0d14ef664feedc8a"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera samsung Galaxy S23 Ultra, 2023:09:14 15:04:10; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "moebel",
+    "project": "einbauschrankwand",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Open state of the open/closed toggle; old Möbel page photo."
+  },
+  {
+    "id": "eingang-holzlamellen-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63dfa1556459303114750836_IMG_20210423_171553.jpg",
+    "sha256": "519bbab5a57af8e99807dfa2d01930a9ae6f788ec4970a0c8b203affc46dd9ff",
+    "original": {
+      "w": 2736,
+      "h": 3648,
+      "bytes": 2316803,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "VOG-L29",
+        "date": "2021:04:23 17:15:54",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/eingang-holzlamellen/01-eingang.jpg",
+      "w": 1800,
+      "h": 2400,
+      "bytes": 481713,
+      "sha256": "26618dbcd40399b7f9539141fc6240fee1786132ad40a12d201ab08dbe01e4b8"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera HUAWEI VOG-L29, 2021:04:23 17:15:54; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "tueren",
+    "project": "eingang-holzlamellen",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": ""
+  },
+  {
+    "id": "fenster-balkontuer-altbau",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63467f5e98f82c3a10453ffb_balkontur_im_altbau.jpeg",
+    "sha256": "2e8f0be4265c8f797d18b03a7a31cb2329606d939ab2b445df271d7011f6cfe7",
+    "original": {
+      "w": 800,
+      "h": 1283,
+      "bytes": 198642,
+      "exif": {
+        "make": null,
+        "model": null,
+        "date": "2012:01:16 20:28:26",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/services/fenster/01-balkontuer-altbau.jpg",
+      "w": 800,
+      "h": 1283,
+      "bytes": 148519,
+      "sha256": "a2e5034015485e8c36d9759df778d3843db4c35cf4e7fa57bc3c2d1075f7e190"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "No EXIF camera data (EXIF date 2012:01:16 20:28:26); no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "fenster",
+    "project": null,
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG). Used on the Fenster and Altbau pages (the only owner photo for Fenster)."
+  },
+  {
     "id": "fischgraetparkett-eiche-01",
     "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef5cff7bbf40487275446_Eiche%20Fischgr%C3%A4tparkett.jpg",
     "sha256": "e36c2ab2aed9cbd6d77944ef642d2b428bbfe056a026cafc922a1ec46667687a",
@@ -10,22 +554,469 @@
       "exif": {
         "make": "HUAWEI",
         "model": "VOG-L29",
-        "date": "2022:07:08 07:41:03"
+        "date": "2022:07:08 07:41:03",
+        "artist": null,
+        "copyright": null,
+        "gps": false
       }
     },
     "output": {
       "path": "src/assets/projects/fischgraetparkett-eiche/01-parkett.jpg",
       "w": 1800,
       "h": 2400,
-      "bytes": 393523
+      "bytes": 393523,
+      "sha256": "78a252a1ef89af5a12e38638fcf8f8a68e0dc8f6a23dc6c89e3ecaa2ca5d7ecf"
     },
+    "cardOnly": false,
     "rights": "own",
-    "rightsEvidence": "Company phone photo (EXIF HUAWEI VOG-L29, 2022:07:08 07:41:03); no Copyright/Artist tag naming a third party. Rights group \"own\" per docs/architecture.md §6.",
+    "rightsEvidence": "EXIF camera HUAWEI VOG-L29, 2022:07:08 07:41:03; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
     "alt": "Fischgrätparkett aus Eiche in einem Altbauzimmer mit roter Wand, weißen Sockelleisten und Fenster",
     "category": "boeden",
     "project": "fischgraetparkett-eiche",
     "role": "cover",
     "privacyCheck": "pending",
-    "notes": "Phase 0 spike migration (one photo). Alt text is a draft; owner to confirm the project."
+    "notes": "Sketch→photo candidate. Owner to confirm the project."
+  },
+  {
+    "id": "glasvitrine-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/6346804cf202f852c69ff68d_glasvitrine_mit_integrierter_beleuchtung.jpeg",
+    "sha256": "7cda56c9bd0f25c82c1972bd9b2cf2947f88d8d0b11c9ff45c66a4bb0f73e090",
+    "original": {
+      "w": 800,
+      "h": 600,
+      "bytes": 95265,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix F30",
+        "date": "2009:04:09 02:52:19",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/glasvitrine/01-vitrine.jpg",
+      "w": 800,
+      "h": 600,
+      "bytes": 61277,
+      "sha256": "daca6c61804f830e7828e334a0424d16fc9c06f7d741ba2ef67c268e49067627"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix F30, 2009:04:09 02:52:19; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "moebel",
+    "project": "glasvitrine",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG)."
+  },
+  {
+    "id": "haustuer-gruenderzeit-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63d5446a83094f1632d1c483_KOWA%20Haust%C3%BCr%20.jpg",
+    "sha256": "4f8b7005d3266839197deb4b093f26f0f86aeb0ef356da56f01c7f72d5264c2d",
+    "original": {
+      "w": 3840,
+      "h": 5120,
+      "bytes": 3165755,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "VOG-L29",
+        "date": "2021:03:11 13:36:35",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/haustuer-gruenderzeit/01-haustuer.jpg",
+      "w": 1800,
+      "h": 2400,
+      "bytes": 464713,
+      "sha256": "1737529c9f7330297daf5beebb4acf9f5166bba07b5121ad035efcc9d2a89770"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera HUAWEI VOG-L29, 2021:03:11 13:36:35; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "tueren",
+    "project": "haustuer-gruenderzeit",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Same phone as Team1 (§0 finding 2). EXIF capture date is 2021-03-11; 2023-01-28 (as in §0) is the EXIF edit date (Windows Photo Editor). Sketch→photo candidate."
+  },
+  {
+    "id": "haustuer-gruenderzeit-02",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63467357ee5b6b16e1a4fec8_ss_Rezessionen1.jpg",
+    "sha256": "237a729930cca283d43e57bece30a45687f94f1fa76752c12768c2b001e0b018",
+    "original": {
+      "w": 872,
+      "h": 1174,
+      "bytes": 272330,
+      "exif": {
+        "make": null,
+        "model": null,
+        "date": null,
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/haustuer-gruenderzeit/02-treppenhaus.jpg",
+      "w": 872,
+      "h": 1174,
+      "bytes": 133274,
+      "sha256": "46d0c3928bc689c73d3f01a455569480e8c85d94db19607653c7883e38a1eaf3"
+    },
+    "cardOnly": true,
+    "rights": "own-unverified",
+    "rightsEvidence": "No EXIF camera data; no Copyright/Artist tag. Rights group \"own-unverified\" (docs/architecture.md §6). Origin pending owner confirmation.",
+    "alt": "",
+    "category": "tueren",
+    "project": "haustuer-gruenderzeit",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Unverified origin. Same scene as the KOWA photo per content-inventory; owner to confirm rights and the grouping with project 2."
+  },
+  {
+    "id": "holzhaustuer-aufgearbeitet-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63467f5e9d2ab60b0e79da8c_1_Stilvolle_Holzhaustuer_vorher.jpeg",
+    "sha256": "a9ff8b04d842c6ef4f98ba6e445ea7bfc985ed7bf4fd83fab245b69289869296",
+    "original": {
+      "w": 600,
+      "h": 800,
+      "bytes": 154845,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2012:03:25 15:36:40",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/holzhaustuer-aufgearbeitet/01-vorher.jpg",
+      "w": 600,
+      "h": 800,
+      "bytes": 51775,
+      "sha256": "e8b3af1c42457bde3ddebc2c8ae56a39ef391e40bfea7ca0e2038af485b83389"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2012:03:25 15:36:40; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "tueren",
+    "project": "holzhaustuer-aufgearbeitet",
+    "role": "before",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG)."
+  },
+  {
+    "id": "holzhaustuer-aufgearbeitet-02",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63467f5e3618be0527845a23_2_Stilvolle_Holzhaustuer_nachher.jpeg",
+    "sha256": "23a93aba88dc83bb238c91739a1f817cb3046e8666cd1d9f8923032c217ac794",
+    "original": {
+      "w": 600,
+      "h": 800,
+      "bytes": 298162,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2012:04:25 19:11:49",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/holzhaustuer-aufgearbeitet/02-nachher.jpg",
+      "w": 600,
+      "h": 800,
+      "bytes": 59116,
+      "sha256": "8342162d4fc4d19b03a27310f93ecda62714f017122eb67d0b5f86004bcd1f57"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2012:04:25 19:11:49; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "tueren",
+    "project": "holzhaustuer-aufgearbeitet",
+    "role": "after",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG)."
+  },
+  {
+    "id": "kernbuchenbett-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/6346804c4dce67784bbd1427_massivholzbett_in_kernbuche.jpeg",
+    "sha256": "624ce005d7f44ae58b094f057347424288735ce855f1252e1f9994c0b64a9919",
+    "original": {
+      "w": 800,
+      "h": 600,
+      "bytes": 88274,
+      "exif": {
+        "make": null,
+        "model": null,
+        "date": "2012:01:16 20:27:16",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/kernbuchenbett/01-bett.jpg",
+      "w": 800,
+      "h": 600,
+      "bytes": 58205,
+      "sha256": "a2d91ac2344edd965c31de9b72d9d6baf6b1dc1f3a8dd481f19a44253d3d7020"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "No EXIF camera data (EXIF date 2012:01:16 20:27:16); no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "moebel",
+    "project": "kernbuchenbett",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG)."
+  },
+  {
+    "id": "shoji-kleiderschrank-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef6593370e506bf289ff5_IMG_20181126_130556.jpg",
+    "sha256": "8249163a98c39f1f13729e1534d4f802dc99135a50b413f6113e8d9d9b11cef0",
+    "original": {
+      "w": 4608,
+      "h": 3456,
+      "bytes": 3637844,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "ANE-LX1",
+        "date": "2018:11:26 13:05:57",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/shoji-kleiderschrank/01-geschlossen.jpg",
+      "w": 2400,
+      "h": 1800,
+      "bytes": 266336,
+      "sha256": "486d4fcdb51c540295d769c634508ee3f5bd966d1e9b4e1fd5cabad9c6665a6f"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera HUAWEI ANE-LX1, 2018:11:26 13:05:57; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "moebel",
+    "project": "shoji-kleiderschrank",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Sketch→photo candidate."
+  },
+  {
+    "id": "shoji-kleiderschrank-02",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef6679f99bd4763f11798_IMG_20181126_130700.jpg",
+    "sha256": "9f6ac5566a7464a6c677e7839472ae21b1b9834528bad1fcf90fb4422f1ee88a",
+    "original": {
+      "w": 4608,
+      "h": 3456,
+      "bytes": 3537295,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "ANE-LX1",
+        "date": "2018:11:26 13:07:01",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/shoji-kleiderschrank/02-offen.jpg",
+      "w": 2400,
+      "h": 1800,
+      "bytes": 236247,
+      "sha256": "d8e8b0f0ead79fb641024d5051d44679182ec2a0eb572e1fbca5fc4088c5f425"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera HUAWEI ANE-LX1, 2018:11:26 13:07:01; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "moebel",
+    "project": "shoji-kleiderschrank",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": ""
+  },
+  {
+    "id": "team-gruppe",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63d51c3621df9f7b7ba89fc2_Team1.jpg",
+    "sha256": "0d85cab19ebbd6e8ac07093040852ef0ae211aa18db5bb4442445efa19bdf9c0",
+    "original": {
+      "w": 5831,
+      "h": 4896,
+      "bytes": 3446302,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "VOG-L29",
+        "date": "2022:09:12 17:16:06",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/team/team-gruppe.jpg",
+      "w": 2400,
+      "h": 2015,
+      "bytes": 517387,
+      "sha256": "f23e15c811bba6465b4087c78f3281749fb4544b5f16998eac37b61f9939c4cb"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "EXIF camera HUAWEI VOG-L29, 2022:09:12 17:16:06; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": null,
+    "project": null,
+    "role": "team",
+    "privacyCheck": "pending",
+    "notes": "Shows four people: publishing needs written consent from everyone pictured (publicationConsent: ausstehend). EXIF capture date 2022-09-12, edited 2023-01-28."
+  },
+  {
+    "id": "team-ulf-schmidt",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/634674091be1f9125a9c4bd0_ulf_schmidt.jpg",
+    "sha256": "f35b35c5039d3a653328caf8ed2a8743f5bb2b9e877b3efedd9ace828229fc0c",
+    "original": {
+      "w": 872,
+      "h": 1156,
+      "bytes": 245158,
+      "exif": {
+        "make": null,
+        "model": null,
+        "date": null,
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/team/ulf-schmidt.jpg",
+      "w": 872,
+      "h": 1156,
+      "bytes": 117648,
+      "sha256": "ac7090759ba6df8aa43455c8f97ab79d596fe2db55e2320fae5d71a181d13bd0"
+    },
+    "cardOnly": true,
+    "rights": "own-unverified",
+    "rightsEvidence": "No EXIF camera data; no Copyright/Artist tag. Rights group \"own-unverified\" (docs/architecture.md §6). Origin pending owner confirmation.",
+    "alt": "",
+    "category": null,
+    "project": null,
+    "role": "portrait",
+    "privacyCheck": "pending",
+    "notes": "Unverified: unused on the old site. Owner to confirm it may be used (owner checklist) and who holds the photographer rights."
+  },
+  {
+    "id": "treppenhaus-handlauf-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63467e26078daa221b504a42_ein_schwarzer_handlauf_setzt_akzente.jpeg",
+    "sha256": "5211389f7cb1d5ae0ab2d5f1b7a5a32369c7b5168e013584cb67faa66331a9c7",
+    "original": {
+      "w": 800,
+      "h": 681,
+      "bytes": 86924,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2011:02:01 13:54:19",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/treppenhaus-handlauf/01-handlauf.jpg",
+      "w": 800,
+      "h": 681,
+      "bytes": 57275,
+      "sha256": "67cc5bedd0be7b332239e5fcc5cead435a1e82a745d0ecf1e51a6b02da0ea88a"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2011:02:01 13:54:19; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "treppen",
+    "project": "treppenhaus-handlauf",
+    "role": "cover",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG)."
+  },
+  {
+    "id": "treppenhaus-handlauf-02",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63467e3cfdfbaa0fde8b9426_Handlauf_und_Trittstufen_wurden_geolt__gewachst.jpeg",
+    "sha256": "35256195f70cfe995404a37f44701f64fbf746813dc034ecfc8ca9a4a3071370",
+    "original": {
+      "w": 800,
+      "h": 1067,
+      "bytes": 125431,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2011:10:07 07:38:12",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/treppenhaus-handlauf/02-trittstufen.jpg",
+      "w": 800,
+      "h": 1067,
+      "bytes": 84395,
+      "sha256": "40d851f66ef076a8fd8fa1b4cff61b29792d91fb26dbdc32acd2ff318b4b94d6"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2011:10:07 07:38:12; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "treppen",
+    "project": "treppenhaus-handlauf",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG)."
+  },
+  {
+    "id": "treppenhaus-handlauf-03",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63467e26c3f36b085b613413_ein_blick_durchs_ganze_haus.jpeg",
+    "sha256": "d17ca5a417f930e5b7a910d104a6885c4f8bf1d7cd9efd9874ba0df841e9213b",
+    "original": {
+      "w": 800,
+      "h": 1067,
+      "bytes": 146029,
+      "exif": {
+        "make": "FUJIFILM",
+        "model": "FinePix S9500",
+        "date": "2011:02:01 13:51:39",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/projects/treppenhaus-handlauf/03-treppenhaus.jpg",
+      "w": 800,
+      "h": 1067,
+      "bytes": 104454,
+      "sha256": "0d832af1be72f3f5ed3c9ee4b716fc9e3e59c895b6d40a79cf66724d6c93109b"
+    },
+    "cardOnly": true,
+    "rights": "own-legacy",
+    "rightsEvidence": "EXIF camera FUJIFILM FinePix S9500, 2011:02:01 13:51:39; no Copyright/Artist tag. Rights group \"own-legacy\" (Oct-2022 upload batch of Fujifilm photos from about 2010–2012, docs/architecture.md §0 finding 3, §6). Cards only; owner must confirm the project (UWG).",
+    "alt": "",
+    "category": "treppen",
+    "project": "treppenhaus-handlauf",
+    "role": "gallery",
+    "privacyCheck": "pending",
+    "notes": "Card only. Owner must confirm this shows a Schreinerei Schmidt project (UWG)."
   }
 ]
