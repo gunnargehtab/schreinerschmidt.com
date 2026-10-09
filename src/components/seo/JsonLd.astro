@@ -1,0 +1,16 @@
+---
+// JSON-LD data block (docs/architecture.md §3 and §7). A data block is not executed, so it needs
+// no CSP hash; the dist CSP test skips `application/ld+json`. Not `is:inline`-hashed on purpose.
+import { jsonLdDocument, serializeJsonLd, type JsonLdNode } from '../../lib/jsonld';
+
+interface Props {
+  /** One node, or several (emitted as `@graph`); `null` entries (e.g. inactive jobs) are skipped. */
+  data: JsonLdNode | readonly (JsonLdNode | null | undefined)[];
+}
+
+const { data } = Astro.props;
+const doc = jsonLdDocument(data);
+const empty = '@graph' in doc && Array.isArray(doc['@graph']) && doc['@graph'].length === 0;
+---
+
+{!empty && <script type="application/ld+json" set:html={serializeJsonLd(doc)} />}
