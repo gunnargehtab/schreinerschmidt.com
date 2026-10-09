@@ -1,4 +1,4 @@
-# Schema fixture (wave 1). Facts from docs/content-inventory.md, all unconfirmed.
+# Curated site facts from docs/content-inventory.md, all unconfirmed.
 site:
   name: Schreinerei Schmidt
   legalName:
@@ -61,4 +61,4 @@ site:
   review:
     status: needs-review
     source: docs/content-inventory.md
-    note: Quelle sind Altseite und Drittportale. Rechtsangaben fehlen.
+    note: Quelle sind Altseite und Drittportale. Rechtsangaben fehlen. Anschrift und Telefon stimmen mit der Altseite überein, sind aber noch nicht vom Inhaber bestätigt.

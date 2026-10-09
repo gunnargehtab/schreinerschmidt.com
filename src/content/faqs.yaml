@@ -1,9 +1,51 @@
-# Schema fixture (wave 1).
-platzhalter-frage:
-  question: Platzhalter-Frage für das Schema?
-  answer: Platzhalter-Antwort, wird in Welle 2 durch den echten Text ersetzt.
-  topics: [boeden]
+# The old site has no FAQ. Answers are derived strictly from inventory facts; all need the owner's confirmation.
+ablauf:
+  question: Wie läuft ein Projekt bei der Schreinerei Schmidt ab?
+  answer: Am Anfang steht ein Beratungsgespräch, in dem wir Ihr Vorhaben besprechen und gemeinsam planen. Danach erhalten Sie ein Angebot. Aufmaß und Montage übernehmen wir. Bei größeren Projekten arbeiten wir mit Netzwerk-Partnern aus dem Handwerk zusammen.
+  topics: [ablauf, beratung]
   order: 1
   review:
+    status: needs-review
+    source: docs/content-inventory.md (/kontakt, Leistungsseiten)
+    note: Ablauf aus den Kontaktoptionen der Altseite abgeleitet (Beratungsgespräch, Angebot). Reihenfolge und Aufmaß-Kosten vom Inhaber bestätigen.
+boeden-arten:
+  question: Welche Holzböden verlegen Sie?
+  answer: Wir verlegen alle gängigen Bodenausführungen, von Stabparkett, Hochkantlamellenparkett, Mosaikparkett und Fertigparkett über Massivdielen und Landhausdielen bis zu Kork und Linoleum. Holzart und Härtegrad wählen wir gemeinsam passend zur Raumnutzung.
+  topics: [boeden]
+  order: 2
+  review:
+    status: needs-review
+    source: docs/content-inventory.md (/leistungen/boden)
+massivdielen-groesse:
+  question: Wie groß können Massivdielen sein?
+  answer: Wir verarbeiten massive Landhausdielen in Längen von bis zu fünf Metern und Breiten von bis zu 60 Zentimetern.
+  topics: [boeden]
+  order: 3
+  review:
+    status: needs-review
+    source: docs/content-inventory.md (/leistungen/boden)
+    note: Maße aus der Altseite, vom Inhaber bestätigen. Die Aussage „in Europa einzigartig“ wurde entfernt.
+altbau-aufarbeiten:
+  question: Können alte Holztreppen und Dielen aufgearbeitet werden?
+  answer: Ja, wir sanieren alte Holztreppen, Vertäfelungen und Holzdielen. Lässt sich eine bestehende Holzkonstruktion nicht erhalten, bauen wir auf Wunsch ein neues, hochwertiges Äquivalent ein.
+  topics: [altbau, treppen, boeden]
+  order: 4
+  review:
+    status: needs-review
+    source: docs/content-inventory.md (/leistungen/altbau)
+fenster-rollladen:
+  question: Übernehmen Sie bei Fenstern auch Rollladen und Fensterbänke?
+  answer: Auf Wunsch übernehmen wir alle anfallenden Leistungen zu Rollladenarbeiten, Fensterbänken und Gurten.
+  topics: [fenster]
+  order: 5
+  review:
+    status: needs-review
+    source: docs/content-inventory.md (/leistungen/fenster)
+einzugsgebiet:
+  question: In welchem Gebiet sind Sie tätig?
+  answer: Unser Sitz ist in Mannheim. Ob Ihr Ort in unserem Einzugsgebiet liegt, klären wir gern kurz am Telefon oder per E-Mail.
+  topics: [kontakt]
+  order: 6
+  review:
     status: placeholder
-    note: Schema-Fixture.
+    note: Einzugsgebiet (Mannheim/Ludwigshafen, Rhein-Neckar?) steht noch nicht fest, siehe Owner-Checkliste. Antwort bewusst ohne Ortsliste.

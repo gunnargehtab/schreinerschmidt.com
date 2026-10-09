@@ -1,10 +1,13 @@
-# Schema fixture (wave 1).
+# The group photo (assets/team/team-gruppe.jpg) has no entry: it needs written consent from everyone pictured and the schema has no slot for unnamed people.
 ulf-schmidt:
   name: Ulf Schmidt
   role: Schreinermeister und Inhaber
   since: 2010
+  bio: Schreiner aus Leidenschaft und Meister seit dem Jahr 2010. Gemeinsam mit meinem Team verwirklichen wir die Wünsche unserer Kunden mit Holzhandwerk. Die Grundlage unserer Arbeit bildet das Vertrauen, das unsere Kunden in uns und unser Handwerk stecken.
+  portrait: ../assets/team/ulf-schmidt.jpg
+  portraitAlt: Ulf Schmidt mit Brille und dunklem Poloshirt, lächelnd in einem Raum im Umbau, dahinter ein Mitarbeiter
   publicationConsent: ausstehend
   review:
     status: needs-review
-    source: docs/content-inventory.md
-    note: Einwilligung zur Veröffentlichung von Name und Foto klären.
+    source: docs/content-inventory.md (/team-karriere)
+    note: Foto hat ungeklärte Herkunft und keine dokumentierte Einwilligung (own-unverified). Der Text ist die Altseiten-Vorstellung in der Ich-Form; das Wort „umweltbewusst“ wurde entfernt (Slogan nach Rechtsprüfung klären).

@@ -1,11 +1,67 @@
-# Schema fixture (wave 1). Replaced by the content-editor in wave 2.
+# Wood species named by the old site/inventory and the owner checklist. Configurator blocks are filled in Phase 3.
 eiche:
   name: Eiche
   latin: Quercus
   origin: heimisch
   certification: []
-  uses: [boeden, treppen]
-  description: 'Platzhalter: Beschreibung der Eiche folgt.'
+  uses: [boeden, treppen, moebel, tueren, altbau]
+  description: Hartes, dichtes Laubholz mit deutlicher Maserung. Wir verarbeiten Eiche für Parkett, Dielen, Treppenstufen und Möbel.
   review:
-    status: placeholder
-    note: Schema-Fixture, Text und Zertifizierung vom Inhaber bestätigen lassen.
+    status: needs-review
+    source: docs/owner-checklist.md (Holzarten)
+    note: Verwendung und Zertifizierung (FSC/PEFC) vom Inhaber bestätigen. Keine Zertifizierung hinterlegt.
+nussbaum:
+  name: Nussbaum
+  latin: Juglans regia
+  origin: heimisch
+  certification: []
+  uses: [moebel]
+  description: Dunkles Laubholz mit lebhafter Zeichnung, bei uns für Möbel im Gespräch.
+  review:
+    status: needs-review
+    source: docs/owner-checklist.md (Holzarten)
+    note: Kandidat für den Konfigurator. Herkunft (europäisch oder amerikanisch), Angebot und Zertifizierung vom Inhaber bestätigen.
+esche:
+  name: Esche
+  latin: Fraxinus excelsior
+  origin: heimisch
+  certification: []
+  uses: [moebel, boeden]
+  description: Helles Laubholz mit kräftiger Maserung, bei uns für Möbel und Böden im Gespräch.
+  review:
+    status: needs-review
+    source: docs/owner-checklist.md (Holzarten)
+    note: Kandidat für den Konfigurator. Angebot und Zertifizierung vom Inhaber bestätigen.
+kernbuche:
+  name: Kernbuche
+  latin: Fagus sylvatica
+  origin: heimisch
+  certification: []
+  uses: [moebel]
+  description: Buche mit rötlichem Kern und lebhafter Farbigkeit. Ein Massivholzbett aus Kernbuche gehört zu unseren Referenzen.
+  review:
+    status: needs-review
+    source: docs/content-inventory.md (Dateiname massivholzbett_in_kernbuche)
+    note: Holzart des Referenzbetts und Zertifizierung vom Inhaber bestätigen.
+kirsche:
+  name: Kirsche
+  latin: Prunus avium
+  origin: heimisch
+  certification: []
+  uses: [moebel]
+  description: Rötlich braunes Laubholz mit feiner Zeichnung, bei uns für Möbel im Gespräch.
+  review:
+    status: needs-review
+    source: docs/owner-checklist.md (Holzarten)
+    note: Kandidat für den Konfigurator. Angebot und Zertifizierung vom Inhaber bestätigen.
+kiefer:
+  name: Kiefer
+  latin: Pinus sylvestris
+  origin: heimisch
+  certification: []
+  uses: [boeden]
+  description: Helles Nadelholz mit Astanteilen und warmer Farbe. Kiefer-Landhausdielen gehören zu unseren Bodenreferenzen.
+  review:
+    status: needs-review
+    source: docs/content-inventory.md (Dateiname kiefer_landhausdielen)
+    note: Verwendung und Zertifizierung vom Inhaber bestätigen.
