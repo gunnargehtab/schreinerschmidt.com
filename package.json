@@ -20,6 +20,7 @@
     "test:e2e": "playwright test",
     "test:links": "node --env-file-if-exists=env/pages.env scripts/check-links.mjs",
     "lighthouse": "node scripts/lighthouse.mjs",
+    "assets:archive": "node scripts/archive-originals.mjs --from-site",
     "assets:migrate": "node scripts/migrate-assets.mjs",
     "verify": "npm run format:check && npm run check && npm run test:unit && npm run build && npm run test:dist && npm run test:e2e && npm run test:links"
   },
