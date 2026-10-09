@@ -702,11 +702,18 @@ No framework; custom elements and event delegation.
   - Kontakt and the danke pages.
   - Legal templates and `/intern/pruefliste/`.
   - The remaining sketches.
+  - **Follow-ups from the Phase 1 review:**
+    - The 404 page gets its 4 section links (design-system §8).
+    - Kontakt reads its NAP from `settings`, with `data-review` marks, instead of hard-coded text. `rating.profileUrl` is rendered only once it is `confirmed`.
+    - Sketch hatching (pass 3) scales with `drawing.strokeWidth` (e.g. ×0.5) instead of a fixed `.75`; it is too faint on hero art.
+    - `check-budgets.mjs`: review the LCP candidate evaluation (1280 px / DPR 1 vs. Lighthouse mobile) once the real hero lands.
+    - The green-claim scan flags the adverb „natürlich“; accept the noise or refine the stem list.
+  - **Phase 3:** add the configurator rows (13 KB / 7 KB) to `ROUTE_BUDGETS` in `check-budgets.mjs`.
 - **Definition of done:**
   - axe, html-validate, link and budget checks are green.
   - The audit build meets the Lighthouse targets.
   - Every page works without JS and in Firefox's fallback mode.
-  - All 8 legacy redirects from §3.1 are active.
+  - All 8 legacy redirects from §3.1 are active. (Done in Phase 1.)
 
 **Phase 5: configurator C + polish**
 - **Scope:**
