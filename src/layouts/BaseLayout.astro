@@ -17,9 +17,7 @@ import SkipLink from '../components/layout/SkipLink.astro';
 type Props = ComponentProps<typeof Seo>;
 
 const base = import.meta.env.BASE_URL;
-// Compat: 404.astro (not in this task) still passes the full "… | Schreinerei Schmidt" title; <Seo> appends the site name.
-const { title, ...rest } = Astro.props;
-const pageTitle = title?.replace(/ \| Schreinerei Schmidt$/, '');
+const props = Astro.props;
 // The header carries `view-transition-name: site-header` by class (motion.css); register it once per page.
 vt(Astro.locals, 'site-header');
 ---
@@ -35,7 +33,7 @@ vt(Astro.locals, 'site-header');
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFBF5" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#160D07" />
-    <Seo title={pageTitle} {...rest} />
+    <Seo {...props} />
     <link rel="expect" href="#main" blocking="render" />
     <Font cssVariable="--font-sans" preload={[{ subset: 'latin' }]} />
     <Font cssVariable="--font-accent" preload={[{ subset: 'latin' }]} />
@@ -52,15 +50,3 @@ vt(Astro.locals, 'site-header');
     <SiteFooter />
   </body>
 </html>
-
-<style is:global>
-  @layer components {
-    /*
-     * Workaround: base.css (`:is(ul, ol) { padding-inline-start: 1.25em }`) sits in a later layer than
-     * reset.css and so beats the `.list-plain` reset. Remove once src/styles/reset.css is fixed.
-     */
-    :is(ul, ol).list-plain {
-      padding-inline-start: 0;
-    }
-  }
-</style>

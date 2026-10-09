@@ -304,7 +304,12 @@ Example: `--space-s: clamp(1rem, 0.9167rem + 0.3704vw, 1.25rem)`. Generate the r
 
 **Sketch → photo** (below the fold only):
 - `scripts/make-sketch-variants.mjs` creates a pixel-aligned pencil version of a photo with sharp: greyscale → edge convolution → invert/levels → espresso-on-cream tint.
-- **Fallback:** if the generated sketches look poor, crossfade from the service illustration instead.
+- **Fallback:** if the generated sketches look poor, crossfade from the service illustration instead. (Phase 1 verdict: the variants are good enough, so keep them.)
+- **As built in Phase 1** (`src/styles/motion.css` is authoritative): the photo's opacity is **never** animated, and there is no `opacity: 0` start state in base CSS.
+  - The sketch layer sits **on top** and is `display: none` outside the motion gate.
+  - Inside the gate, the sketch fades out on the view timeline, and the photo only settles from `scale: 1.03`.
+  - Longhands are used, see §6.
+- The original snippet below is kept for reference; it predates this rule.
 ```css
 .sketch-photo { display: grid; aspect-ratio: var(--ar); overflow: clip; }
 .sketch-photo > * { grid-area: 1 / 1; inline-size: 100%; block-size: 100%; }
@@ -556,7 +561,7 @@ html:has(#site-menu:popover-open) { overflow: hidden; }
 
 **Hard rules:**
 - No `opacity: 0` or other start state in base styles.
-- Write `animation-timeline` **after** the `animation` shorthand.
+- **Use longhands** for scroll-driven animations (`animation-name`, `-timing-function`, `-fill-mode`, then `animation-timeline`). Astro's lightningcss folds a following `animation-timeline` into the `animation` shorthand, where it is reset-only, so browsers drop it (found in Phase 1).
 - Allowed non-compositor exceptions: `stroke-dashoffset` (small SVGs), the hero `clip-path`, counters, details `block-size`.
 
 ### Cross-document view transitions
