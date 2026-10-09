@@ -140,6 +140,13 @@
     }
   }
 
+  /*
+   * Scroll-driven rules use the animation LONGHANDS on purpose. The CSS minifier (lightningcss,
+   * no browser targets in the Astro build) folds a following `animation-timeline` into the
+   * `animation` shorthand, where it is a reset-only sub-property; browsers then drop the whole
+   * declaration and the effect silently never runs. Longhands are left alone.
+   */
+
   /* Sketch draw-on: paths carry pathLength="1"; the dash hides nothing until the keyframe runs. */
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
@@ -149,7 +156,9 @@
 
       .sketch[data-draw~='scroll'] path {
         stroke-dasharray: 1 1.1;
-        animation: draw linear both;
+        animation-name: draw;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --sketch;
         animation-range: entry 0% cover 30%;
       }
@@ -203,7 +212,12 @@
     }
   }
 
-  /* Sketch → photo (below the fold only). Finished state = photo. */
+  /*
+   * Sketch → photo (below the fold only). Finished state = photo, and the photo's opacity is
+   * never animated: the decorative pencil layer lies ON TOP and fades out on the view timeline
+   * while the photo settles from a slight scale. Where that timeline cannot run (Firefox, reduced
+   * motion) the sketch layer is simply not displayed, so the photo is all there is.
+   */
   .sketch-photo {
     display: grid;
     aspect-ratio: var(--ar);
@@ -217,7 +231,7 @@
   }
 
   .sketch-photo__sketch {
-    opacity: 0;
+    display: none;
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -227,13 +241,18 @@
       }
 
       .sketch-photo__sketch {
-        animation: sp-sketch linear both;
+        display: block;
+        animation-name: sp-sketch;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --sp;
         animation-range: entry 0% cover 60%;
       }
 
       .sketch-photo__img {
-        animation: sp-photo linear both;
+        animation-name: sp-photo;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --sp;
         animation-range: cover 30% cover 55%;
       }
@@ -253,7 +272,6 @@
 
   @keyframes sp-photo {
     from {
-      opacity: 0;
       scale: 1.03;
     }
   }
@@ -266,13 +284,17 @@
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: scroll()) {
       .hero__media {
-        animation: hero-open linear both;
+        animation-name: hero-open;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: scroll(root);
         animation-range: 0 50svh;
       }
 
       .site-header .wordmark {
-        animation: shrink linear both;
+        animation-name: shrink;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: scroll(root);
         animation-range: 0 6rem;
         transform-origin: left center;
@@ -281,7 +303,9 @@
 
     @supports (animation-timeline: view()) {
       .reveal > * {
-        animation: fade-up linear both;
+        animation-name: fade-up;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: view();
         animation-range: entry 10% cover 30%;
         animation-range: entry calc(10% + mod(sibling-index() - 1, var(--cols, 3)) * 6%) cover
@@ -317,7 +341,9 @@
       }
 
       .mass[data-draw~='scroll'] .mass__line {
-        animation: mass-draw linear both;
+        animation-name: mass-draw;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --mass;
         animation-range: entry 0% cover 35%;
       }

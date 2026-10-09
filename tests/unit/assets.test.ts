@@ -10,20 +10,25 @@ import {
   ASSET_CATEGORIES,
   ASSET_ROLES,
   CARD_ONLY_EDGE,
+  DERIVED_ROLES,
   PUBLISHABLE_RIGHTS,
   assets,
   findAsset,
   findAssetByPath,
+  findSketchVariant,
   getAsset,
   getProjectAssets,
   getProjectSlugs,
   isAssetRole,
+  isDerived,
   isPublishable,
   type AssetEntry,
 } from '../../src/lib/asset-manifest';
+import { CANDIDATES } from '../../scripts/make-sketch-variants.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const ASSET_DIRS = ['projects', 'services', 'team', 'brand'];
+// Derived files (sketches/, brand/wordmark.png) sit under the same gate as migrated photos.
+const ASSET_DIRS = ['projects', 'services', 'team', 'brand', 'sketches'];
 const MAX_EDGE = 2400;
 
 /** The 15 reference projects of docs/architecture.md §6. */
@@ -51,6 +56,8 @@ const EXCLUDED =
 
 // Read from disk as well, so the gate does not depend on the typed import.
 const manifest = JSON.parse(readFileSync(join(ROOT, 'src/assets/asset-manifest.json'), 'utf8')) as AssetEntry[];
+const migrated = manifest.filter((e) => !isDerived(e));
+const derived = manifest.filter((e) => isDerived(e));
 
 function listFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
@@ -87,7 +94,11 @@ describe('asset manifest: rights gate', () => {
   });
 
   it.each(manifest.map((e) => [e.id, e] as const))('%s lives in the folder of its project/role', (_id, e) => {
-    if (e.project !== null) {
+    if (e.role === 'sketch-variant') {
+      expect(e.output.path).toBe(`src/assets/sketches/${e.derivedFrom}.jpg`);
+    } else if (e.role === 'brand') {
+      expect(e.output.path).toMatch(/^src\/assets\/brand\/[a-z0-9-]+\.png$/);
+    } else if (e.project !== null) {
       expect(PROJECT_SLUGS).toContain(e.project);
       expect(e.output.path).toMatch(new RegExp(`^src/assets/projects/${e.project}/\\d{2}-[a-z0-9-]+\\.jpg$`));
     } else if (e.role === 'brand-reference') {
@@ -107,8 +118,9 @@ describe('asset manifest: rights gate', () => {
     }
   });
 
-  it('matches the allow-list in scripts/asset-sources.mjs', () => {
-    expect(manifest.map((e) => e.id).sort()).toEqual(ASSET_SOURCES.map((s) => s.id).sort());
+  it('matches the allow-list in scripts/asset-sources.mjs (derived entries aside)', () => {
+    expect(migrated.map((e) => e.id).sort()).toEqual(ASSET_SOURCES.map((s) => s.id).sort());
+    for (const e of migrated) expect(e.derivedFrom, e.id).toBeUndefined();
     for (const s of ASSET_SOURCES) {
       const e = manifest.find((m) => m.id === s.id);
       expect(e, s.id).toBeDefined();
@@ -128,6 +140,62 @@ describe('asset manifest: rights gate', () => {
     const e = findAssetByPath('projects/fischgraetparkett-eiche/01-parkett.jpg');
     expect(e?.id).toBe('fischgraetparkett-eiche-01');
     expect(e?.alt.length).toBeGreaterThanOrEqual(12);
+  });
+});
+
+// Derived assets: sketch→photo variants (scripts/make-sketch-variants.mjs) and the wordmark mask
+// (scripts/make-wordmark.mjs). They inherit the rights of a migrated, publishable source.
+describe('derived assets', () => {
+  it('has the five sketch→photo candidates of docs/architecture.md §6 and the wordmark', () => {
+    expect(
+      derived
+        .filter((e) => e.role === 'sketch-variant')
+        .map((e) => e.derivedFrom)
+        .sort(),
+    ).toEqual([...CANDIDATES].sort());
+    expect(derived.filter((e) => e.role === 'brand').map((e) => e.id)).toEqual(['brand-wordmark']);
+    expect(findAsset('brand-wordmark')?.derivedFrom).toBe('brand-logo-reference');
+  });
+
+  it.each(derived.map((e) => [e.id, e] as const))('%s inherits a publishable, migrated source', (_id, e) => {
+    expect(DERIVED_ROLES).toContain(e.role);
+    expect(e.derivedFrom).toBeDefined();
+    const source = migrated.find((m) => m.id === e.derivedFrom);
+    expect(source, `source ${e.derivedFrom}`).toBeDefined();
+    expect(isPublishable(source as AssetEntry)).toBe(true);
+    expect(e.rights).toBe(source?.rights);
+    expect(e.sourceUrl).toBe(source?.sourceUrl);
+    expect(e.sha256).toBe(source?.sha256);
+    expect(e.project).toBe(source?.project ?? null);
+    expect(e.category).toBe(source?.category ?? null);
+    expect(e.rightsEvidence).toContain(`Derived from ${source?.id}`);
+    expect(existsSync(join(ROOT, e.output.path)), e.output.path).toBe(true);
+  });
+
+  it('sketch variants are pixel-aligned with their photo', () => {
+    for (const e of derived.filter((d) => d.role === 'sketch-variant')) {
+      const source = migrated.find((m) => m.id === e.derivedFrom);
+      expect([e.output.w, e.output.h], e.id).toEqual([source?.output.w, source?.output.h]);
+      expect(findSketchVariant(e.derivedFrom as string)?.id).toBe(e.id);
+    }
+    expect(findSketchVariant('team-gruppe')).toBeUndefined();
+  });
+
+  it('the wordmark mask is a tight crop with an alpha channel and no tagline', async () => {
+    const e = findAsset('brand-wordmark') as AssetEntry;
+    const meta = await sharp(join(ROOT, e.output.path)).metadata();
+    expect(meta.hasAlpha).toBe(true);
+    // The wordmark is one block of lettering: wide and flat (the logo's tagline would double the height).
+    expect(e.output.w / e.output.h).toBeGreaterThan(8);
+    const source = findAsset('brand-logo-reference') as AssetEntry;
+    expect(e.output.h).toBeLessThan(source.output.h * 0.7);
+    expect(e.output.w).toBeLessThanOrEqual(source.output.w);
+  });
+
+  it('derived entries never appear as project photos', () => {
+    for (const slug of getProjectSlugs()) {
+      for (const a of getProjectAssets(slug)) expect(isDerived(a), a.id).toBe(false);
+    }
   });
 });
 

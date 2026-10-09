@@ -1,0 +1,22 @@
+---
+// Wordmark (docs/design-system.md §5 SiteHeader): the cropped PNG wordmark
+// (scripts/make-wordmark.mjs) as a CSS mask filled with --wordmark, so it follows the theme, plus
+// visually hidden text. Renders a <span>: the header places it inside its link. The tagline
+// „Umweltbewusstes Holzhandwerk“ is NOT part of this component; it is live text outside the link.
+// The mask URL goes in as a custom property (base-prefixed, same-origin; img-src 'self').
+import wordmark from '../../assets/brand/wordmark.png';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<span
+  class:list={['wordmark', className]}
+  style={`--wordmark-mask: url(${wordmark.src}); --wordmark-ar: ${wordmark.width} / ${wordmark.height}`}
+>
+  <span class="wordmark__img" aria-hidden="true"></span>
+  <span class="wordmark__text visually-hidden">Schreinerei Schmidt</span>
+</span>

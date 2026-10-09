@@ -14,8 +14,15 @@ export const ASSET_ROLES = [
   'portrait',
   'team',
   'brand-reference',
+  // Derived roles: generated from a migrated source (carry `derivedFrom`). See scripts/derived-assets.mjs.
+  'sketch-variant',
+  'brand',
 ] as const;
 export type AssetRole = (typeof ASSET_ROLES)[number];
+
+/** Roles whose entries are derived from another entry and inherit its rights. */
+export const DERIVED_ROLES = ['sketch-variant', 'brand'] as const satisfies readonly AssetRole[];
+export type DerivedRole = (typeof DERIVED_ROLES)[number];
 
 export const ASSET_CATEGORIES = ['moebel', 'boeden', 'treppen', 'fenster', 'tueren', 'altbau', 'terrassen'] as const;
 export type AssetCategory = (typeof ASSET_CATEGORIES)[number];
@@ -25,6 +32,8 @@ export const CARD_ONLY_EDGE = 1200;
 
 export interface AssetEntry {
   id: string;
+  /** Source entry id for derived assets (sketch variants, the wordmark mask); absent otherwise. */
+  derivedFrom?: string;
   sourceUrl: string;
   /** sha256 of the original download. */
   sha256: string;
@@ -74,6 +83,20 @@ export function isAssetRole(role: string): role is AssetRole {
   return (ASSET_ROLES as readonly string[]).includes(role);
 }
 
+export function isDerivedRole(role: string): role is DerivedRole {
+  return (DERIVED_ROLES as readonly string[]).includes(role);
+}
+
+/** True for entries generated from another entry (they never count as project photos). */
+export function isDerived(entry: AssetEntry): boolean {
+  return entry.derivedFrom !== undefined || isDerivedRole(entry.role);
+}
+
+/** The pencil variant of a photo for the sketch→photo reveal, if one was generated. */
+export function findSketchVariant(sourceId: string): AssetEntry | undefined {
+  return assets.find((a) => a.role === 'sketch-variant' && a.derivedFrom === sourceId);
+}
+
 export function findAsset(id: string): AssetEntry | undefined {
   return byId.get(id);
 }
@@ -95,11 +118,11 @@ export function findAssetByPath(path: string): AssetEntry | undefined {
 /** Publishable photos of a project in their NN order (cover first). */
 export function getProjectAssets(project: string): AssetEntry[] {
   return assets
-    .filter((a) => a.project === project && isPublishable(a))
+    .filter((a) => a.project === project && isPublishable(a) && !isDerived(a))
     .sort((a, b) => (a.output.path < b.output.path ? -1 : a.output.path > b.output.path ? 1 : 0));
 }
 
 /** Slugs of all projects that have at least one asset, sorted. */
 export function getProjectSlugs(): string[] {
-  return [...new Set(assets.flatMap((a) => (a.project ? [a.project] : [])))].sort();
+  return [...new Set(assets.flatMap((a) => (a.project && !isDerived(a) ? [a.project] : [])))].sort();
 }

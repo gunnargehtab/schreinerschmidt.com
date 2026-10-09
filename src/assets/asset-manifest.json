@@ -238,6 +238,41 @@
     "notes": "Old 702×107 PNG wordmark. Input for the Phase 1 wordmark mask only; never render it as a photo."
   },
   {
+    "id": "brand-wordmark",
+    "derivedFrom": "brand-logo-reference",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/62fdeca9bdc81d826ce7fa07_Logo.png",
+    "sha256": "1f57637215897cdada5ea2d8d680019ef67eb0f88f68322082acb5db305ba22c",
+    "original": {
+      "w": 702,
+      "h": 107,
+      "bytes": 16225,
+      "exif": {
+        "make": null,
+        "model": null,
+        "date": null,
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/brand/wordmark.png",
+      "w": 700,
+      "h": 63,
+      "bytes": 3833,
+      "sha256": "d9fa3d3613bfd634ea39a82b29fa73c6c044896a71283843a823584f1fee0ad8"
+    },
+    "cardOnly": true,
+    "rights": "own",
+    "rightsEvidence": "Derived from brand-logo-reference (wordmark rows cropped at 1,0 700×63 by scripts/make-wordmark.mjs). No EXIF camera data; no Copyright/Artist tag. Company logo from the old site (reference only, docs/architecture.md §6).",
+    "alt": "",
+    "category": null,
+    "project": null,
+    "role": "brand",
+    "privacyCheck": "pending",
+    "notes": "Alpha mask of the wordmark only (tagline excluded, it is live text). Used by src/components/ui/Wordmark.astro as a CSS mask filled with --wordmark. Replace with the vector logo once the owner supplies it."
+  },
+  {
     "id": "dachausbau-dielen-01",
     "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef58d9f99bd2e50f024b1_2019-09-20.jpg",
     "sha256": "8574aaee322a02cb430121149fcb07972101fdb4df4a7b4e56f550aa3a371eec",
@@ -408,6 +443,41 @@
     "notes": "Sketch→photo candidate. \"Treppe Eiche Massivholz naturgeölt.jpg\" is the same photo and is not migrated."
   },
   {
+    "id": "eichentreppe-01-sketch",
+    "derivedFrom": "eichentreppe-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/6405e88edd1f951832d788d3_IMG_20230203_125350.jpg",
+    "sha256": "f20eed33bce128fe035ecb8080e34700e6c12bc253574d703bef2e04c81e9385",
+    "original": {
+      "w": 2736,
+      "h": 3648,
+      "bytes": 1950108,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "VOG-L29",
+        "date": "2023:02:03 12:53:51",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/sketches/eichentreppe-01.jpg",
+      "w": 1800,
+      "h": 2400,
+      "bytes": 363031,
+      "sha256": "c6e8c663985c6f6f8b07ce88ad9be98fe0a48a07fc771e6dabc579e63710554f"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "Derived from eichentreppe-01 (pencil variant by scripts/make-sketch-variants.mjs). EXIF camera HUAWEI VOG-L29, 2023:02:03 12:53:51; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "treppen",
+    "project": "eichentreppe",
+    "role": "sketch-variant",
+    "privacyCheck": "pending",
+    "notes": "Pixel-aligned pencil variant for the sketch→photo reveal (SketchPhoto). Decorative: the photo carries the alt text."
+  },
+  {
     "id": "einbauschrankwand-01",
     "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/655a0e39754b348afe09d381_20230914_150222_1.jpg",
     "sha256": "2caf59b0a19b8bcaa8bac4c6a3c9312877d32bd7be4209c5ad8ed819f4fa932c",
@@ -440,6 +510,41 @@
     "role": "cover",
     "privacyCheck": "pending",
     "notes": "Closed state of the open/closed toggle. Sketch→photo candidate."
+  },
+  {
+    "id": "einbauschrankwand-01-sketch",
+    "derivedFrom": "einbauschrankwand-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/655a0e39754b348afe09d381_20230914_150222_1.jpg",
+    "sha256": "2caf59b0a19b8bcaa8bac4c6a3c9312877d32bd7be4209c5ad8ed819f4fa932c",
+    "original": {
+      "w": 4000,
+      "h": 3000,
+      "bytes": 1895475,
+      "exif": {
+        "make": "samsung",
+        "model": "Galaxy S23 Ultra",
+        "date": "2023:09:14 15:02:22",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/sketches/einbauschrankwand-01.jpg",
+      "w": 2400,
+      "h": 1800,
+      "bytes": 355134,
+      "sha256": "0279c48e47938c162240a8b47130401acc28da354c40a29d3a9fcf559108d2e6"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "Derived from einbauschrankwand-01 (pencil variant by scripts/make-sketch-variants.mjs). EXIF camera samsung Galaxy S23 Ultra, 2023:09:14 15:02:22; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "moebel",
+    "project": "einbauschrankwand",
+    "role": "sketch-variant",
+    "privacyCheck": "pending",
+    "notes": "Pixel-aligned pencil variant for the sketch→photo reveal (SketchPhoto). Decorative: the photo carries the alt text."
   },
   {
     "id": "einbauschrankwand-02",
@@ -578,6 +683,41 @@
     "notes": "Sketch→photo candidate. Owner to confirm the project."
   },
   {
+    "id": "fischgraetparkett-eiche-01-sketch",
+    "derivedFrom": "fischgraetparkett-eiche-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef5cff7bbf40487275446_Eiche%20Fischgr%C3%A4tparkett.jpg",
+    "sha256": "e36c2ab2aed9cbd6d77944ef642d2b428bbfe056a026cafc922a1ec46667687a",
+    "original": {
+      "w": 2736,
+      "h": 3648,
+      "bytes": 2369641,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "VOG-L29",
+        "date": "2022:07:08 07:41:03",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/sketches/fischgraetparkett-eiche-01.jpg",
+      "w": 1800,
+      "h": 2400,
+      "bytes": 450625,
+      "sha256": "29e6b9d7bdeeded1d015f70f4ca0b901a78fa6800e012e14841d2ddfceea7f4a"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "Derived from fischgraetparkett-eiche-01 (pencil variant by scripts/make-sketch-variants.mjs). EXIF camera HUAWEI VOG-L29, 2022:07:08 07:41:03; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "boeden",
+    "project": "fischgraetparkett-eiche",
+    "role": "sketch-variant",
+    "privacyCheck": "pending",
+    "notes": "Pixel-aligned pencil variant for the sketch→photo reveal (SketchPhoto). Decorative: the photo carries the alt text."
+  },
+  {
     "id": "glasvitrine-01",
     "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/6346804cf202f852c69ff68d_glasvitrine_mit_integrierter_beleuchtung.jpeg",
     "sha256": "7cda56c9bd0f25c82c1972bd9b2cf2947f88d8d0b11c9ff45c66a4bb0f73e090",
@@ -644,6 +784,41 @@
     "role": "cover",
     "privacyCheck": "pending",
     "notes": "Same phone as Team1 (§0 finding 2). EXIF capture date is 2021-03-11; 2023-01-28 (as in §0) is the EXIF edit date (Windows Photo Editor). Sketch→photo candidate."
+  },
+  {
+    "id": "haustuer-gruenderzeit-01-sketch",
+    "derivedFrom": "haustuer-gruenderzeit-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63d5446a83094f1632d1c483_KOWA%20Haust%C3%BCr%20.jpg",
+    "sha256": "4f8b7005d3266839197deb4b093f26f0f86aeb0ef356da56f01c7f72d5264c2d",
+    "original": {
+      "w": 3840,
+      "h": 5120,
+      "bytes": 3165755,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "VOG-L29",
+        "date": "2021:03:11 13:36:35",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/sketches/haustuer-gruenderzeit-01.jpg",
+      "w": 1800,
+      "h": 2400,
+      "bytes": 543201,
+      "sha256": "8bffe3e3b1b2d52b77710a095307bb1f20148a20ad26cdddfed9c9772fafd7e8"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "Derived from haustuer-gruenderzeit-01 (pencil variant by scripts/make-sketch-variants.mjs). EXIF camera HUAWEI VOG-L29, 2021:03:11 13:36:35; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "tueren",
+    "project": "haustuer-gruenderzeit",
+    "role": "sketch-variant",
+    "privacyCheck": "pending",
+    "notes": "Pixel-aligned pencil variant for the sketch→photo reveal (SketchPhoto). Decorative: the photo carries the alt text."
   },
   {
     "id": "haustuer-gruenderzeit-02",
@@ -814,6 +989,41 @@
     "role": "cover",
     "privacyCheck": "pending",
     "notes": "Sketch→photo candidate."
+  },
+  {
+    "id": "shoji-kleiderschrank-01-sketch",
+    "derivedFrom": "shoji-kleiderschrank-01",
+    "sourceUrl": "https://cdn.prod.website-files.com/62e8c86393d73a7acebb0e1f/63cef6593370e506bf289ff5_IMG_20181126_130556.jpg",
+    "sha256": "8249163a98c39f1f13729e1534d4f802dc99135a50b413f6113e8d9d9b11cef0",
+    "original": {
+      "w": 4608,
+      "h": 3456,
+      "bytes": 3637844,
+      "exif": {
+        "make": "HUAWEI",
+        "model": "ANE-LX1",
+        "date": "2018:11:26 13:05:57",
+        "artist": null,
+        "copyright": null,
+        "gps": false
+      }
+    },
+    "output": {
+      "path": "src/assets/sketches/shoji-kleiderschrank-01.jpg",
+      "w": 2400,
+      "h": 1800,
+      "bytes": 294555,
+      "sha256": "cc18659f3c8a34d7c0f5ea133b8bf901aaec1fb476aaca70c9650b7d462408e2"
+    },
+    "cardOnly": false,
+    "rights": "own",
+    "rightsEvidence": "Derived from shoji-kleiderschrank-01 (pencil variant by scripts/make-sketch-variants.mjs). EXIF camera HUAWEI ANE-LX1, 2018:11:26 13:05:57; no Copyright/Artist tag. Rights group \"own\" (company phones 2018–2023, docs/architecture.md §0 finding 3, §6).",
+    "alt": "",
+    "category": "moebel",
+    "project": "shoji-kleiderschrank",
+    "role": "sketch-variant",
+    "privacyCheck": "pending",
+    "notes": "Pixel-aligned pencil variant for the sketch→photo reveal (SketchPhoto). Decorative: the photo carries the alt text."
   },
   {
     "id": "shoji-kleiderschrank-02",

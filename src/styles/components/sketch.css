@@ -1,0 +1,73 @@
+/*
+ * Sketches (docs/design-system.md §3 "Sketch system"): inline SVGs rendered at build time by
+ * src/lib/sketch. The SVG carries fill/stroke/linecap attributes; this file supplies the colours
+ * (the SVG has no <style>) and the layout box. Finished state only; draw-on lives in motion.css.
+ */
+@layer components {
+  .sketch {
+    display: block;
+    inline-size: var(--sketch-size, 100%);
+    max-inline-size: 100%;
+    block-size: auto;
+    color: var(--sketch);
+  }
+
+  /* Pass 4 is the single carpenter's-pencil accent. */
+  .sketch [data-pass='4'] {
+    stroke: var(--accent);
+  }
+
+  /* Sketch → photo: both layers share the grid cell; the photo is the finished state (motion.css). */
+  .sketch-photo img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  /* Wordmark: the cropped PNG as an alpha mask filled with --wordmark (§5 SiteHeader). */
+  .wordmark {
+    display: inline-block;
+    inline-size: var(--wordmark-size, 14rem);
+    max-inline-size: 100%;
+    vertical-align: middle;
+  }
+
+  .wordmark__img {
+    display: block;
+    inline-size: 100%;
+    aspect-ratio: var(--wordmark-ar, 700 / 63);
+    background-color: var(--wordmark);
+    mask: var(--wordmark-mask) center / contain no-repeat;
+  }
+
+  /* No mask support: the hidden text takes over and the box disappears. */
+  @supports not (mask: url('')) {
+    .wordmark__img {
+      display: none;
+    }
+
+    .wordmark .wordmark__text {
+      position: static;
+      inline-size: auto;
+      block-size: auto;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+      font-weight: var(--weight-heading);
+      letter-spacing: 0.04em;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .sketch [data-pass='4'] {
+      stroke: CanvasText;
+    }
+
+    /* The mask keeps working; only the fill would be forced to Canvas (§1.3). */
+    .wordmark__img {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
+  }
+}

@@ -1,0 +1,20 @@
+---
+// Inline hand-drawn SVG from src/lib/sketch, rendered at build time (docs/design-system.md §3).
+// `draw="scroll"` draws on a view timeline, `draw="load"` once after load; both are gated in
+// motion.css and fall back to the finished drawing. The SVG is aria-hidden: name the subject in
+// the surrounding text when it matters.
+import { renderSketch, type SketchName } from '../../lib/sketch';
+
+interface Props {
+  name: SketchName;
+  /** CSS length for the inline size (`--sketch-size`); default 100% of the container. */
+  size?: string;
+  draw?: 'scroll' | 'load';
+  class?: string;
+}
+
+const { name, size, draw, class: className } = Astro.props;
+const svg = renderSketch(name, { class: className, draw, size });
+---
+
+<Fragment set:html={svg} />

@@ -404,14 +404,19 @@ function rightsEvidence(src, p) {
 }
 
 /**
- * Keeps hand-written fields (alt) from an existing manifest entry.
- * @returns {Promise<Map<string, { alt?: string }>>}
+ * Keeps hand-written fields (alt) from an existing manifest entry. Entries with `derivedFrom`
+ * (sketch variants, the wordmark mask; written by scripts/make-sketch-variants.mjs and
+ * scripts/make-wordmark.mjs via scripts/derived-assets.mjs) are not produced here, so they are
+ * carried over unchanged as long as their source is still migrated.
+ * @returns {Promise<Map<string, { id: string, alt?: string, derivedFrom?: string, output?: { path: string } }>>}
  */
 async function readExistingManifest() {
-  /** @type {Map<string, { alt?: string }>} */
+  /** @type {Map<string, { id: string, alt?: string, derivedFrom?: string, output?: { path: string } }>} */
   const map = new Map();
   if (!existsSync(MANIFEST)) return map;
-  const entries = /** @type {{ id: string, alt?: string }[]} */ (JSON.parse(await readFile(MANIFEST, 'utf8')));
+  const entries = /** @type {{ id: string, alt?: string, derivedFrom?: string, output?: { path: string } }[]} */ (
+    JSON.parse(await readFile(MANIFEST, 'utf8'))
+  );
   for (const e of entries) map.set(e.id, e);
   return map;
 }
@@ -550,11 +555,24 @@ async function main() {
       notes: src.notes,
     });
   }
+  // Preserve derived entries (see readExistingManifest); drop those whose source is gone.
+  const migratedIds = new Set(entries.map((e) => e.id));
+  /** @type {string[]} */
+  const derivedPaths = [];
+  for (const e of existing.values()) {
+    if (!e.derivedFrom) continue;
+    if (!migratedIds.has(e.derivedFrom)) {
+      console.warn(`WARN dropping derived entry ${e.id}: source ${e.derivedFrom} is no longer migrated`);
+      continue;
+    }
+    entries.push(/** @type {(typeof entries)[number]} */ (/** @type {unknown} */ (e)));
+    if (e.output?.path) derivedPaths.push(path.join(ROOT, e.output.path));
+  }
   entries.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const manifestChanged = await writeIfChanged(MANIFEST, JSON.stringify(entries, null, 2) + '\n');
 
   // Outputs on disk that the allow-list no longer produces would fail the rights gate; report them.
-  const expected = new Set(ASSET_SOURCES.map((s) => path.join(ASSETS_DIR, s.out)));
+  const expected = new Set([...ASSET_SOURCES.map((s) => path.join(ASSETS_DIR, s.out)), ...derivedPaths]);
   /** @type {string[]} */
   const strays = [];
   for (const top of ['projects', 'services', 'team', 'brand']) {
