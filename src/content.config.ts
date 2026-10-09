@@ -184,12 +184,15 @@ const settings = defineCollection({
     }),
     legal: z.object({
       // Facts, so the production guard can refuse unconfirmed legal data.
-      vatId: fact(z.string()).optional(),
-      economicId: fact(z.string()).optional(),
+      // Required facts; a confirmed `null` means "not applicable". Guard: one of vatId/economicId must be
+      // confirmed non-null (src/lib/review.ts).
+      legalForm: fact(z.string()),
+      vatId: fact(z.string().nullable()),
+      economicId: fact(z.string().nullable()),
       craftsRegisterNo: fact(z.string()),
       professionalTitle: z.string(),
       chamber: z.object({ name: z.string(), address: z.string(), url: z.url() }),
-      liabilityInsurance: fact(z.string()).optional(),
+      liabilityInsurance: fact(z.string().nullable()),
     }),
     review,
   }),

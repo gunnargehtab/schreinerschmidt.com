@@ -443,4 +443,61 @@ describe('production guard', () => {
       expect.arrayContaining(['settings.site.phone', 'settings.site.address', 'jobs.j.baseSalary']),
     );
   });
+
+  describe('legal identity facts', () => {
+    const legalWith = (legal: Record<string, unknown>): ReviewEntry =>
+      settings({
+        legal: {
+          craftsRegisterNo: fact('X', 'confirmed'),
+          professionalTitle: 'Meister',
+          chamber: { name: 'Kammer', address: 'Weg 1', url: 'https://example.test/' },
+          ...legal,
+        },
+        legalName: fact('Muster e. K.', 'confirmed'),
+        review: { status: 'confirmed' },
+      });
+    const decide = (entry: ReviewEntry) =>
+      guardDecision(collectReviewItems({ entries: [entry] }), { demo: false, allowPlaceholders: false });
+
+    it('lists and blocks on placeholder legal form, ids and insurance', () => {
+      const entry = legalWith({
+        legalForm: fact('Platzhalter', 'placeholder'),
+        vatId: fact(null, 'placeholder'),
+        economicId: fact(null, 'placeholder'),
+        liabilityInsurance: fact(null, 'placeholder'),
+      });
+      const items = collectReviewItems({ entries: [entry] });
+      for (const f of ['legalForm', 'vatId', 'economicId', 'liabilityInsurance']) {
+        expect(byPath(items, `settings.site.legal.${f}`)).toMatchObject({ area: 'Rechtliches', guard: 'legal' });
+      }
+      const d = decide(entry);
+      expect(d.outcome).toBe('fail');
+      expect(d.blocking.map((i) => i.path)).toContain('settings.site.legal.vatId');
+    });
+
+    it('passes with a confirmed vatId, a confirmed-null economicId and confirmed-null insurance', () => {
+      const d = decide(
+        legalWith({
+          legalForm: fact('e. K.', 'confirmed'),
+          vatId: fact('DE000', 'confirmed'),
+          economicId: fact(null, 'confirmed'),
+          liabilityInsurance: fact(null, 'confirmed'),
+        }),
+      );
+      expect(d.outcome).toBe('pass');
+    });
+
+    it('blocks when both ids are confirmed null', () => {
+      const d = decide(
+        legalWith({
+          legalForm: fact('e. K.', 'confirmed'),
+          vatId: fact(null, 'confirmed'),
+          economicId: fact(null, 'confirmed'),
+          liabilityInsurance: fact(null, 'confirmed'),
+        }),
+      );
+      expect(d.outcome).toBe('fail');
+      expect(d.blocking[0]?.path).toContain('legal.vatId');
+    });
+  });
 });
