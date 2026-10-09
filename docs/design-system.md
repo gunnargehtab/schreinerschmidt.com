@@ -142,7 +142,7 @@ Rules:
 - **Unsupported features:**
   - Red Hat Display has **no `smcp`**, so never use `font-variant-caps`.
   - Fraunces has no `tnum`, so never use it for numbers.
-- **Loading** (Astro Fonts API, `fontProviders.npm({ remote: false })`):
+- **Loading** (Astro Fonts API, `fontProviders.npm({ remote: false })` wrapped in `fontsourceLocal()`; see architecture §0.6):
 
   | Font | Weight | Style | Display | Subsets | Preload |
   |---|---|---|---|---|---|

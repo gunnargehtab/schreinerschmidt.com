@@ -88,7 +88,7 @@ Checked on 2026-10-09. Pin exactly with `npm i -E`.
 | @astrojs/markdown-satteri | 0.4.3 | Turn off smart quotes (German „…“ are authored by hand) |
 | @astrojs/sitemap | 3.7.4 | Production builds only |
 | three / @types/three | 0.186.1 / 0.186.0 | Configurator only; `WebGLRenderer` |
-| @fontsource-variable/red-hat-display, @fontsource-variable/fraunces | 5.3.0 | Via the Astro Fonts API `fontProviders.npm({ remote: false })`: offline and self-hosted |
+| @fontsource-variable/red-hat-display, @fontsource-variable/fraunces | 5.3.0 | Via the Astro Fonts API, `fontProviders.npm({ remote: false })` wrapped in `fontsourceLocal()` (see architecture §0.6): offline and self-hosted |
 | roughjs | 4.6.6 | **Build time only.** Generates the hand-drawn SVG sketches; zero runtime JS |
 | dev: typescript | **6.0.3** | **Not 7.x**: the @astrojs/check 0.9.10 peer is `^5 \|\| ^6` |
 | dev: @astrojs/check | 0.9.10 | |
@@ -682,6 +682,11 @@ No framework; custom elements and event delegation.
   - The migration script and manifest, and the sketch-variant script.
   - The rough.js pipeline with the first 3 drawings.
   - All CI gates live.
+  - **Follow-ups from the Phase 0 review:**
+    - Replace Astro's generated redirect pages, which have English copy, no `lang`, no charset, no CSP and a canonical even in demo mode. Use `src/pages/[...legacy].astro` over `legacyRedirects`: German copy, `lang="de"`, meta refresh, noindex and no canonical. Then drop `redirects` from the config and re-enable html-validate's `doctype-style`.
+    - Unit-test the forward/back/lateral/reload classifier in `vtTypesScript` with stubbed activations, or factor it into an exported pure function.
+    - Specs for the Playwright `no-js` and `a11y` projects.
+    - A `test:dist:audit` script with `env/audit.env`, together with `quality.yml`, `scripts/lighthouse.mjs` and `scripts/migrate-assets.mjs`.
 - **Definition of done:**
   - Every gate is green on placeholder pages.
   - The migration is reproducible and the manifest cross-check passes.
@@ -701,6 +706,7 @@ No framework; custom elements and event delegation.
   - axe, html-validate, link and budget checks are green.
   - The audit build meets the Lighthouse targets.
   - Every page works without JS and in Firefox's fallback mode.
+  - All 8 legacy redirects from §3.1 are active.
 
 **Phase 5: configurator C + polish**
 - **Scope:**

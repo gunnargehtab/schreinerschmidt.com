@@ -94,11 +94,19 @@ test.describe('fonts', () => {
     await page.goto('');
     await page.evaluate(() => document.fonts.ready);
     await page.waitForLoadState('networkidle');
+    await page.evaluate(() => document.fonts.ready);
     expect(fonts.length).toBeGreaterThan(0);
     for (const pathname of fonts) {
       expect(pathname, `${pathname} is woff2`).toMatch(/\.woff2$/);
       expect(pathname.startsWith(base), `${pathname} is under ${base}`).toBe(true);
     }
+
+    // One preloaded latin file per family (Red Hat Display, Fraunces); nothing else is fetched.
+    const preloaded = await page
+      .locator('link[rel=preload][as=font]')
+      .evaluateAll((links) => links.map((link) => new URL((link as HTMLLinkElement).href).pathname));
+    expect(preloaded).toHaveLength(2);
+    expect([...new Set(fonts)].sort()).toEqual([...preloaded].sort());
   });
 });
 

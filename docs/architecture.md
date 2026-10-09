@@ -13,7 +13,9 @@ This document is the authoritative technical reference. It complements `docs/pla
 5. **CSP hashing.** Astro only hashes the scripts and styles it processes itself; `is:inline` is never hashed.
    - JSON-LD is not subject to `script-src`.
    - Inline speculation rules **are** subject to it.
-6. **Fonts.** `fontProviders.npm({ remote: false })` reads `@fontsource-variable/*` from `node_modules`, so builds work offline and are pinned by the lockfile.
+6. **Fonts.** `fontProviders.npm({ remote: false })` alone is **not** offline: it reads the `@fontsource-variable/*` CSS from `node_modules`, but unifont then rewrites every `src` to jsdelivr. Its faces also carry no subset, so `subsets` doesn't filter and `<Font preload={[{subset:'latin'}]}>` emits nothing, and the package CSS's `font-display: swap` overrides the family's `display`.
+   - `astro.config.mjs` therefore wraps it in **`fontsourceLocal()`**. The wrapper maps the jsdelivr URLs back to `node_modules` files, derives the subset from the file name, drops unrequested subsets and removes the package's `display`. **Don't simplify it away.**
+   - Result: offline builds pinned by the lockfile, latin + latin-ext faces only, one latin preload per family, and Fraunces gets `optional`.
 7. **Structured data.**
    - FAQ rich results are gone, so `FAQPage` markup is optional.
    - JobPosting is only allowed on a single-job page, hence `/karriere/[slug]/`.
@@ -111,11 +113,12 @@ export default defineConfig({
 });
 ```
 - **Do not** enable `experimental.incrementalBuild`. Its cache key ignores env values.
-- **Risks to check in Phase 0:**
-  - the font family names (the " Variable" suffix);
-  - the satteri option keys;
-  - the `style-src-attr` directive;
-  - the CSP hash behaviour.
+- **Phase 0 findings** (the skeleton above predates them; `astro.config.mjs` is authoritative):
+  - **Font family names:** the " Variable" suffix is correct. `provider` is `fontsourceLocal()`, not the bare npm provider (see §0.6).
+  - **Satteri option keys:** they match the skeleton.
+  - **`style-src-attr`:** Astro rejects `script-src*`/`style-src*` in `directives`. Use `styleDirective: { resources: [{ resource: "'unsafe-inline'", kind: 'attribute' }] }`.
+  - **CSP meta position:** Astro emits the CSP `<meta>` at `</head>`, after our inline scripts and font styles, so the policy wouldn't cover them. A post-build step moves it directly after `<meta charset>`, and a dist test guards the order.
+  - **Shiki:** `markdown.syntaxHighlight: false`, because its inline styles would violate the CSP.
 - **Fallback:** if CSP blocks progress, drop `security.csp` for the demo.
 
 ## 3. Single-source inline scripts (`src/lib/inline-scripts.mjs`)

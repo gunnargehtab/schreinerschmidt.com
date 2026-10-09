@@ -105,4 +105,4 @@ jobs:
           curl -fsS "$URL" | grep -q 'name="robots" content="noindex'
           test "$(curl -s -o /dev/null -w '%{http_code}' "${URL%/}")" = 301
           test "$(curl -s -o /dev/null -w '%{http_code}' "${URL}gibt-es-nicht/")" = 404
-          curl -s -o /dev/null -w 'POST -> %{http_code} (expect 405)\n' -X POST "$URL"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL")" = 405
