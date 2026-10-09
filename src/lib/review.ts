@@ -393,6 +393,26 @@ export function collectReviewItems({ entries, assets = [], sources = [] }: Revie
       });
     });
 
+    // 2b. Either USt-IdNr. or Wirtschafts-IdNr. must end up confirmed with a value (Impressum, § 5 DDG).
+    if (collection === 'settings' && isRecord(data['legal'])) {
+      const ids = (['vatId', 'economicId'] as const).map((k) => data['legal'] && (data['legal'] as Data)[k]);
+      const covered = ids.some((f) => isFact(f) && f.status === 'confirmed' && f.value !== null && f.value !== '');
+      const placeholderFlagged = ids.some((f) => isFact(f) && f.status === 'placeholder');
+      if (!covered && !placeholderFlagged) {
+        items.push({
+          area: 'Rechtliches',
+          collection,
+          id,
+          path: `${prefix}.legal.vatId / ${prefix}.legal.economicId`,
+          status: 'placeholder',
+          note: 'USt-IdNr. (§ 27a UStG) oder Wirtschafts-IdNr. muss bestätigt und eingetragen sein.',
+          kind: 'fact',
+          page: 'impressum/',
+          guard: 'legal',
+        });
+      }
+    }
+
     // 3. Settings fields without their own fact() inherit the entry status (legal and contact data).
     if (collection === 'settings' && entryReview.status !== 'confirmed') {
       const plain: [string, unknown][] = [

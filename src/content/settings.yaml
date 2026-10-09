@@ -49,6 +49,22 @@ site:
       status: placeholder
       note: Link zum Google-Profil fehlt.
   legal:
+    legalForm:
+      value: Platzhalter
+      status: placeholder
+      note: Rechtsform (z. B. Einzelunternehmen oder e. K.) vom Inhaber, siehe docs/owner-checklist.md (Rechtliches).
+    vatId:
+      value: null
+      status: placeholder
+      note: USt-IdNr. nach § 27a UStG vom Inhaber, siehe docs/owner-checklist.md (Rechtliches). Ohne USt-IdNr. stattdessen die Wirtschafts-IdNr.
+    economicId:
+      value: null
+      status: placeholder
+      note: Wirtschafts-IdNr., falls keine USt-IdNr. vorhanden ist, siehe docs/owner-checklist.md (Rechtliches).
+    liabilityInsurance:
+      value: null
+      status: placeholder
+      note: Berufshaftpflicht (Versicherer, Geltungsbereich) vom Inhaber oder „nicht zutreffend“ bestätigen, siehe docs/owner-checklist.md (Rechtliches).
     craftsRegisterNo:
       value: Platzhalter
       status: placeholder
