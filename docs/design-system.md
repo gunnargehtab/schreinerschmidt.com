@@ -332,6 +332,8 @@ Example: `--space-s: clamp(1rem, 0.9167rem + 0.3704vw, 1.25rem)`. Generate the r
   - `utilities.css`
   - `motion.css`
   - `print.css`
+- **Import order (load-bearing):** every layout (`BaseLayout`, `PageLayout`, `LegalLayout`) imports `../styles/global.css` as its **first** frontmatter import. Astro orders a page's CSS by cumulative import index, so a later import would let a component's `@layer components {}` block land first and demote that layer.
+- **Lists without bullets:** use `.list-plain`, which keeps Safari's list semantics through `list-style-type: ''`, instead of `role="list"`, which html-validate rejects as redundant.
 - **Global vs scoped:**
   - Global: anything shared or rendered by JS (buttons, form controls, Maßlinie, motion and view-transition rules).
   - Astro scoped `<style>` for component visuals, **wrapped in `@layer components {}`**.

@@ -72,7 +72,7 @@ const isCharsetMeta = (/** @type {string} */ tag) => IS_CHARSET_META.test(tag.re
 /**
  * Astro injects the CSP `<meta>` at the end of `<head>`, after our inline scripts, the font styles
  * and preloads. A meta policy only governs content parsed after it, so move it directly behind
- * `<meta charset>`. Pages without a CSP meta (Astro's redirect pages) stay untouched.
+ * `<meta charset>`. Pages without a CSP meta stay untouched.
  * @returns {import('astro').AstroIntegration}
  */
 function cspMetaFirst() {

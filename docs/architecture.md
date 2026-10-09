@@ -11,7 +11,7 @@ This document is the authoritative technical reference. It complements `docs/pla
    - Company phones, 2018–2023, at 2736–4000 px.
    - An Oct-2022 upload batch: Fujifilm photos from about 2010–2012 at **800×600**. `2019-09-20.jpg` is only 540×420.
    - Use the legacy photos for cards only. Confirm they show Schreinerei Schmidt projects; anything else would be misleading advertising under the UWG.
-4. **Astro static redirects ignore `base`.** Add the base to destinations manually.
+4. **Astro static redirects ignore `base`** and emit English pages with no `lang`, charset or CSP. Since Phase 1, `config.redirects` is not used. `src/pages/[...legacy].astro` renders German meta-refresh pages from `src/data/redirects.mjs` with base-prefixed targets.
 5. **CSP hashing.** Astro only hashes the scripts and styles it processes itself; `is:inline` is never hashed.
    - JSON-LD is not subject to `script-src`.
    - Inline speculation rules **are** subject to it.
@@ -114,6 +114,8 @@ export default defineConfig({
   integrations: DEMO ? [] : [sitemap({ filter: (p) => !p.endsWith('/danke/') })],
 });
 ```
+- **Phase 1 changes to this skeleton:** no `redirects` / `withBase` (see §0.4). The `cspMetaFirst()` integration is always on.
+- **The vt direction classifier** lives in `inline-scripts.mjs` as a source *string*, `classifyNavigationSource`. `vtTypesScript()` inlines that string, and the exported `classifyNavigation` is built from it with `new Function` at build time, for tests only. `Function.prototype.toString` can't be used, because Astro's bundler reprints function bodies, which breaks the CSP hash. The module never reaches the client, whose CSP forbids eval.
 - **Do not** enable `experimental.incrementalBuild`. Its cache key ignores env values.
 - **Phase 0 findings** (the skeleton above predates them; `astro.config.mjs` is authoritative):
   - **Font family names:** the " Variable" suffix is correct. `provider` is `fontsourceLocal()`, not the bare npm provider (see §0.6).
@@ -470,7 +472,7 @@ jobs:
 - the asset-manifest cross-check and the no-EXIF check
 
 ## 12. Risk register
-- **R1:** redirects ignore the base → `withBase()` plus a dist test.
+- **R1:** redirects ignore the base → own redirect pages (`[...legacy].astro`) plus a dist test.
 - **R2:** inline scripts aren't hashed → single source plus a hash test.
 - **R3:** stray SVG styles → SVGO plus html-validate.
 - **R4:** JSX whitespace → `compressHTML: true` plus the canary test.
