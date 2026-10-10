@@ -1,0 +1,46 @@
+---
+// One form row (design-system §5 "Forms"): visible label above the control, "(Pflichtfeld)" as text,
+// optional hint, then the inline error. The error stays hidden until the control is :user-invalid
+// or flagged by enhance.ts (`.is-invalid`, aria-invalid). The control goes into the default slot and
+// references `${id}-hint` / `${id}-error` (see TextField, TextArea, Select, FileField).
+import { REQUIRED_TEXT } from './mode';
+import { MESSAGES } from '../../scripts/forms/messages.de';
+
+interface Props {
+  /** id of the control the label points to. */
+  id: string;
+  label: string;
+  required?: boolean;
+  hint?: string | undefined;
+  /** Static error text, shown without JS; enhance.ts replaces it with the specific message. */
+  error?: string | undefined;
+  requiredText?: string | undefined;
+  class?: string | undefined;
+}
+
+const {
+  id,
+  label,
+  required = false,
+  hint,
+  error = MESSAGES.required,
+  requiredText = REQUIRED_TEXT,
+  class: className,
+} = Astro.props;
+---
+
+<div class:list={['field', className]} data-label={label}>
+  <label class="field__label" for={id}>
+    {label}
+    {required && <span class="field__required">{requiredText}</span>}
+  </label>
+  {hint && (
+    <p class="field__hint" id={`${id}-hint`}>
+      {hint}
+    </p>
+  )}
+  <p class="field__error" id={`${id}-error`}>
+    {error}
+  </p>
+  <slot />
+</div>

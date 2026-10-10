@@ -1,0 +1,13 @@
+---
+// Live region for the send state (role="status"). The region is in the page from the start, so
+// screen readers announce the message enhance.ts writes into the (initially hidden) paragraph.
+interface Props {
+  id?: string;
+}
+
+const { id } = Astro.props;
+---
+
+<div class="form-status-region" id={id} role="status" data-form-status>
+  <p class="form-status" hidden></p>
+</div>

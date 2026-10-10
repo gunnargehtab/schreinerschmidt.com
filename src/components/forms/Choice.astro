@@ -1,0 +1,71 @@
+---
+// Checkbox or radio group as fieldset/legend (design-system §5). The whole label row is the target.
+// `required`: radios need one choice (native); a checkbox group may only be required with a single
+// box (e.g. a confirmation), because "at least one of several" has no native constraint.
+import { MESSAGES } from '../../scripts/forms/messages.de';
+import { REQUIRED_TEXT, describedBy } from './mode';
+
+interface Option {
+  value: string;
+  label: string;
+  checked?: boolean;
+}
+
+interface Props {
+  type: 'radio' | 'checkbox';
+  name: string;
+  legend: string;
+  options: (Option | string)[];
+  /** Prefix for the option ids (`${id}-0`, `${id}-1`, …). */
+  id?: string;
+  required?: boolean;
+  hint?: string;
+  error?: string;
+  requiredText?: string;
+  class?: string;
+}
+
+const {
+  type,
+  name,
+  legend,
+  options,
+  id = `f-${name}`,
+  required = false,
+  hint,
+  requiredText = REQUIRED_TEXT,
+  class: className,
+} = Astro.props;
+const items: Option[] = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+if (required && type === 'checkbox' && items.length > 1) {
+  throw new Error(`Choice "${name}": a checkbox group can only be required with a single box`);
+}
+// Several checkboxes share one name, submitted as a list: `name[]` (html-validate form-dup-name).
+const fieldName = type === 'checkbox' && items.length > 1 && !name.endsWith('[]') ? `${name}[]` : name;
+const error = Astro.props.error ?? (type === 'radio' ? MESSAGES.choose : MESSAGES.confirm);
+---
+
+<fieldset
+  class:list={['field', 'choice-group', className]}
+  data-label={legend}
+  aria-describedby={describedBy(hint && `${id}-hint`)}
+>
+  <legend>
+    {legend}
+    {required && <span class="field__required">{requiredText}</span>}
+  </legend>
+  {hint && (
+    <p class="field__hint" id={`${id}-hint`}>
+      {hint}
+    </p>
+  )}
+  <p class="field__error" id={`${id}-error`}>
+    {error}
+  </p>
+  {items.map((o, i) => (
+    <label class="choice">
+      <input type={type} id={`${id}-${i}`} name={fieldName} value={o.value} checked={o.checked} required={required} />
+      {o.label}
+    </label>
+  ))}
+</fieldset>

@@ -1,0 +1,75 @@
+---
+// Native <select> inside a <Field>. Where `appearance: base-select` is supported, forms.css turns
+// it into the customisable picker (inside @supports); elsewhere it is a styled native select.
+import Field from './Field.astro';
+import { describedBy } from './mode';
+import { MESSAGES } from '../../scripts/forms/messages.de';
+
+interface Option {
+  value: string;
+  label: string;
+  selected?: boolean;
+  disabled?: boolean;
+}
+
+interface Props {
+  name: string;
+  label: string;
+  options: (Option | string)[];
+  id?: string;
+  required?: boolean;
+  /** Leading empty option; with `required`, choosing it fails validation. Pass `false` to omit it. */
+  placeholder?: string | false;
+  hint?: string;
+  error?: string;
+  autocomplete?: string;
+  requiredText?: string;
+  class?: string;
+}
+
+const {
+  name,
+  label,
+  options,
+  id = `f-${name}`,
+  required = false,
+  placeholder = 'Bitte wählen',
+  hint,
+  error = MESSAGES.choose,
+  autocomplete,
+  requiredText,
+  class: className,
+} = Astro.props;
+const items: Option[] = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+const preselected = items.some((o) => o.selected);
+---
+
+<Field
+  id={id}
+  label={label}
+  required={required}
+  hint={hint}
+  error={error}
+  requiredText={requiredText}
+  class={className}
+>
+  <select
+    class="select"
+    id={id}
+    name={name}
+    required={required}
+    autocomplete={autocomplete}
+    aria-describedby={describedBy(hint && `${id}-hint`)}
+  >
+    {placeholder !== false && (
+      <option value="" selected={!preselected}>
+        {placeholder}
+      </option>
+    )}
+    {items.map((o) => (
+      <option value={o.value} selected={o.selected} disabled={o.disabled}>
+        {o.label}
+      </option>
+    ))}
+  </select>
+</Field>

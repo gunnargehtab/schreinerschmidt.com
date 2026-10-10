@@ -1,0 +1,108 @@
+---
+// Static location map (design-system §5 "Other components", plan §7): a self-hosted image made
+// once by scripts/make-static-map.mjs from OpenStreetMap tiles, a visible OSM attribution and
+// links out to OSM. Nothing external loads until the visitor clicks a link.
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { getEntry } from 'astro:content';
+import defaultMap from '../../assets/map/kontakt.avif';
+
+interface Props {
+  /** Defaults to "Kartenausschnitt mit Markierung bei {Adresse}" from the settings. */
+  alt?: string;
+  image?: ImageMetadata;
+  /** Pin position; defaults to MAP_POINT in scripts/make-static-map.mjs (needs-review there). */
+  lat?: number;
+  lon?: number;
+  routeLabel?: string;
+  mapLabel?: string;
+  attribution?: string;
+  sizes?: string;
+  class?: string;
+}
+
+const site = (await getEntry('settings', 'site'))?.data;
+if (!site) throw new Error('StaticMap: settings entry "site" is missing');
+const address = `${site.address.street}, ${site.address.postalCode} ${site.address.city}`;
+
+const {
+  alt = `Kartenausschnitt mit Markierung bei ${address}`,
+  image = defaultMap,
+  // Keep in sync with MAP_POINT in scripts/make-static-map.mjs.
+  lat = 49.4907376,
+  lon = 8.5231086,
+  routeLabel = 'Route planen',
+  mapLabel = 'Größere Karte',
+  attribution = '© OpenStreetMap-Mitwirkende',
+  sizes = '(min-width: 40rem) 40rem, 100vw',
+  class: className,
+} = Astro.props;
+
+const point = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+const routeHref = `https://www.openstreetmap.org/directions?to=${encodeURIComponent(point)}`;
+const mapHref = `https://www.openstreetmap.org/?mlat=${lat.toFixed(5)}&mlon=${lon.toFixed(5)}#map=17/${lat.toFixed(5)}/${lon.toFixed(5)}`;
+---
+
+<figure class:list={['static-map', className]} data-review="needs-review">
+  <Picture
+    src={image}
+    alt={alt}
+    widths={[image.width]}
+    sizes={sizes}
+    formats={['avif']}
+    fallbackFormat="webp"
+    quality={80}
+    loading="lazy"
+    decoding="async"
+  />
+  <figcaption class="static-map__caption">
+    <a class="static-map__route" href={routeHref}>
+      {routeLabel}
+    </a>
+    <a href={mapHref}>{mapLabel}</a>
+    <a class="static-map__credit" href="https://www.openstreetmap.org/copyright">
+      {attribution}
+    </a>
+  </figcaption>
+</figure>
+
+<style>
+  @layer components {
+    .static-map {
+      margin: 0;
+      max-inline-size: 40rem;
+    }
+
+    .static-map :global(img) {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+      border: var(--rule-strong);
+      background: var(--surface-alt);
+    }
+
+    .static-map__caption {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2xs) var(--space-s);
+      margin-block-start: var(--space-2xs);
+      font-size: var(--step--1);
+    }
+
+    .static-map__caption a {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--target-min);
+    }
+
+    .static-map__route {
+      font-weight: var(--weight-ui);
+    }
+
+    .static-map__credit {
+      margin-inline-start: auto;
+      color: var(--ink-muted);
+    }
+  }
+</style>

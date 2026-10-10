@@ -102,8 +102,28 @@
   }
 
   .field:has(:user-invalid) .field__error,
-  .field:has([aria-invalid='true']) .field__error {
+  .field:has([aria-invalid='true']) .field__error,
+  .field.is-invalid .field__error {
     display: flex;
+  }
+
+  /* File input: the native button styled like a secondary button. */
+  .input--file {
+    padding-block: 0.375em;
+    cursor: pointer;
+  }
+
+  .input--file::file-selector-button {
+    min-block-size: 2rem;
+    margin-inline-end: var(--space-xs);
+    padding: 0.25em 0.75em;
+    font: inherit;
+    font-weight: var(--weight-ui);
+    color: var(--ink);
+    background: var(--surface-alt);
+    border: var(--hairline) solid var(--line-strong);
+    border-radius: 0;
+    cursor: pointer;
   }
 
   /* Select: customizable picker where supported, styled native select elsewhere. */
@@ -195,6 +215,70 @@
 
   .error-summary a {
     color: var(--error);
+  }
+
+  .error-summary:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .error-summary__title {
+    font-size: var(--step-1);
+    margin: 0;
+  }
+
+  .error-summary__list,
+  .error-summary__contact {
+    margin-block: var(--space-2xs) 0;
+    padding-inline-start: 1.25em;
+  }
+
+  .error-summary__list:empty {
+    display: none;
+  }
+
+  .error-summary__list a,
+  .error-summary__contact a {
+    display: inline-block;
+    padding-block: var(--space-3xs);
+    font-weight: var(--weight-ui);
+  }
+
+  .error-summary > * + * {
+    margin-block-start: var(--space-2xs);
+  }
+
+  .error-summary__contact a {
+    color: inherit;
+  }
+
+  /* FormStatus: the region itself is unstyled; enhance.ts puts a .form-status box in it. */
+  .form-status {
+    margin: 0;
+  }
+
+  .form__notice {
+    padding: var(--space-2xs) var(--space-s);
+    font-size: var(--step--1);
+    font-weight: var(--weight-ui);
+    border: var(--hairline) dashed var(--line-strong);
+  }
+
+  .form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  /* Honeypot: off-screen by class (never display:none or an inline style), see Honeypot.astro. */
+  .form-hp {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   @media (forced-colors: active) {

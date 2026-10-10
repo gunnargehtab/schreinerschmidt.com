@@ -1,0 +1,128 @@
+---
+// TEST-ONLY fixture for tests/e2e/forms.spec.ts and the axe sweep: every form field type, in demo
+// mode (the build mode) and once in live mode against an unreachable endpoint, plus the static map.
+// Demo builds only (noindex, /intern/); `npm run build:audit` (PUBLIC_DEMO=false) emits nothing.
+// The live form posts to `*.example.invalid`, which can never resolve, and the demo CSP
+// (form-action/connect-src 'self') blocks it anyway; the e2e spec bypasses CSP and fulfils the
+// request with page.route(), so nothing ever leaves the test browser.
+import { PUBLIC_DEMO } from 'astro:env/client';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Choice from '../../../components/forms/Choice.astro';
+import FileField from '../../../components/forms/FileField.astro';
+import FormShell from '../../../components/forms/FormShell.astro';
+import Select from '../../../components/forms/Select.astro';
+import TextArea from '../../../components/forms/TextArea.astro';
+import TextField from '../../../components/forms/TextField.astro';
+import StaticMap from '../../../components/ui/StaticMap.astro';
+import { url } from '../../../lib/url';
+
+export function getStaticPaths() {
+  return PUBLIC_DEMO ? [{ params: { demo: undefined } }, { params: { demo: 'danke' } }] : [];
+}
+
+const danke = Astro.params.demo === 'danke';
+const LIVE_ENDPOINT = 'https://formular.example.invalid/s/fixture';
+const services = [
+  { value: 'moebel', label: 'Möbel' },
+  { value: 'boeden', label: 'Böden' },
+  { value: 'treppen', label: 'Treppen' },
+];
+---
+
+{danke ? (
+  <BaseLayout
+    title="Formular-Test: gesendet"
+    description="Interne Testseite: Ziel der Weiterleitung nach dem Senden des Live-Testformulars."
+    noindex
+  >
+    <section class="section">
+      <div class="stack stack--m">
+        <p class="eyebrow">Intern · Test</p>
+        <h1>Gesendet (Testseite)</h1>
+        <p>
+          <a href={url('intern/formular/')}>Zurück zum Testformular</a>
+        </p>
+      </div>
+    </section>
+  </BaseLayout>
+) : (
+  <BaseLayout
+    title="Formular-Test"
+    description="Interne Testseite für die Formular-Bausteine: alle Feldtypen im Demo- und im Live-Modus."
+    noindex
+  >
+    <section class="section">
+      <div class="stack stack--m">
+        <p class="eyebrow">Intern · Test</p>
+        <h1>Formular-Testseite</h1>
+        <p class="lead">Alle Feldtypen für die automatischen Tests. Diese Seite gibt es nur im Entwurf.</p>
+      </div>
+    </section>
+
+    <section class="section section--alt" aria-labelledby="demo-heading">
+      <div class="wrap wrap--narrow stack stack--m">
+        <h2 id="demo-heading">Demo-Modus</h2>
+        <FormShell
+          id="demo-form"
+          danke="intern/formular/danke/"
+          labelledby="demo-heading"
+          submitLabel="Testanfrage senden"
+        >
+          <TextField name="name" id="demo-name" preset="name" required />
+          <TextField name="email" id="demo-email" preset="email" required />
+          <TextField name="telefon" id="demo-tel" preset="tel" hint="Für Rückfragen, freiwillig." />
+          <TextField name="plz" id="demo-plz" preset="plz" required />
+          <TextField name="ort" id="demo-ort" preset="ort" />
+          <Select name="leistung" id="demo-leistung" label="Leistung" options={services} required />
+          <Choice
+            type="radio"
+            name="kontaktweg"
+            id="demo-kontaktweg"
+            legend="Bevorzugter Kontaktweg"
+            options={[
+              { value: 'telefon', label: 'Telefon' },
+              { value: 'email', label: 'E-Mail' },
+            ]}
+            required
+          />
+          <Choice
+            type="checkbox"
+            name="interesse"
+            id="demo-interesse"
+            legend="Weitere Themen"
+            options={['Aufmaß vor Ort', 'Montage']}
+          />
+          <TextArea name="nachricht" id="demo-nachricht" label="Nachricht" required minlength={10} />
+          <FileField name="unterlagen" id="demo-unterlagen" label="Unterlagen" />
+        </FormShell>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="live-heading">
+      <div class="wrap wrap--narrow stack stack--m">
+        <h2 id="live-heading">Live-Modus (Testendpunkt)</h2>
+        <p>Sendet an einen Testendpunkt, der nie erreichbar ist. Nur für die automatischen Tests.</p>
+        <FormShell
+          id="live-form"
+          danke="intern/formular/danke/"
+          subject="Testanfrage"
+          labelledby="live-heading"
+          mode="live"
+          endpoint={LIVE_ENDPOINT}
+          submitLabel="Live-Test senden"
+        >
+          <TextField name="name" id="live-name" preset="name" required />
+          <TextField name="email" id="live-email" preset="email" required />
+          <FileField name="lebenslauf" id="live-cv" label="Lebenslauf" mode="live" />
+        </FormShell>
+      </div>
+    </section>
+
+    <section class="section section--alt" aria-labelledby="map-heading">
+      <div class="stack stack--m">
+        <h2 id="map-heading">Karte</h2>
+        <StaticMap />
+      </div>
+    </section>
+  </BaseLayout>
+)}

@@ -1,0 +1,18 @@
+---
+// Spam honeypot (docs/architecture.md §8): a neutral field name, visually hidden by a CSS class
+// (never an inline style, never display:none, which bots skip), an aria-hidden wrapper, out of the
+// tab order and without autofill. enhance.ts fakes a success when it is filled and drops it from
+// the FormData it sends.
+interface Props {
+  id: string;
+  name?: string;
+  label?: string;
+}
+
+const { id, name = 'homepage', label = 'Homepage' } = Astro.props;
+---
+
+<div class="form-hp" aria-hidden="true" data-hp>
+  <label for={id}>{label}</label>
+  <input type="text" id={id} name={name} tabindex="-1" autocomplete="off" />
+</div>
