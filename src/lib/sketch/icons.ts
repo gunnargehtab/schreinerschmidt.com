@@ -26,6 +26,18 @@ export const ICONS = {
   monitor: 'M3.5 5h17v11h-17zM8.5 20h7M12 16v4',
   /* Theme trigger: a disc, one half hatched, the way the sketches shade. */
   contrast: 'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 4v16M12 4l8 8M12 8l7.3 7.3M12 12l5.7 5.7M12 16l3.3 3.3',
+  /* Configurator project types (docs/configurator.md §1): elevation sketches, one per radio card.
+     Rendered with square caps (carpenter's pencil) by configurator/fields/RadioCards.astro. */
+  'projekt-moebel': 'M3.5 4h13v16h-13zM10 4v16M8 11.5v1.5M10 9.5h6.5M10 15h6.5M16.5 4l4.5 2.5v13L16.5 20',
+  'projekt-boden':
+    'M3 8.5l4.5-4.5 4.5 4.5 4.5-4.5 4.5 4.5M3 14.5l4.5-4.5 4.5 4.5 4.5-4.5 4.5 4.5M3 20.5l4.5-4.5 4.5 4.5 4.5-4.5 4.5 4.5',
+  'projekt-treppe': 'M3 20.5h4.5V16H12v-4.5h4.5V7H21M5 15l9.5-9.5M5 15v4',
+  'projekt-fenster': 'M4.5 3.5h15v15h-15zM12 3.5v15M4.5 11h15M3 20.5h18',
+  'projekt-tuer': 'M6 20.5v-16h12v16M3.5 20.5h17M6 8h12M9 17.5V11h6v6.5M16.5 13.5v1.5',
+  'projekt-terrasse':
+    'M5.5 17V7.5l2-2.5 2 2.5V17M13.5 17V7.5l2-2.5 2 2.5V17M3 12h2.5M9.5 12h4M17.5 12H21M3 17h18M3 20.5h18',
+  'projekt-altbau': 'M5 20.5V10.5a7 7 0 0 1 14 0v10M8.5 20.5V11a3.5 3.5 0 0 1 7 0v9.5M3 20.5h18',
+  'projekt-sonstiges': 'M4.5 19.5l1-4L16 5l3 3L8.5 18.5zM14 7l3 3M5.5 15.5l3 3',
 } as const;
 
 export type IconName = keyof typeof ICONS;

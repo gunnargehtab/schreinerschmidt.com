@@ -52,7 +52,13 @@ const exampleStatus = marked(tuer.vorherNachher);
         <button type="button" class="btn btn--ghost btn--small" popovertarget="din-erklaerung">
           {tuer.din.trigger}
         </button>
-        <div id="din-erklaerung" class="explainer__popover" popover aria-labelledby="din-erklaerung-titel">
+        <div
+          id="din-erklaerung"
+          class="explainer__popover"
+          popover
+          role="dialog"
+          aria-labelledby="din-erklaerung-titel"
+        >
           <h3 id="din-erklaerung-titel" class="explainer__title">
             {tuer.din.heading}
           </h3>

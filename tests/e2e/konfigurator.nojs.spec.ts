@@ -149,6 +149,6 @@ test('the submit button precedes the step nav in the DOM, so Enter submits', asy
 test('popovers work without JS (DIN explainer)', async ({ page }) => {
   await page.goto('konfigurator/tuer/');
   await expect(page.locator('#din-erklaerung')).toBeHidden();
-  await page.getByRole('button', { name: 'Was bedeutet DIN links oder rechts?' }).click();
+  await page.getByRole('button', { name: 'Was bedeutet DIN links oder DIN rechts?' }).click();
   await expect(page.locator('#din-erklaerung')).toBeVisible();
 });

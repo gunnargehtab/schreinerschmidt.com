@@ -1,9 +1,14 @@
 /*
  * Quote wizard (docs/configurator.md, docs/design-system.md §8 "Konfigurator shell").
  * Global because the wizard script renders into this markup. Finished state only: no hidden start
- * states, no motion. The no-JS form is one long sheet of paper on graph paper; the visibility of
- * branches and conditions comes from konfigurator/bedingungen.css (unlayered, generated), and the
- * Möbel/other step titles from the :has() rules at the bottom of this file.
+ * states, no motion beyond UI feedback. The no-JS form is one long sheet of paper on graph paper;
+ * the visibility of branches and conditions comes from konfigurator/bedingungen.css (unlayered,
+ * generated), and the Möbel/other step titles from the :has() rules at the bottom of this file.
+ *
+ * Layout: the sheet is centred at 56rem. Once Möbel is checked the sheet widens to the content
+ * width and step 2 splits into drawing (7 columns, sticky) and fields (5 columns); every other
+ * container shows the drawing as a 4:3 viewport above the fields. The drawing lives inside step 2
+ * (DOM contract), so the split is a grid on that step, not on the section.
  */
 @layer components {
   /* `hidden` must win over every display value below. */
@@ -11,16 +16,32 @@
     display: none !important;
   }
 
-  /* Hero: the compact 3-step Maßlinie under the lead. */
+  /* Hero: the compact 3-step Maßkette under the lead. Adjacent segments share their ticks. */
   .hero-mass {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-2xs);
     max-inline-size: 40rem;
     margin: 0;
     padding: 0;
   }
 
+  .hero-mass .mass {
+    gap: var(--space-3xs);
+  }
+
+  .hero-mass .mass__line {
+    min-inline-size: 0.5rem;
+  }
+
+  .hero-mass .mass__label {
+    padding-inline: 0.125rem;
+  }
+
+  .hero-mass > li + li .mass::before {
+    display: none;
+  }
+
+  /* Layout: wizard column plus the JS summary sidebar. */
   .configurator__layout {
     display: grid;
     gap: var(--space-l);
@@ -57,9 +78,16 @@
   .configurator__main {
     display: grid;
     gap: var(--space-s);
+    inline-size: 100%;
     min-inline-size: 0;
     max-inline-size: 56rem;
+    margin-inline: auto;
     align-content: start;
+  }
+
+  /* Möbel: the sheet takes the full content width for the drawing/fields split. */
+  .configurator:has([name='typ'][value='moebel']:checked) .configurator__main {
+    max-inline-size: none;
   }
 
   .configurator__ribbon,
@@ -74,6 +102,10 @@
     font-weight: var(--weight-ui);
     background: var(--surface);
     border: var(--hairline) dashed var(--line-strong);
+  }
+
+  .configurator__nojs {
+    max-inline-size: 60ch;
   }
 
   /* The sheet: the form sits on solid paper so text never competes with the grid. */
@@ -153,11 +185,16 @@
     margin: 0;
   }
 
-  .field {
+  /* Fields: text controls keep a readable measure; choice groups use the full width. */
+  .wizard .field {
     min-inline-size: 0;
   }
 
-  fieldset.field {
+  .wizard .field:not(fieldset) {
+    max-inline-size: 36rem;
+  }
+
+  .wizard fieldset.field {
     margin: 0;
     padding: 0;
     border: 0;
@@ -186,15 +223,40 @@
     color: var(--ink-muted);
   }
 
+  /* The card or chip carries the focus ring, never the control and the card both. */
+  .wizard .choice > input:focus-visible {
+    outline: none;
+  }
+
+  .wizard .choice:has(:focus-visible) {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 2px;
+  }
+
   .choice-group--chips .choice,
   .choice-group--cards .choice {
     background: var(--surface);
     border: var(--hairline) solid var(--line-strong);
+    transition:
+      border-color var(--dur-1),
+      background-color var(--dur-1),
+      box-shadow var(--dur-1) var(--ease-out);
   }
 
   .choice-group--chips .choice {
     align-items: center;
     padding-inline: var(--space-xs);
+  }
+
+  @media (hover: hover) {
+    .choice-group--chips .choice:hover,
+    .choice-group--cards .choice:hover {
+      border-color: var(--ink);
+    }
+
+    .choice-group--cards .choice:hover {
+      box-shadow: var(--shadow-paper);
+    }
   }
 
   .choice-group--chips .choice:has(:checked),
@@ -204,11 +266,15 @@
     box-shadow: inset 0 0 0 1px var(--accent);
   }
 
-  .choice:has(:focus-visible) {
-    outline: var(--focus-width) solid var(--focus);
-    outline-offset: 2px;
+  @media (hover: hover) {
+    .choice-group--cards .choice:has(:checked):hover {
+      box-shadow:
+        inset 0 0 0 1px var(--accent),
+        var(--shadow-paper);
+    }
   }
 
+  /* Cards: line icon, label, hint; the tick box sits top right like a checked drawing revision. */
   .choice-group--cards .choice-options {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
@@ -220,8 +286,13 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-2xs);
-    min-block-size: 5.5rem;
+    min-block-size: var(--target-min);
     padding: var(--space-s);
+  }
+
+  /* Without an icon the label shares the first row with the tick box. */
+  .choice-group--cards .choice:not(:has(.choice__icon)) {
+    padding-inline-end: calc(var(--space-s) + 1.5rem);
   }
 
   .choice-group--cards .choice__label {
@@ -229,36 +300,88 @@
   }
 
   .choice__icon {
-    inline-size: 2rem;
-    block-size: 2rem;
-    color: var(--ink);
+    flex: none;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    margin-block-end: var(--space-3xs);
+    color: var(--sketch);
   }
 
-  /* The native control stays in the DOM (keyboard, screen readers); the card shows the tick. */
+  /* The native control stays in the DOM (keyboard, screen readers) as a square tick box. */
   .choice-group--cards .choice > input {
     appearance: none;
     position: absolute;
     inset-block-start: var(--space-2xs);
     inset-inline-end: var(--space-2xs);
-    inline-size: 1.25rem;
-    block-size: 1.25rem;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
     margin: 0;
     border: var(--hairline) solid var(--line-strong);
-    border-radius: 50%;
+    border-radius: 0;
     background: var(--surface);
   }
 
   .choice-group--cards .choice > input:checked {
     border-color: var(--accent);
+  }
+
+  /* The red pencil tick overshoots the box, the way a tick is drawn by hand. */
+  .choice-group--cards .choice:has(:checked)::after {
+    content: '';
+    position: absolute;
+    inset-block-start: calc(var(--space-2xs) - 0.375rem);
+    inset-inline-end: calc(var(--space-2xs) - 0.375rem);
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    pointer-events: none;
     background-color: var(--accent);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l5 5L19 7'/%3E%3C/svg%3E");
-    background-size: 90%;
-    background-position: center;
-    background-repeat: no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.25' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M6.5 12.5l4 5.5L19 5.5'/%3E%3C/svg%3E")
+      center / contain no-repeat;
   }
 
   .field--bool .choice {
     padding-inline: 0;
+  }
+
+  /* Wood swatches (Möbel step 3): the average colours from furniture/species.ts, placeholders
+     until measured. "Beratung gewünscht" shows an empty, dashed chip. */
+  .wizard [data-field='moebel_holz'] .choice::before {
+    content: '';
+    order: 1;
+    flex: none;
+    align-self: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    background: var(--_swatch, transparent);
+    border: var(--hairline) solid var(--line-strong);
+  }
+
+  .wizard [data-field='moebel_holz'] .choice__text {
+    order: 2;
+  }
+
+  .wizard [data-field='moebel_holz'] .choice:has([value='beratung'])::before {
+    border-style: dashed;
+  }
+
+  .wizard [data-field='moebel_holz'] .choice:has([value='eiche']) {
+    --_swatch: #c9a97c;
+  }
+
+  .wizard [data-field='moebel_holz'] .choice:has([value='nussbaum']) {
+    --_swatch: #6e4b36;
+  }
+
+  .wizard [data-field='moebel_holz'] .choice:has([value='esche']) {
+    --_swatch: #d9c6a3;
+  }
+
+  .wizard [data-field='moebel_holz'] .choice:has([value='kernbuche']) {
+    --_swatch: #c98f63;
+  }
+
+  .wizard [data-field='moebel_holz'] .choice:has([value='kirsche']) {
+    --_swatch: #b5704a;
   }
 
   /* Number input with the optional slider next to it. */
@@ -272,6 +395,7 @@
   .number-range > .input {
     flex: none;
     inline-size: 7.5rem;
+    font-variant-numeric: tabular-nums;
   }
 
   .number-range__slider {
@@ -304,31 +428,44 @@
     margin-block-start: var(--space-xs);
   }
 
+  .explainer__title,
   .share-popover__title {
     font-size: var(--step-0);
     line-height: 1.3;
   }
 
-  /* Möbel preview: the build-time Beispielskizze; the aspect ratio is reserved via --ar. */
+  /* Möbel preview: a 4:3 viewport on paper. The build-time Beispielskizze reserves its own
+     ratio via --ar; the viewer (JS) shares the cell, so swapping them never shifts the layout. */
   .preview {
     display: grid;
     gap: var(--space-2xs);
+    inline-size: 100%;
     max-inline-size: 40rem;
     margin: 0;
   }
 
   .preview__stage {
+    display: grid;
+    aspect-ratio: 4 / 3;
     padding: var(--space-s);
+    overflow: clip;
     background: var(--surface);
     border: var(--rule);
   }
 
-  /* A Regal is taller than wide: cap the width so the drawing stays within one screen height. */
+  .preview__stage > * {
+    grid-area: 1 / 1;
+    place-self: center;
+    min-inline-size: 0;
+    min-block-size: 0;
+    max-inline-size: 100%;
+    max-block-size: 100%;
+  }
+
   .preview__drawing {
+    display: grid;
     aspect-ratio: var(--ar, 4 / 3);
-    inline-size: 100%;
-    max-inline-size: 22rem;
-    margin-inline: auto;
+    block-size: 100%;
     color: var(--ink);
   }
 
@@ -337,6 +474,7 @@
     --ze-muted: var(--ink-muted);
     display: block;
     inline-size: 100%;
+    max-block-size: 100%;
     block-size: auto;
     font-family: var(--font-sans);
   }
@@ -346,36 +484,108 @@
     color: var(--ink-muted);
   }
 
-  /* Service area line. */
-  #einzugsgebiet {
-    display: block;
-    min-block-size: 1lh;
+  /* Wide containers with Möbel chosen: drawing 7 columns (sticky), title and fields 5 columns. */
+  @container section (inline-size >= 64rem) {
+    .configurator:has([name='typ'][value='moebel']:checked) .step[data-step='details'] {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-rows: auto 1fr;
+      column-gap: var(--space-l);
+      align-items: start;
+    }
+
+    .configurator:has([name='typ'][value='moebel']:checked) .step[data-step='details'] > * {
+      grid-column: 8 / -1;
+    }
+
+    .configurator:has([name='typ'][value='moebel']:checked) .step[data-step='details'] > .preview {
+      position: sticky;
+      inset-block-start: calc(var(--header-sticky-h) + var(--space-s));
+      grid-column: 1 / 8;
+      grid-row: 1 / 3;
+      align-self: start;
+      max-inline-size: none;
+    }
   }
 
-  /* Progress line: a dimension line per step; ink when done, red and thicker when current. */
+  /* Service area line: reserved under the PLZ field so filling it never shifts the form. */
+  #einzugsgebiet {
+    display: block;
+    margin-block-start: calc(var(--space-2xs) - var(--space-m));
+  }
+
+  #einzugsgebiet:empty {
+    display: none;
+  }
+
+  /*
+   * Progress (JS reveals it): one dimension chain, one segment per step with 45° ticks.
+   * Done: solid ink line, button in ink. Current: thicker red line. Future: dashed hairline.
+   * The <li> draws its segment (border) and the tick at its start in normal flow, so nothing in the
+   * segment is positioned: on narrow screens the current label can anchor to the list and sit at
+   * the start of the row below the chain, with "2/6" at its end.
+   */
   .progress {
+    display: grid;
     margin-block-end: var(--space-xs);
   }
 
   .progress__list {
+    position: relative;
     display: flex;
-    gap: var(--space-3xs);
     margin: 0;
     padding: 0;
   }
 
   .progress__step {
+    --_line: var(--line-strong);
+    --_style: dashed;
+    --_w: var(--hairline);
     flex: 1 1 0;
     min-inline-size: 0;
-    border-block-start: 2px dashed var(--line-strong);
+    border-block-start: var(--_w) var(--_style) var(--_line);
   }
 
   .progress__step:has([data-done]:not([hidden])) {
-    border-block-start: 2px solid var(--ink);
+    --_line: var(--ink);
+    --_style: solid;
+    --_w: 0.125rem;
   }
 
   .progress__step:has([aria-current='step']) {
-    border-block-start: 4px solid var(--accent);
+    --_line: var(--accent);
+    --_style: solid;
+    --_w: 0.1875rem;
+  }
+
+  /* 45° ticks: one at the start of each segment, one closing the chain. */
+  .progress__step::before,
+  .progress__list::after {
+    content: '';
+    display: block;
+    inline-size: 0.75rem;
+    block-size: 0;
+    margin-block-start: calc(var(--_w) / -2 - 0.0625rem);
+    margin-inline: -0.375rem;
+    border-block-start: max(var(--_w), 0.125rem) solid var(--_line);
+    rotate: -45deg;
+  }
+
+  .progress__list::after {
+    --_line: var(--line-strong);
+    --_w: var(--hairline);
+    flex: none;
+    align-self: flex-start;
+  }
+
+  .progress__list:has(> :last-child [data-done]:not([hidden]))::after {
+    --_line: var(--ink);
+    --_w: 0.125rem;
+  }
+
+  .progress__list:has(> :last-child [aria-current='step'])::after {
+    --_line: var(--accent);
+    --_w: 0.1875rem;
   }
 
   .progress__link {
@@ -383,15 +593,28 @@
     align-items: baseline;
     gap: var(--space-2xs);
     inline-size: 100%;
-    min-block-size: var(--target-min);
-    padding: var(--space-2xs) var(--space-3xs);
+    min-block-size: calc(var(--target-min) - 0.25rem);
+    margin: 0;
+    padding: var(--space-xs) var(--space-2xs) var(--space-2xs) var(--space-3xs);
     font: inherit;
     font-size: var(--step--1);
-    color: inherit;
+    line-height: 1.3;
+    color: var(--ink-muted);
     text-align: start;
     background: none;
     border: 0;
+    border-radius: 0;
     cursor: pointer;
+  }
+
+  .progress__step:has([data-done]:not([hidden])) .progress__link,
+  .progress__link[aria-current='step'] {
+    color: var(--ink);
+  }
+
+  .progress__link[aria-current='step'] {
+    font-weight: var(--weight-ui);
+    cursor: default;
   }
 
   .progress__link:disabled {
@@ -399,34 +622,81 @@
     color: var(--ink-muted);
   }
 
+  @media (hover: hover) {
+    .progress__link:not(:disabled, [aria-current='step']):hover .progress__label {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-thickness: 0.0625em;
+      text-underline-offset: 0.15em;
+    }
+  }
+
   .progress__link:focus-visible {
     outline: var(--focus-width) solid var(--focus);
-    outline-offset: 2px;
+    outline-offset: -0.125rem;
   }
 
   .progress__n {
+    flex: none;
     font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-ui);
     color: var(--accent);
   }
 
-  .progress__link[aria-current='step'] {
-    font-weight: var(--weight-ui);
+  .progress__link:disabled .progress__n {
+    color: inherit;
   }
 
   .progress__compact {
     display: none;
     margin: 0;
     font-size: var(--step--1);
+    font-weight: var(--weight-ui);
     font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+    color: var(--ink-muted);
   }
 
+  /* Narrow: the chain stays; only the current label and "2/6" sit on the row below it. */
   @container section (inline-size < 40rem) {
-    .progress__step:not(:has([aria-current='step'])) .progress__label {
-      display: none;
+    .progress {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: var(--space-3xs);
+    }
+
+    .progress__list {
+      grid-column: 1 / -1;
+      grid-row: 1;
     }
 
     .progress__compact {
       display: block;
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .progress__link {
+      min-block-size: 1.75rem;
+      padding-block-end: 0;
+    }
+
+    .progress__n,
+    .progress__step:not(:has([aria-current='step'])) .progress__label {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .progress__link[aria-current='step'] .progress__label {
+      position: absolute;
+      inset-block-start: 100%;
+      inset-inline-start: 0;
+      inline-size: max-content;
+      max-inline-size: calc(100cqi - 5rem);
+      margin-block-start: var(--space-3xs);
     }
   }
 
@@ -606,8 +876,39 @@
 
   @media (forced-colors: active) {
     .choice-group--cards .choice > input:checked {
-      background-color: Highlight;
       border-color: Highlight;
+      outline: 1px solid Highlight;
+    }
+
+    .choice-group--cards .choice:has(:checked)::after {
+      forced-color-adjust: none;
+      background-color: Highlight;
+    }
+
+    .choice-group--chips .choice:has(:checked),
+    .choice-group--cards .choice:has(:checked) {
+      border-color: Highlight;
+    }
+
+    .wizard [data-field='moebel_holz'] .choice::before {
+      forced-color-adjust: none;
+      border-color: CanvasText;
+    }
+
+    .progress__step,
+    .progress__step::before,
+    .progress__list::after {
+      border-color: CanvasText;
+    }
+
+    .progress__step:has([aria-current='step']),
+    .progress__step:has([aria-current='step'])::before,
+    .progress__list:has(> :last-child [aria-current='step'])::after {
+      border-color: Highlight;
+    }
+
+    .timeline__tick {
+      border-color: CanvasText;
     }
   }
 }
