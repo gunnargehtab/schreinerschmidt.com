@@ -112,6 +112,22 @@ export const konfiguratorSchema = z.object({
     }),
     timeline: z.object({ h2: z.string(), items: z.array(timelineItem).min(1) }),
   }),
+  /** 3D preview (docs/configurator.md §4.6, §4.9–4.11): poster button, view buttons, canvas label. */
+  viewer: z.object({
+    load: z.string(),
+    reload: z.string(),
+    /** Prefix of the canvas aria-label; the viewer appends „: “ + describe(build). */
+    label: z.string(),
+    note: z.string(),
+    group: z.string(),
+    views: z.object({ vorne: z.string(), seite: z.string(), dreiviertel: z.string(), oben: z.string() }),
+    rotate: z.string(),
+    rotateLeft: z.string(),
+    rotateRight: z.string(),
+    zoomIn: z.string(),
+    zoomOut: z.string(),
+    reset: z.string(),
+  }),
   announce: z.object({
     typePreselected: z.string(),
     typeSwitched: z.string(),

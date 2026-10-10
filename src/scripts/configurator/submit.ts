@@ -149,6 +149,7 @@ export function createSubmit(w: Wizard): Submit {
     let reason: SubmitError = 'network';
     try {
       const { buildPayload } = await import('./payload');
+      const drawing = w.drawing();
       const body = await buildPayload(form, {
         id,
         short,
@@ -159,7 +160,10 @@ export function createSubmit(w: Wizard): Submit {
         items: w.items(),
         text: w.text(),
         subject: subject(),
-        svg: w.drawing(),
+        svg: drawing,
+        // The 3D snapshot (§4.12) once 3D was loaded (Möbel only). Its demo download/preview is
+        // deferred: it does not fit the flow budget (docs/configurator.md §3).
+        snapshot: drawing ? await (await preview()).snapshot3d() : null,
       });
       for (let attempt = 0; attempt < 2; attempt++) {
         try {

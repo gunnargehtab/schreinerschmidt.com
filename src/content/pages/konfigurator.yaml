@@ -185,6 +185,27 @@ success:
       - title: 'Montage & Übergabe'
         text: 'Wir liefern, montieren und übergeben.'
 
+# 3D preview (docs/configurator.md §4.6, §4.9–4.11), rendered by preview/PreviewPanel.astro and
+# ViewControls.astro. `label` is the prefix of the canvas aria-label („3D-Vorschau: Regal aus Eiche, …“).
+# `note` marks the Kernbuche texture, which is approximated from white maple (§4.4).
+viewer:
+  load: '3D-Ansicht laden (ca. 0,3 MB)'
+  reload: '3D neu laden'
+  label: '3D-Vorschau'
+  note: 'Holzbild beispielhaft'
+  group: 'Ansicht'
+  views:
+    vorne: 'Vorne'
+    seite: 'Seite'
+    dreiviertel: '3/4-Ansicht'
+    oben: 'Draufsicht'
+  rotate: 'Drehen'
+  rotateLeft: 'Nach links drehen'
+  rotateRight: 'Nach rechts drehen'
+  zoomIn: 'Vergrößern'
+  zoomOut: 'Verkleinern'
+  reset: 'Zurücksetzen'
+
 # Polite live region (debounced). {typ} is the project-type label, e.g. "Boden".
 announce:
   typePreselected: 'Projektart {typ} vorausgewählt'

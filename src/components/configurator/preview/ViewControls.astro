@@ -1,0 +1,48 @@
+---
+// View buttons of the 3D preview (docs/configurator.md §4.6 "View buttons"): the non-drag path
+// required by WCAG 2.5.7 and the keyboard path (OrbitControls gets no key events). Native buttons,
+// ≥ 44 px (configurator.css), in a `role="group"` named „Ansicht“. Hidden until the viewer is ready
+// (preview/load3d.ts); „Draufsicht“ only shows for tables (viewer3d/index.ts).
+// DOM contract: [data-view-controls] > button[data-view=vorne|seite|dreiviertel|oben],
+// button[data-rotate=-1|1], button[data-zoom=1|-1], button[data-action=reset-view].
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+
+interface Props {
+  copy: KonfiguratorCopy['viewer'];
+}
+
+const { copy } = Astro.props;
+const btn = 'btn btn--secondary btn--small';
+---
+
+<div class="view-controls" role="group" aria-label={copy.group} data-view-controls hidden>
+  <button class={btn} type="button" data-view="vorne">
+    {copy.views.vorne}
+  </button>
+  <button class={btn} type="button" data-view="seite">
+    {copy.views.seite}
+  </button>
+  <button class={btn} type="button" data-view="dreiviertel">
+    {copy.views.dreiviertel}
+  </button>
+  <button class={btn} type="button" data-view="oben" hidden>
+    {copy.views.oben}
+  </button>
+  <button class={btn} type="button" data-rotate="-1" aria-label={copy.rotateLeft}>
+    <span aria-hidden="true">◀ </span>
+    {copy.rotate}
+  </button>
+  <button class={btn} type="button" data-rotate="1" aria-label={copy.rotateRight}>
+    {copy.rotate}
+    <span aria-hidden="true"> ▶</span>
+  </button>
+  <button class={btn} type="button" data-zoom="1">
+    {copy.zoomIn}
+  </button>
+  <button class={btn} type="button" data-zoom="-1">
+    {copy.zoomOut}
+  </button>
+  <button class={btn} type="button" data-action="reset-view">
+    {copy.reset}
+  </button>
+</div>

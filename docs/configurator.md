@@ -284,7 +284,7 @@ Step 3:
 - **Core** (`main.ts` entry, ≤ 11.25 KB gz): `controller.ts`, `steps.ts`, `state.ts`, `serialize.ts`, `history.ts`, `draft.ts`, `announce.ts`, `transitions.ts` + `fields.ts`, `conditions.ts`, `service-area.ts`.
 - **First interaction** (prefetched; awaited at the first „Weiter“, or at once when a restored step needs clamping): `validate.ts` + `messages.de.ts` (one chunk).
 - **First change** (or at start when a session with values is restored): `summary.ts` (sidebar, review, mail text; also used by validate.ts and submit.ts).
-- **Möbel chosen**: `preview/{index,params}.ts` + `drawing/svg.ts` + the carcass generator, ≤ 8.75 KB gz; `preview/load3d.ts` (Phase B). On request from there: the table generator (`moebel_art=esstisch`), `drawing/elevation.ts` (print sheet).
+- **Möbel chosen**: `preview/{index,params}.ts` + `drawing/svg.ts` + the carcass generator, ≤ 8.75 KB gz; it `import()`s `preview/load3d.ts` (≤ 1.5 KB gz) at once, which reveals the 3D tools and holds the poster button, the auto-load gate and the WebGL2 probe. On request from there: `viewer3d/*` + three.js (poster click or auto-load), the table generator (`moebel_art=esstisch`), `drawing/elevation.ts` (print sheet).
 - **Submit**: `submit.ts` + `mailto.ts`; in live mode `payload.ts`, and for Möbel `preview/info.ts` (cut list + description, shares the preview's generators).
 - **File selection**: `photos.ts`.
 - `viewer3d/{index,types,renderer,scene,rig,panel-geometry,materials,textures,contact-shadow,camera,overlay,tween,snapshot,quality}.ts`: dynamic import only.
@@ -400,9 +400,10 @@ export function swapStep(update: () => void, dir: 'fwd'|'back'): Promise<void> {
 ### JS budget (gz)
 - Core ≤ 11.25 KB.
 - Möbel preview ≤ 8.75 KB (loaded when Möbel is chosen). Re-split from 13 + 7 KB with the user on 2026-10-10: the full carcass rules + screen elevation measure 8.5 KB gz; the 20 KB total is unchanged.
-- **Full flow:** everything a completed demo or live enquiry downloads besides the preview, photos and three.js (core + validation/messages + summary + submit/mailto + payload). ≤ 18.75 KB, and with the Möbel preview ≤ 27.25 KB (set with the user on 2026-10-10 from the measurement after Phase 3: 18.6 / 27.1 KB). About 1 KB of that is Vite's module-preload helper plus the hashed dependency maps Astro's client build adds to every chunk with an `import()`; Astro 7.3 does not let the config switch it off. `scripts/check-budgets.mjs` enforces it (`FLOW`) and prints the chunk list.
+- 3D loader (`preview/load3d.ts`) ≤ 1.5 KB, loaded together with the Möbel preview; core + preview + loader ≤ 21.5 KB. The loader did not fit into the preview chunk (≈ 0.1 KB headroom against the flow cap), so it became a chunk of its own, budgeted explicitly (decided with the user on 2026-10-10; measured 1.39 KB).
+- **Full flow:** everything a completed demo or live enquiry downloads besides the preview, photos and three.js (core + validation/messages + summary + submit/mailto + payload). ≤ 18.75 KB, and with the Möbel preview and the 3D loader ≤ 28.75 KB (set with the user on 2026-10-10: 27.25 KB from the measurement after Phase 3, + 1.5 KB for the loader in Phase 4). About 1 KB of that is Vite's module-preload helper plus the hashed dependency maps Astro's client build adds to every chunk with an `import()`; Astro 7.3 does not let the config switch it off. `scripts/check-budgets.mjs` enforces it (`FLOW`) and prints the chunk list.
 - Photos ≈ 1.5 KB (on file select).
-- three.js chunk: on request only.
+- three.js + viewer chunk ≤ 160 KB: on request only (measured 142.4 KB in Phase 4).
 - `scripts/check-budgets.mjs` enforces these.
 
 ## 4. 3D preview
@@ -663,7 +664,7 @@ export function load3D(panel: HTMLElement, init): Promise<Viewer> {
   return pending;
 }
 ```
-- **Poster:** the live SVG plus a "3D-Ansicht laden (ca. 0,3 MB)" button, always shown.
+- **Poster:** the live SVG plus a "3D-Ansicht laden (ca. 0,3 MB)" button, always shown.
 - **Auto-load** only when all of these hold:
   - `(pointer: fine) and (min-width: 64rem)`;
   - the panel is visible (IntersectionObserver ≥ 0.5);
@@ -674,6 +675,7 @@ export function load3D(panel: HTMLElement, init): Promise<Viewer> {
 - **Renderer:** pass the probed context to `new WebGLRenderer({ canvas, context })`.
 - **Init:** call `yieldToMain()` between phases (module, renderer, PMREM, meshes, `compileAsync`, first frame).
 - **First frame:** flat species colours, then the textures stream in.
+- **Where it lives (Phase 4):** the preview chunk only `import()`s `preview/load3d.ts`; the loader chunk does the rest (revealing `[data-viewer-tools]`, `?3d=aus`, the auto-load gate, the WebGL2 probe, state and context-loss handling). Its DOM contract is in its header comment.
 - three.js is reachable **only** through this `import()`. Optionally, a Rolldown codeSplitting group `three` gives it a stable chunk name.
 
 ### 4.10 Lifecycle
@@ -805,7 +807,7 @@ Focus moves to the heading; the session and draft are cleared.
 | `a11y` | axe with `wcag22aa` on every step, in the error state, both schemes, and the success view (`konfigurator.a11y.spec.ts`); the no-JS long form in both schemes (`konfigurator-nojs.a11y.spec.ts`: axe needs script execution, so it runs in the `a11y` project with the wizard script blocked by `page.route`, which yields the no-JS DOM; states: no choice, `konfigurator/moebel/` with Regal, Boden with conditions revealed) |
 | `motion-print` | Reduced motion: no `startViewTransition`; print shows summary + drawing + title block |
 
-**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, core + Möbel ≤ 20 KB; full flow (core + validation + summary + submit + payload) ≤ 18.75 KB, with the Möbel preview ≤ 27.25 KB (§3 "JS budget"); three.js chunk ≤ 160 KB.
+**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, 3D loader ≤ 1.5 KB, core + Möbel + loader ≤ 21.5 KB; full flow (core + validation + summary + submit + payload) ≤ 18.75 KB, with the Möbel preview and loader ≤ 28.75 KB (§3 "JS budget"); three.js chunk ≤ 160 KB.
 
 **Manual:** NVDA + Firefox, VoiceOver + Safari, TalkBack, keyboard-only, 400% zoom, forced colours.
 

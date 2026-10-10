@@ -210,6 +210,22 @@ describe('appendPayload', () => {
     expect(await (drawing as Blob).text()).toBe(input.svg);
   });
 
+  it('attaches the 3D snapshot as ansicht_3d.webp and lists it; without one neither appears', async () => {
+    const snapshot = new Blob(['webp-bytes'], { type: 'image/webp' });
+    const withSnap = { ...input, snapshot };
+    const fd = appendPayload(new FormData(), withSnap, anfrageJson(withSnap, moebel));
+    const file = fd.get('ansicht_3d');
+    expect(file).toBeInstanceOf(Blob);
+    expect((file as File).name).toBe('ansicht_3d.webp');
+    expect(await (file as Blob).text()).toBe('webp-bytes');
+    expect(anfrageJson(withSnap, moebel)['anhaenge']).toEqual(['zeichnung.svg', 'ansicht_3d.webp']);
+
+    const without = { ...input, snapshot: null };
+    const fd2 = appendPayload(new FormData(), without, anfrageJson(without, moebel));
+    expect(fd2.get('ansicht_3d')).toBeNull();
+    expect(anfrageJson(without, moebel)['anhaenge']).toEqual(['zeichnung.svg']);
+  });
+
   it('attaches nothing without a drawing and keeps _replyto empty without an e-mail', () => {
     const fd = appendPayload(new FormData(), { ...input, svg: undefined, values: { typ: 'boden' } }, {});
     expect(fd.get('zeichnung')).toBeNull();

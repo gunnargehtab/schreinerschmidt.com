@@ -1,6 +1,7 @@
 // Live payload (docs/configurator.md §5 "Payload"): the plain field names of the no-JS form plus
 // `anfrage_json` (schema ss-anfrage@1), `zusammenfassung` (the same text as on screen, from
-// summary.ts), `_subject`, `_replyto`, `anfrage_id` and the SVG drawing as `zeichnung`. Loaded on
+// summary.ts), `_subject`, `_replyto`, `anfrage_id`, the SVG drawing as `zeichnung` and, once the 3D
+// view was loaded, its snapshot as `ansicht_3d` (ansicht_3d.webp, docs/configurator.md §4.12). Loaded on
 // request by submit.ts; the Möbel generator output comes from preview/info.ts (on request, with the
 // preview chunk), so no generator code sits in the flow budget. The pure parts (anfrageJson,
 // appendPayload) are covered by tests/unit/configurator/payload.test.ts.
@@ -18,6 +19,7 @@ export const SCHEMA = 'ss-anfrage@1';
 export const HONEYPOT = 'homepage';
 const PHOTOS = 'fotos[]';
 const DRAWING = 'zeichnung.svg';
+const SNAPSHOT = 'ansicht_3d.webp';
 
 export interface PayloadInput {
   id: string;
@@ -31,6 +33,8 @@ export interface PayloadInput {
   subject: string;
   /** Markup of the drawing, attached as zeichnung.svg when present. */
   svg?: string | undefined;
+  /** The 3D snapshot (WebP/PNG), attached as ansicht_3d.webp when present. */
+  snapshot?: Blob | null | undefined;
   /** File names of the attached photos (`fotos[]`), listed in `anhaenge`. */
   fotos?: readonly string[] | undefined;
   /** Clock, for deterministic tests. */
@@ -66,7 +70,7 @@ export function anfrageJson(i: PayloadInput, moebel: MoebelInfo | null = null): 
     moebel,
     rahmen: { ...of(values, ['rahmen']), einzugsgebiet: serviceArea(plz)?.tier ?? null },
     kontakt: of(values, ['kontakt']),
-    anhaenge: [...(i.svg ? [DRAWING] : []), ...(i.fotos ?? [])],
+    anhaenge: [i.svg && DRAWING, i.snapshot && SNAPSHOT, ...(i.fotos ?? [])].filter(Boolean),
   };
 }
 
@@ -79,6 +83,7 @@ export function appendPayload(fd: FormData, i: PayloadInput, json: Record<string
   fd.set('_subject', i.subject);
   fd.set('_replyto', String(i.values['email'] ?? ''));
   if (i.svg) fd.set('zeichnung', new Blob([i.svg], { type: 'image/svg+xml' }), DRAWING);
+  if (i.snapshot) fd.set('ansicht_3d', i.snapshot, SNAPSHOT);
   return fd;
 }
 

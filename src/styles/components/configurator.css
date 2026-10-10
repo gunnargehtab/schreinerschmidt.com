@@ -581,6 +581,114 @@
   }
 
   /*
+   * 3D slot (docs/configurator.md §4.6, §4.9; contract in preview/load3d.ts). The viewer fills the
+   * stage cell the drawing sizes; its canvas and the dimension overlay stack in one grid area. Only
+   * `ready` shows the canvas; the drawing beneath keeps its layout and is hidden from view and from
+   * the accessibility tree (the canvas carries role="img"). The canvas stays transparent, so the
+   * furniture sits on the paper; `--shadow-strength` scales the contact shadow (read by the viewer).
+   * OrbitControls sets touch-action: none inline; pan-y keeps vertical swipes scrolling the page.
+   */
+  .preview__viewer {
+    --shadow-strength: 0.8;
+    display: grid;
+    place-self: stretch;
+    min-block-size: 0;
+    overflow: clip;
+  }
+
+  .preview__viewer:not([data-viewer-state='ready']) {
+    visibility: hidden;
+  }
+
+  .preview__stage:has([data-viewer-state='ready']) > .preview__drawing {
+    visibility: hidden;
+  }
+
+  .preview__viewer > canvas,
+  .preview__overlay {
+    grid-area: 1 / 1;
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .preview__viewer > canvas {
+    touch-action: pan-y !important;
+    cursor: grab;
+  }
+
+  .preview__viewer > canvas:active {
+    cursor: grabbing;
+  }
+
+  .preview__viewer > canvas:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* Dimension overlay (§4.7): hairlines in the sketch colour, labels with a paper halo. */
+  .preview__overlay {
+    overflow: visible;
+    pointer-events: none;
+    font: 12px var(--font-sans);
+  }
+
+  .preview__overlay line {
+    stroke: var(--ink-muted);
+    stroke-width: 1;
+  }
+
+  .preview__overlay .ov-ext {
+    stroke-dasharray: 3 2;
+  }
+
+  .preview__overlay text {
+    fill: var(--ink);
+    stroke: var(--surface);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+  }
+
+  @media (forced-colors: active) {
+    .preview__overlay text {
+      stroke: Canvas;
+    }
+  }
+
+  /* Poster button, reload, view buttons and the Kernbuche note under the stage (JS reveals them). */
+  .preview__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  .preview__tools .btn {
+    min-block-size: var(--target-min);
+  }
+
+  .view-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .preview__note {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+  }
+
+  /* Bett and „andere“ have nothing to show in 3D. */
+  .preview[data-preview-state='inactive'] .preview__tools {
+    display: none;
+  }
+
+  /*
    * Wide containers with Möbel chosen: the drawing (sticky) on the left, title, intro and fields on
    * the right. The fields keep at least 22rem (two option cards per row); the drawing takes the
    * rest and is capped so it fits below the sticky header. The branches sit in `.step__fields`

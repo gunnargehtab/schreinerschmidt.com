@@ -546,7 +546,7 @@ No framework; custom elements and event delegation.
   - **Finishes:** natur geölt / weiß geölt / lackiert matt, made with Canvas2D filters plus roughness and clearcoat.
   - **Grain:** UVs follow the grain per part, with continuous grain across sideboard fronts.
 - **Loading:**
-  - A "3D-Ansicht laden (ca. 0,3 MB)" poster button is always there.
+  - A "3D-Ansicht laden (ca. 0,3 MB)" poster button is always there.
   - Auto-load happens only on desktop, when the panel is visible, the browser is idle and Save-Data is off.
   - WebGL2 is probed before anything downloads.
   - `yieldToMain()` runs between init phases. Flat colours render first, then textures stream in.
@@ -561,7 +561,7 @@ No framework; custom elements and event delegation.
 - **Snapshot:** render the 3/4 preset and call `toBlob` in the same task; `preserveDrawingBuffer` stays off.
 - **Pricing:** an `estimate()` stub with `enabled: false` and every rate `null`. It returns `null` and is never shown in the demo.
 - **Budgets:**
-  - Wizard ≤ 11.25 KB gz; Möbel preview ≤ 8.75 KB gz (re-split from 13 + 7 KB on 2026-10-10; 20 KB total).
+  - Wizard ≤ 11.25 KB gz; Möbel preview ≤ 8.75 KB gz (re-split from 13 + 7 KB on 2026-10-10); 3D loader ≤ 1.5 KB gz (Phase 4); 21.5 KB total.
   - three.js chunk ≤ 160 KB gz.
   - First textures ≤ 260 KB.
   - Click → first frame ≤ 0.8 s on desktop, ≤ 2.5 s on a mid-range Android.
@@ -751,6 +751,15 @@ No framework; custom elements and event delegation.
   - the privacy note (legal);
   - the before/after door reference;
   - the map pin.
+
+**Phase 4 status** (2026-10-10): three.js viewer for Regal, Sideboard and Einbauschrank (`src/scripts/configurator/viewer3d/*`), the loader `preview/load3d.ts`, view controls, overlay, context loss, quality tiers, the texture pipeline (`scripts/textures/prepare.mjs`) and the e2e specs `konfigurator-viewer{3d,-fallback,-isolation}`. Measured (gz): Möbel preview 8.62, 3D loader 1.40, core + preview + loader 21.16, three + viewer 142.5, full flow 18.69, flow + preview + loader 28.71. SwiftShader: click → ready about 2.5 s, +1.2 MB heap over 10 load/dispose cycles, 0 live contexts.
+
+**Phase 5 entry: notes from Phase 4**
+- **Budget headroom is nearly gone:** flow + preview + loader 28.71 / 28.75 KB, full flow 18.69 / 18.75 KB. Any new bytes in the core, preview, submit or payload chunks need a decision with the user first.
+- **Demo snapshot deferred:** the live payload attaches `ansicht_3d.webp`, but the demo success view does not yet offer the snapshot as a download or `<img>` (§6.1, configurator.md §4.12). It costs about 0.17 KB in `submit.ts`, over the flow cap. Options: put it in an on-request chunk, or a budget decision with the user.
+- **Textures:** the user downloads the 5 Poly Haven maps by hand (`textures-src/SOURCES.md`), then `npm run textures` and copies the printed `avgColor`s into `furniture/species.ts`. The `texMm` tile sizes in `prepare.mjs` (all 1000 mm) are `needs-review`. The finish filters, the Kernbuche tint and heart overlay, and the LRU are untested with real images.
+- **Not measurable in CI:** time to first frame (≤ 0.8 s desktop / ≤ 2.5 s mid-range Android) and GPU memory. Check on real devices in Phase 5 QA.
+- Table builds render as boxes; the Esstisch live edge (`ExtrudeGeometry`) is Phase 5. The optional DirectionalLight shadow was not added.
 
 **Phase 5: configurator C + polish**
 - **Scope:**

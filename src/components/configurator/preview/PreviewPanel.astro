@@ -1,8 +1,11 @@
 ---
-// Möbel preview panel (docs/configurator.md §2 point 6, §4.8). Without JS it is the build-time
+// Möbel preview panel (docs/configurator.md §2 point 6, §4.8, §4.9). Without JS it is the build-time
 // "Beispielskizze": the front elevation of the default Regal, drawn by the same renderElevation()
-// the browser uses later. JS replaces the drawing inside `[data-preview-drawing]` with the live one
-// and reveals the 3D slot `[data-viewer]` when WebGL is available.
+// the browser uses later. JS replaces the drawing inside `[data-preview-drawing]` with the live one,
+// reveals the 3D tools `[data-viewer-tools]` (poster button „3D-Ansicht laden“, view buttons) and,
+// once the viewer is ready, shows the canvas in the 3D slot `[data-viewer]`, which shares the stage
+// cell with the drawing. The contract of the 3D slot is documented in preview/load3d.ts; the copy
+// comes from konfigurator.yaml `viewer`. With PUBLIC_3D=false the tools are not rendered at all.
 //
 // Size: the screen renderer sets 12 px labels for the pixel width it is given, so the sketch is
 // rendered SKETCH_W px wide and shown through `.preview__sketch`, which configurator.css caps at the
@@ -12,9 +15,13 @@
 // renders at the real width once. `--ar` is the sheet's width/height as a NUMBER: configurator.css
 // multiplies it with a height cap to size the cell, so a tall drawing stays inside the sticky
 // viewport (and a phone screen).
+import { PUBLIC_3D } from 'astro:env/client';
 import { renderElevation } from '../../../lib/configurator/drawing/elevation';
 import { ART_RANGES, FIELDS } from '../../../lib/configurator/fields';
 import { generate, type CarcassParams } from '../../../lib/configurator/furniture';
+import { getPageCopy } from '../../../lib/page-copy';
+import { konfiguratorSchema } from '../../../lib/page-copy/konfigurator';
+import ViewControls from './ViewControls.astro';
 
 interface Props {
   /** Figcaption of the build-time drawing (copy: nojs.sketchCaption). */
@@ -22,6 +29,7 @@ interface Props {
 }
 
 const { caption } = Astro.props;
+const { viewer } = await getPageCopy('konfigurator', konfiguratorSchema);
 
 /** Render width (px) of the sketch; `.preview__sketch` in configurator.css caps the display at the same value. */
 const SKETCH_W = 260;
@@ -61,7 +69,21 @@ const ratio = box ? (Number(box[1]) / Number(box[2])).toFixed(3) : '1.333';
         <Fragment set:html={svg} />
       </div>
     </div>
-    <div class="preview__viewer" data-viewer hidden></div>
+    <div class="preview__viewer" data-viewer data-label={viewer.label} hidden></div>
   </div>
+  {PUBLIC_3D && (
+    <div class="preview__tools" data-viewer-tools hidden>
+      <button class="btn btn--secondary btn--small" type="button" data-action="load-3d">
+        {viewer.load}
+      </button>
+      <button class="btn btn--secondary btn--small" type="button" data-action="reload-3d" hidden>
+        {viewer.reload}
+      </button>
+      <ViewControls copy={viewer} />
+      <p class="preview__note" data-viewer-note hidden>
+        {viewer.note}
+      </p>
+    </div>
+  )}
   <figcaption class="preview__caption">{caption}</figcaption>
 </figure>

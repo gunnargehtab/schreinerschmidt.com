@@ -8,7 +8,9 @@
 // preview chunk, whereas a standalone bundle would split the SVG core into a chunk of its own.
 // What the browser downloads when Möbel is chosen is the entry chunk plus the shared chunk rolldown
 // splits off for the lazily imported table generator; the table chunk itself only loads for
-// moebel_art=esstisch. scripts/check-budgets.mjs checks the same on dist/.
+// moebel_art=esstisch, and the 3D loader (preview/load3d.ts, ≤ 1.5 KB gz) on the poster click or
+// the desktop auto-load gate; its viewer chunk (three.js) is external here, like in
+// tests/unit/configurator/viewer3d. scripts/check-budgets.mjs checks the same on dist/.
 import { gzipSync } from 'node:zlib';
 import { rolldown } from 'rolldown';
 import { describe, expect, it } from 'vitest';
@@ -28,7 +30,7 @@ describe('Möbel preview chunk', () => {
       input: ENTRY,
       platform: 'browser',
       logLevel: 'silent',
-      external: (id) => /lib\/configurator\/(fields|conditions|drawing\/elevation)$/.test(id),
+      external: (id) => /lib\/configurator\/(fields|conditions|drawing\/elevation)$|viewer3d\/index$/.test(id),
     });
     const { output } = await bundle.generate({ format: 'esm', minify: true, codeSplitting: true });
     await bundle.close();
@@ -39,11 +41,13 @@ describe('Möbel preview chunk', () => {
     const statics = entry.imports.filter((f) => byName[f]).map((f) => byName[f]!);
     const dynamics = entry.dynamicImports.map((f) => byName[f]!).filter(Boolean);
     const initial = gz(entry.code) + statics.reduce((sum, c) => sum + gz(c.code), 0);
-    const table = dynamics.reduce((sum, c) => sum + gz(c.code), 0);
+    const tableChunk = dynamics.find((c) => c.code.includes('Kufengestell'))!;
+    const loader = dynamics.find((c) => c !== tableChunk)!;
+    const table = gz(tableChunk.code);
     const line = (c: (typeof chunks)[number]) => `${c.fileName}: ${c.code.length} B min / ${gz(c.code)} B gz`;
     console.log(
       [
-        `Möbel preview: ${(initial / KB).toFixed(2)} KB gz initial (budget ≤ ${CEILING / KB} KB), table chunk +${(table / KB).toFixed(2)} KB gz on request`,
+        `Möbel preview: ${(initial / KB).toFixed(2)} KB gz initial (budget ≤ ${CEILING / KB} KB), table chunk +${(table / KB).toFixed(2)} KB gz on request, 3D loader +${(gz(loader.code) / KB).toFixed(2)} KB gz`,
         ...[entry, ...statics, ...dynamics].map((c) => `  ${line(c)}`),
       ].join('\n'),
     );
@@ -53,8 +57,10 @@ describe('Möbel preview chunk', () => {
     expect(initialCode).not.toContain('[10,20,25,50]'); // the DIN scales of the print fitting
     expect(initialCode).not.toContain('Kufengestell');
     expect(initialCode).toContain('Mittelwand');
-    expect(dynamics.length).toBe(1);
-    expect(dynamics[0]!.code).toContain('Kufengestell');
+    expect(dynamics.length).toBe(2);
+    expect(loader.code).toContain('webgl2');
+    expect(loader.code).not.toMatch(/__THREE__|WebGLRenderer/);
+    expect(gz(loader.code)).toBeLessThanOrEqual(1.5 * KB);
     expect(initial).toBeLessThanOrEqual(CEILING);
     expect(initial + table).toBeLessThanOrEqual(CEILING + 2 * KB);
   });

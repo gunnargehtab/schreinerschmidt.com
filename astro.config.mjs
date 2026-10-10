@@ -24,6 +24,10 @@ const DEMO = process.env['PUBLIC_DEMO'] !== 'false';
 const FORM = process.env['PUBLIC_FORM_ENDPOINT'] || '';
 if (!DEMO && !FORM) throw new Error('Production build needs PUBLIC_FORM_ENDPOINT');
 const formSrc = FORM ? ` ${new URL(FORM).origin}` : '';
+// `PUBLIC_3D=off` (docs/configurator.md §4.5) compiles the 3D path out: the schema field is a
+// boolean, so normalise the spelling before the env is validated. PreviewPanel.astro renders no
+// 3D tools and the Möbel preview never import()s the loader when it is false.
+if (/^(off|no|0)$/i.test(process.env['PUBLIC_3D'] ?? '')) process.env['PUBLIC_3D'] = 'false';
 
 const JSDELIVR = /^https:\/\/cdn\.jsdelivr\.net\/npm\/((?:@[^/]+\/)?[^@/]+)@[^/]+\/(.+)$/;
 const SUBSET = /-((?:latin|cyrillic|greek|vietnamese)(?:-ext)?)-wght-(?:normal|italic)\.woff2$/;
@@ -158,6 +162,21 @@ export default defineConfig({
       options: { package: '@fontsource-variable/fraunces', file: 'wght-italic.css' },
     },
   ],
+  vite: {
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            output: {
+              // three.js (+ addons) in a chunk of its own with a stable name, `_astro/three.[hash].js`
+              // (docs/configurator.md §4.9): loaded on request by the viewer chunk only.
+              codeSplitting: { groups: [{ name: 'three', test: /[\\/]node_modules[\\/]three[\\/]/ }] },
+            },
+          },
+        },
+      },
+    },
+  },
   markdown: {
     // Shiki emits inline styles that the CSP blocks; the site has no code blocks.
     syntaxHighlight: false,

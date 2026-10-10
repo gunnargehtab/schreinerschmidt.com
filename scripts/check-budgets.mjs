@@ -5,24 +5,30 @@
 // - HTML: the page file without its inline <style> blocks (those count as CSS).
 // - CSS: inline <style> blocks + linked stylesheets.
 // - JS: inline executable scripts + <script src> + modulepreloads + their static import graph.
-//   Dynamic import() targets are excluded (loaded on request), except for the three.js check.
+//   Dynamic import() targets are excluded (loaded on request), except for the three.js and 3D checks.
 // - Fonts: files every page loads: <link rel=preload as=font> + @font-face sources without a
 //   unicode-range. Faces limited by unicode-range (latin-ext) only load for those characters.
 // - LCP image: first img[fetchpriority=high]; the candidate a browser picks from the first matching
 //   <source> of its <picture> (AVIF), else from the img itself. Evaluated for two viewports, a
 //   1280 px desktop (DPR 1) and a 390 px phone (DPR 2.625); the larger file counts. The phone run
 //   picks art-directed sources (Home: 4:5 crop below 48rem) via their `media` attribute.
-// - three.js: no JS reachable from a page outside /konfigurator/ (static or dynamic) may contain it.
+// - three.js: no JS reachable from a page outside /konfigurator/ (static or dynamic) may contain it,
+//   and the 3D loader (`load3d.*.js`) must not be reachable from there either.
 // - Möbel preview: the chunk the configurator core import()s when Möbel is chosen (found by its
 //   `data-preview-drawing` selector), plus the chunks it imports statically that the page does not
-//   already load: ≤ 8.75 KB gz, and page JS + preview ≤ 20 KB gz (docs/configurator.md §3, §7). Its own
-//   import() targets (the table generator) are reported, not counted. Skipped with a log line while
-//   no page imports the chunk.
+//   already load: ≤ 8.75 KB gz (docs/configurator.md §3 "JS budget", §7). Its own import() targets
+//   (the table generator) are reported, not counted. Skipped with a log line while no page imports the chunk.
+// - Möbel 3D loader: the preview import()s `load3d.*.js` as soon as it mounts, so it downloads whenever
+//   Möbel is chosen and is budgeted explicitly (decided 2026-10-10): ≤ 1.5 KB gz, and page JS + preview +
+//   loader ≤ 21.5 KB gz (PREVIEW.withCore).
+// - 3D viewer (on request): the `viewer3d.*.js` chunk the loader import()s plus everything it imports
+//   statically (three.js): ≤ 160 KB gz. Fails when the preview references the loader but no such chunk
+//   exists; passes with a log line when the preview has no loader import (build with PUBLIC_3D=off).
 // - Full flow: everything a completed demo or live enquiry downloads besides the preview, the photos
 //   and three.js: the page JS plus every chunk reachable from it through import() (validation +
 //   messages, summary, submit + mailto, payload), found by walking the core's import() graph without
 //   entering the preview world, the photos chunk (`image/jpeg`) or three.js: FLOW.limit, and flow +
-//   Möbel preview ≤ FLOW.withPreview (18.75 / 27.25 KB gz, see FLOW).
+//   Möbel preview + 3D loader ≤ FLOW.withPreview (18.75 / 28.75 KB gz, see FLOW).
 //
 // Usage: node scripts/check-budgets.mjs  (reads BASE_PATH, falls back to env/pages.env)
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -54,20 +60,23 @@ const ROUTE_BUDGETS = [
   // components at once; they are never part of the public site.
   { match: /^intern\//, budget: { html: 45 } },
   // Configurator: 11.25 KB gz initial JS (docs/configurator.md §3 "JS budget"); the Möbel preview chunk
-  // is checked separately below (PREVIEW).
-  // TODO(Phase 3, 3D wave): also check the three.js chunk (<= 160 KB gz), import()ed on request.
+  // is checked separately below (PREVIEW, LOADER, VIEWER).
   { match: /^konfigurator\//, budget: { js: 11.25 } },
 ];
 
 /** Möbel preview chunk (docs/configurator.md §3 "JS budget", §7 "Budgets"), KB gz. */
-const PREVIEW = { match: /^konfigurator\//, signature: /data-preview-drawing/, limit: 8.75, withCore: 20 };
+const PREVIEW = { match: /^konfigurator\//, signature: /data-preview-drawing/, limit: 8.75, withCore: 21.5 };
+/** Möbel 3D loader (docs/configurator.md §3 "JS budget"), KB gz; the preview import()s it on mount. */
+const LOADER = { name: /^load3d\./, limit: 1.5 };
+/** 3D viewer chunk + the three.js chunk it imports, loaded on request, KB gz. */
+const VIEWER = { name: /^viewer3d\./, limit: 160 };
 /**
  * Full flow (core + validation + summary + submit + payload), KB gz; `withPreview` adds the Möbel
- * preview. Set with the user on 2026-10-10 from the measurement after Phase 3 (18.6 / 27.1); about
+ * preview and the 3D loader. Set with the user on 2026-10-10 from the measurement after Phase 3 (18.6 / 27.1); about
  * 1 KB is Vite's module-preload helper plus the hashed dependency maps that Astro's client build adds
  * to every chunk with an import() (not switchable from astro.config in Astro 7.3; docs/configurator.md §3).
  */
-const FLOW = { limit: 18.75, withPreview: 27.25 };
+const FLOW = { limit: 18.75, withPreview: 28.75 };
 /** The photos chunk (on file selection) re-encodes to JPEG; nothing else in the flow does. */
 const PHOTOS_SIGNATURE = /image\/jpeg/;
 
@@ -290,6 +299,8 @@ if (!existsSync(DIST)) {
 const rows = [];
 /** @type {string[]} */
 const threeOffenders = [];
+/** @type {string[]} */
+const loaderOffenders = [];
 
 for (const rel of listHtml(DIST)) {
   const file = join(DIST, rel);
@@ -346,6 +357,8 @@ for (const rel of listHtml(DIST)) {
       ...(inlineJs.some((code) => THREE_SIGNATURE.test(code)) ? ['(inline script)'] : []),
     ];
     if (hits.length > 0) threeOffenders.push(`${pageUrl}: ${hits.join(', ')}`);
+    const loaders = reachable.filter((f) => LOADER.name.test(baseName(f))).map((f) => urlPathOf(f));
+    if (loaders.length > 0) loaderOffenders.push(`${pageUrl}: ${loaders.join(', ')}`);
   }
 
   // Möbel preview chunk: import()ed by the core, so it is outside `js`; measured with its own static
@@ -356,16 +369,55 @@ for (const rel of listHtml(DIST)) {
     if (entry) {
       const files = moduleGraph([entry], false).filter((f) => !jsFiles.includes(f));
       const bytes = kb(files.reduce((sum, f) => sum + gz(read(f)), 0));
-      const withCore = kb(jsBytes) + bytes;
-      const onRequest = moduleGraph([entry], true)
-        .filter((f) => !files.includes(f) && !jsFiles.includes(f) && !THREE_SIGNATURE.test(read(f)))
+      const previewGraph = moduleGraph([entry], true);
+
+      // 3D loader (import()ed on mount) and the viewer + three.js it loads on request.
+      const loaderEntry = previewGraph.find((f) => LOADER.name.test(baseName(f)));
+      const loaderFiles = loaderEntry
+        ? moduleGraph([loaderEntry], false).filter((f) => !jsFiles.includes(f) && !files.includes(f))
+        : [];
+      const loaderBytes = kb(loaderFiles.reduce((sum, f) => sum + gz(read(f)), 0));
+      const viewerEntry = loaderEntry
+        ? moduleGraph([loaderEntry], true).find((f) => VIEWER.name.test(baseName(f)))
+        : undefined;
+      const viewerFiles = viewerEntry ? moduleGraph([viewerEntry], false) : [];
+      const viewerBytes = kb(viewerFiles.reduce((sum, f) => sum + gz(read(f)), 0));
+
+      const withCore = kb(jsBytes) + bytes + loaderBytes;
+      const onRequest = previewGraph
+        .filter(
+          (f) =>
+            !files.includes(f) &&
+            !jsFiles.includes(f) &&
+            !loaderFiles.includes(f) &&
+            !viewerFiles.includes(f) &&
+            !THREE_SIGNATURE.test(read(f)),
+        )
         .reduce((sum, f) => sum + gz(read(f)), 0);
       notes.push(
-        `Möbel preview ${bytes.toFixed(2)} / ${PREVIEW.limit} KB (${files.map(baseName).join(' + ')}; +${kb(onRequest).toFixed(1)} KB on request); core + preview ${withCore.toFixed(2)} / ${PREVIEW.withCore} KB`,
+        `Möbel preview ${bytes.toFixed(2)} / ${PREVIEW.limit} KB (${files.map(baseName).join(' + ')}; +${kb(onRequest).toFixed(1)} KB on request); 3D loader ${loaderEntry ? `${loaderBytes.toFixed(2)} / ${LOADER.limit} KB (${loaderFiles.map(baseName).join(' + ')})` : 'none (3D off)'}; core + preview + 3D loader ${withCore.toFixed(2)} / ${PREVIEW.withCore} KB`,
       );
       if (bytes > PREVIEW.limit) failures_extra.push(`Möbel preview ${bytes.toFixed(2)} KB > ${PREVIEW.limit} KB`);
+      if (loaderBytes > LOADER.limit)
+        failures_extra.push(`Möbel 3D loader ${loaderBytes.toFixed(2)} KB > ${LOADER.limit} KB`);
       if (withCore > PREVIEW.withCore)
-        failures_extra.push(`core + Möbel preview ${withCore.toFixed(2)} KB > ${PREVIEW.withCore} KB`);
+        failures_extra.push(`core + Möbel preview + 3D loader ${withCore.toFixed(2)} KB > ${PREVIEW.withCore} KB`);
+
+      if (loaderEntry && viewerFiles.length === 0) {
+        failures_extra.push('3D viewer chunk (viewer3d.*.js) not found although the preview references the loader');
+      } else if (loaderEntry) {
+        if (!viewerFiles.some((f) => THREE_SIGNATURE.test(read(f))))
+          failures_extra.push('3D viewer chunk does not include three.js');
+        notes.push(
+          `3D viewer ${viewerBytes.toFixed(1)} / ${VIEWER.limit} KB (${viewerFiles.map(baseName).join(' + ')})`,
+        );
+        if (viewerBytes > VIEWER.limit)
+          failures_extra.push(`3D viewer ${viewerBytes.toFixed(1)} KB > ${VIEWER.limit} KB`);
+      } else if (previewGraph.some((f) => /load3d/.test(read(f)))) {
+        failures_extra.push('preview references load3d but the loader chunk was not found in dist');
+      } else {
+        notes.push('3D viewer not built (PUBLIC_3D=off); check skipped');
+      }
 
       // Full flow: the core's import() graph without the preview world (the preview files and every
       // chunk that statically imports one of them: table, print sheet, payload info), the photos chunk
@@ -377,13 +429,15 @@ for (const rel of listHtml(DIST)) {
         (f) => previewWorld(f) || PHOTOS_SIGNATURE.test(read(f)) || THREE_SIGNATURE.test(read(f)),
       ).filter((f) => !jsFiles.includes(f));
       const flow = kb(jsBytes) + kb(flowFiles.reduce((sum, f) => sum + gz(read(f)), 0));
-      const flowWithPreview = flow + bytes;
+      const flowWithPreview = flow + bytes + loaderBytes;
       notes.push(
-        `full flow ${flow.toFixed(2)} / ${FLOW.limit} KB (core ${kb(jsBytes).toFixed(2)} + ${flowFiles.map((f) => `${baseName(f)} ${kb(gz(read(f))).toFixed(2)}`).join(' + ')}); flow + Möbel preview ${flowWithPreview.toFixed(2)} / ${FLOW.withPreview} KB`,
+        `full flow ${flow.toFixed(2)} / ${FLOW.limit} KB (core ${kb(jsBytes).toFixed(2)} + ${flowFiles.map((f) => `${baseName(f)} ${kb(gz(read(f))).toFixed(2)}`).join(' + ')}); flow + preview + 3D loader ${flowWithPreview.toFixed(2)} / ${FLOW.withPreview} KB`,
       );
       if (flow > FLOW.limit) failures_extra.push(`full flow ${flow.toFixed(2)} KB > ${FLOW.limit} KB`);
       if (flowWithPreview > FLOW.withPreview)
-        failures_extra.push(`full flow + Möbel preview ${flowWithPreview.toFixed(2)} KB > ${FLOW.withPreview} KB`);
+        failures_extra.push(
+          `full flow + Möbel preview + 3D loader ${flowWithPreview.toFixed(2)} KB > ${FLOW.withPreview} KB`,
+        );
     } else if (route === 'konfigurator/') {
       notes.push('Möbel preview chunk not imported by this page yet (core not wired); check skipped');
     }
@@ -450,5 +504,9 @@ for (const offender of threeOffenders) {
   console.error(`THREE.JS outside /konfigurator/: ${offender}`);
   failed = true;
 }
-if (!failed) console.log(`All ${rows.length} page(s) within budget; no three.js outside /konfigurator/.`);
+for (const offender of loaderOffenders) {
+  console.error(`3D LOADER outside /konfigurator/: ${offender}`);
+  failed = true;
+}
+if (!failed) console.log(`All ${rows.length} page(s) within budget; no three.js or 3D loader outside /konfigurator/.`);
 process.exitCode = failed ? 1 : 0;

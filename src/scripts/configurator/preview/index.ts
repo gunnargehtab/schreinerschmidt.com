@@ -34,11 +34,21 @@
 // - Only the screen front view is in this chunk. The print sheet and the Seite/Oben views come from
 //   src/lib/configurator/drawing/elevation (full renderer), import()ed by printSheet().
 // - The drawing is re-rendered when the panel width changes (ResizeObserver), coalesced per frame.
+// - 3D (docs/configurator.md §4.9; ./load3d.ts holds the contract): when the markup has the poster
+//   tools `[data-viewer-tools]` (PUBLIC_3D), the loader chunk is import()ed with the preview; it
+//   reveals the tools (not for `?3d=aus`), probes WebGL2 on the poster click or the desktop auto-load
+//   and loads the viewer chunk on request. Every Build goes to it (feed), null for bett/andere
+//   disposes the viewer, and dispose() takes it down with the preview. The module-level snapshot3d()
+//   exposes §4.12 to submit.ts (live attachment) without a path through the core: null (sync) before
+//   the loader mounted, resolves null without a ready viewer.
+import { PUBLIC_3D } from 'astro:env/client';
 import { renderScreen } from '../../../lib/configurator/drawing/svg';
 import { generateCarcass } from '../../../lib/configurator/furniture/carcass';
 import { describe } from '../../../lib/configurator/furniture/describe';
+import { SPECIES } from '../../../lib/configurator/furniture/species';
 import type { Build, Hint } from '../../../lib/configurator/furniture/types';
 import type { Values } from '../../../lib/configurator/fields';
+import type { Host3d } from './load3d';
 import { paramsFromValues } from './params';
 
 export { faecherRange, paramsFromValues } from './params';
@@ -80,6 +90,10 @@ export interface Preview {
 
 type TableModule = typeof import('../../../lib/configurator/furniture/table');
 let tablePromise: Promise<TableModule> | null = null;
+
+/** The 3D host of the mounted preview (one at a time); submit.ts takes the snapshot through it. */
+let host3d: Host3d | null = null;
+export const snapshot3d = (): Promise<Blob | null> | null => host3d?.snapshot() ?? null;
 
 /** Hints are announced 800 ms after the last change, so a slider drag yields one announcement. */
 const HINT_DELAY = 800;
@@ -135,6 +149,8 @@ export function mountPreview(form: HTMLFormElement, panel: HTMLElement, announce
       if (ac.signal.aborted) return;
       if (b) render(b);
       else panel.dataset['previewState'] = 'inactive';
+      last = b;
+      host3d?.feed(b);
     });
   };
 
@@ -147,6 +163,18 @@ export function mountPreview(form: HTMLFormElement, panel: HTMLElement, announce
   if (drawing) ro.observe(drawing);
   update();
 
+  // 3D: the loader chunk (poster button, probe, auto-load gate). PUBLIC_3D is inlined at build time,
+  // so with PUBLIC_3D=false this branch and the import() are compiled out (no tools in the markup).
+  let last: Build | null = null;
+  if (PUBLIC_3D) {
+    import('./load3d').then(
+      (m) => {
+        if (!ac.signal.aborted) (host3d = m.mount3d(panel, announce, describe, SPECIES)).feed(last);
+      },
+      () => {},
+    );
+  }
+
   return {
     update,
     dispose() {
@@ -155,6 +183,7 @@ export function mountPreview(form: HTMLFormElement, panel: HTMLElement, announce
       cancelAnimationFrame(raf);
       clearTimeout(timer);
       raf = 0;
+      host3d?.dispose();
     },
   };
 }
