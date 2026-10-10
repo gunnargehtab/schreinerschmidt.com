@@ -1,18 +1,93 @@
 ---
+// Impressum (docs/architecture.md §9). The Markdown template in src/content/legal/impressum.md is
+// resolved against the settings (tokens, demo/production blocks) and rendered at build time by
+// renderLegal(); unconfirmed facts show as review marks, never as invented values.
+import { getEntry } from 'astro:content';
+import { PUBLIC_DEMO } from 'astro:env/client';
 import PageLayout from '../../layouts/PageLayout.astro';
-import { url } from '../../lib/url';
+import ReviewMark from '../../components/ui/ReviewMark.astro';
+import { getSite } from '../../lib/content';
+import { formatDate, isoDate } from '../../lib/format';
+import { renderLegal } from '../../lib/legal-tokens';
+import { getPageCopy } from '../../lib/page-copy';
+import { uiFormsSchema } from '../../lib/page-copy/ui-forms';
+
+const entry = await getEntry('legal', 'impressum');
+if (!entry) throw new Error('Legal entry "impressum" is missing (src/content/legal/impressum.md)');
+const ui = await getPageCopy('ui', uiFormsSchema);
+const site = await getSite();
+const { html } = await renderLegal(entry.body ?? '', { site, demo: PUBLIC_DEMO, base: import.meta.env.BASE_URL });
+const { title, seo, stand, review } = entry.data;
+const pending = PUBLIC_DEMO && review.status !== 'confirmed';
 ---
 
-<PageLayout
-  title="Impressum"
-  description="Impressum der Schreinerei Schmidt in Mannheim mit Anbieterkennzeichnung und Kontaktdaten. Die rechtlichen Angaben werden gerade geprüft und folgen."
->
-  <section class="section">
-    <div class="prose">
-      <p>Diese Seite entsteht gerade. Die rechtlichen Angaben werden noch geprüft.</p>
-      <p>
-        <a href={url('datenschutz/')}>Datenschutz</a> · <a href={url('kontakt/')}>Kontakt</a>
-      </p>
+<PageLayout title={seo.title} heading={title} description={seo.description}>
+  <section class="section legal">
+    <div class="stack stack--m">
+      <div class="legal__meta cluster">
+        {pending && (
+          <p>
+            <ReviewMark status={review.status === 'placeholder' ? 'placeholder' : 'needs-review'} note={review.note}>
+              <strong class="legal__pending">{ui.demoBanner.legalPending}</strong>
+            </ReviewMark>
+          </p>
+        )}
+        <p>
+          Stand: <time datetime={isoDate(stand)}>{formatDate(stand)}</time>
+        </p>
+      </div>
+      <div class="prose legal__body" set:html={html} />
     </div>
   </section>
 </PageLayout>
+
+<style>
+  @layer components {
+    .legal__meta {
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+    }
+
+    .legal__pending {
+      color: var(--ink);
+    }
+
+    /* The Markdown HTML is injected, so its elements need :global. */
+    .legal__body :global(h2) {
+      font-size: var(--step-1);
+      scroll-margin-block-start: calc(var(--header-sticky-h, 0px) + var(--space-s));
+    }
+
+    .legal__body :global(ul) {
+      padding-inline-start: 1.25em;
+      list-style: disc;
+    }
+
+    .legal__body :global(.review-mark) {
+      overflow-wrap: anywhere;
+    }
+
+    :global(:root[data-pruefen]) .legal__body :global(.review-mark) {
+      background: var(--accent-tint);
+      outline: var(--hairline) dashed var(--error);
+      outline-offset: 1px;
+    }
+
+    :global(:root[data-pruefen]) .legal__body :global(.review-mark[data-review='placeholder']) {
+      outline-style: solid;
+      outline-width: 2px;
+    }
+
+    :global(:root[data-pruefen]) .legal__body :global(.review-mark)::after {
+      content: ' [prüfen]';
+      content: ' [prüfen]' / '';
+      font-size: var(--step--2);
+      color: var(--error);
+    }
+
+    :global(:root[data-pruefen]) .legal__body :global(.review-mark[data-review='placeholder'])::after {
+      content: ' [Platzhalter]';
+      content: ' [Platzhalter]' / '';
+    }
+  }
+</style>

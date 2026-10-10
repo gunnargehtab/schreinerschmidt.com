@@ -1,10 +1,14 @@
 ---
 // 404 (docs/design-system.md §8): the shelf sketch draws itself, one board is missing and a
 // Maßlinie asks „? cm“ as live text over the gap. Links only point at pages that exist; the four
-// section links (Leistungen, Referenzen, Über uns, Kontakt) arrive with the Phase 2 pages.
+// section links (Leistungen, Referenzen, Über uns, Kontakt) come from src/content/pages/404.yaml.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Sketch from '../components/ui/Sketch.astro';
+import { getPageCopy } from '../lib/page-copy';
+import { notFoundSchema } from '../lib/page-copy/notfound';
 import { url } from '../lib/url';
+
+const copy = await getPageCopy('404', notFoundSchema);
 ---
 
 <BaseLayout
@@ -15,25 +19,22 @@ import { url } from '../lib/url';
   <section class="section not-found">
     <div class="not-found__layout">
       <div class="stack stack--m not-found__text">
-        <p class="eyebrow">Fehler 404</p>
-        <h1>Hier fehlt ein Brett.</h1>
-        <p class="lead">Die Seite, die Sie suchen, gibt es nicht oder nicht mehr. Vielleicht wurde sie verschoben.</p>
+        <p class="eyebrow">{copy.eyebrow}</p>
+        <h1>{copy.h1}</h1>
+        <p class="lead">{copy.text}</p>
         <ul class="cluster list-plain">
           <li>
             <a class="btn btn--primary" href={url('')}>
-              Zur Startseite
+              {copy.home}
             </a>
           </li>
-          <li>
-            <a class="btn btn--secondary" href={url('leistungen/boeden/')}>
-              Böden
-            </a>
-          </li>
-          <li>
-            <a class="btn btn--secondary" href={url('kontakt/')}>
-              Kontakt
-            </a>
-          </li>
+          {copy.sectionLinks.map((link) => (
+            <li>
+              <a class="btn btn--secondary" href={url(link.href)}>
+                {link.label}
+              </a>
+            </li>
+          ))}
         </ul>
       </div>
       <figure class="not-found__figure">
@@ -43,9 +44,7 @@ import { url } from '../lib/url';
           <span class="mass__label">? cm</span>
           <span class="mass__line" aria-hidden="true"></span>
         </p>
-        <figcaption class="visually-hidden">
-          Skizze eines Regals mit drei Böden; der dritte Boden fehlt, und eine Maßlinie fragt nach seiner Länge.
-        </figcaption>
+        <figcaption class="visually-hidden">{copy.figcaption}</figcaption>
       </figure>
     </div>
   </section>

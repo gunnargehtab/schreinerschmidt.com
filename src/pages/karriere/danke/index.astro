@@ -1,0 +1,45 @@
+---
+// Thank-you page of the application form (noindex; excluded from prerendering by the
+// speculation rules). Copy: src/content/pages/karriere.yaml (danke).
+import PageLayout from '../../../layouts/PageLayout.astro';
+import { getSite } from '../../../lib/content';
+import { telHref } from '../../../lib/format';
+import { getPageCopy } from '../../../lib/page-copy';
+import { karriereSchema } from '../../../lib/page-copy/karriere';
+import { uiFormsSchema } from '../../../lib/page-copy/ui-forms';
+import { url } from '../../../lib/url';
+
+const copy = await getPageCopy('karriere', karriereSchema);
+const ui = await getPageCopy('ui', uiFormsSchema);
+const site = await getSite();
+---
+
+<PageLayout
+  title={copy.danke.title}
+  description="Danke für Deine Bewerbung bei der Schreinerei Schmidt in Mannheim. Wir haben Deine Nachricht erhalten und melden uns bei Dir."
+  crumbs={[{ label: 'Karriere', href: 'karriere/' }, { label: copy.danke.title }]}
+  noindex
+>
+  <section class="section">
+    <div class="stack stack--m">
+      <p class="lead">{copy.danke.text}</p>
+      <ul class="cluster list-plain">
+        <li>
+          <a class="btn btn--primary" href={url('')}>
+            {ui.links.home}
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--secondary" href={url('karriere/')}>
+            Zu den offenen Stellen
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--secondary" href={telHref(site.phone.e164)}>
+            {copy.application.callCta.replaceAll(' ', ' ')}
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</PageLayout>

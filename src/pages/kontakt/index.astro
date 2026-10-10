@@ -1,28 +1,187 @@
 ---
+// Kontakt (docs/design-system.md §8): quick actions, the short form and the address block with
+// hours and static map. Mobile order is actions, form, address, map (DOM order); on desktop the
+// form and the info column sit side by side in the same order. NAP and hours come from
+// settings.yaml and carry review marks while unconfirmed; copy comes from kontakt.yaml.
 import PageLayout from '../../layouts/PageLayout.astro';
-import { url } from '../../lib/url';
+import FormShell from '../../components/forms/FormShell.astro';
+import Select from '../../components/forms/Select.astro';
+import TextArea from '../../components/forms/TextArea.astro';
+import TextField from '../../components/forms/TextField.astro';
+import { formatHours, nbsp } from '../../components/layout/nav-data';
+import ReviewMark from '../../components/ui/ReviewMark.astro';
+import StaticMap from '../../components/ui/StaticMap.astro';
+import { getSite } from '../../lib/content';
+import { telHref } from '../../lib/format';
+import { getPageCopy } from '../../lib/page-copy';
+import { kontaktSchema } from '../../lib/page-copy/kontakt';
+import { uiFormsSchema } from '../../lib/page-copy/ui-forms';
+
+const copy = await getPageCopy('kontakt', kontaktSchema);
+const ui = await getPageCopy('ui', uiFormsSchema);
+const site = await getSite();
+const { form } = copy;
+
+// Same pin as StaticMap's default (MAP_POINT in scripts/make-static-map.mjs, needs-review there).
+const routeHref = `https://www.openstreetmap.org/directions?to=${encodeURIComponent('49.49074,8.52311')}`;
+
+const napStatus = site.review.status === 'confirmed' ? undefined : site.review.status;
+const hoursStatus = site.hours.status === 'confirmed' ? undefined : site.hours.status;
+const hours = formatHours(site.hours.value);
+// The copy's hours text repeats the settings hours in its first sentence; only the remark after it is
+// shown next to the hours list, so the hours themselves have a single source (settings.yaml).
+const hoursNote = copy.hours.text
+  .split(/(?<=\.)\s+/)
+  .slice(1)
+  .join(' ');
+const profile = site.rating.profileUrl?.status === 'confirmed' ? site.rating.profileUrl.value : undefined;
+
+// FormShell appends the link to the note, so the label at the end of the sentence is removed.
+const privacyNote = form.privacyNote.endsWith(`${form.privacyLinkLabel}.`)
+  ? form.privacyNote.slice(0, -(form.privacyLinkLabel.length + 1)).trimEnd()
+  : form.privacyNote;
+const phone = nbsp(site.phone.display);
 ---
 
-<PageLayout
-  title="Kontakt"
-  description="So erreichen Sie die Schreinerei Schmidt in Mannheim: Andreas-Hofer-Str. 33, 68259 Mannheim, Telefon +49 179 9467822 oder per E-Mail."
->
-  <section class="section">
-    <div class="stack stack--m prose">
-      <address>
-        Schreinerei Schmidt
-        <br />
-        Andreas-Hofer-Str. 33
-        <br />
-        68259 Mannheim
-        <br />
-        Telefon: <a href="tel:+491799467822">+49&nbsp;179&nbsp;9467822</a>
-        <br />
-        E-Mail: <a href="mailto:info@schreinerschmidt.com">info@schreinerschmidt.com</a>
-      </address>
-      <p>
-        <a href={url('')}>Zur Startseite</a> · <a href={url('leistungen/boeden/')}>Böden</a>
-      </p>
+<PageLayout title={copy.seo.title} heading={copy.hero.h1} description={copy.seo.description}>
+  <p class="lead" slot="lead">
+    {copy.hero.lead}
+  </p>
+
+  <section class="section section--compact" aria-label="Schnellkontakt">
+    <ul class="cluster list-plain">
+      <li>
+        <a class="btn btn--primary" href={telHref(site.phone.e164)}>
+          {copy.actions.call}
+        </a>
+      </li>
+      <li>
+        <a class="btn btn--secondary" href={`mailto:${site.email}`}>
+          {copy.actions.mail}
+        </a>
+      </li>
+      <li>
+        <a class="btn btn--secondary" href={routeHref}>
+          {copy.actions.route}
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section section--alt kontakt" aria-labelledby="anfrage-title">
+    <div class="kontakt__layout">
+      <div class="kontakt__form stack stack--m">
+        <h2 id="anfrage-title">{form.h2}</h2>
+        <p>{form.lead}</p>
+        <FormShell
+          id="kontakt-form"
+          danke="kontakt/danke/"
+          subject="Anfrage über die Website"
+          labelledby="anfrage-title"
+          submitLabel={form.submit}
+          demoNotice={form.demoNotice}
+          demoSuccess={ui.form.demoSuccess}
+          sendingText={ui.form.sending}
+          summaryTitle={ui.form.errorSummaryTitle}
+          privacyNote={privacyNote}
+          privacyLinkText={form.privacyLinkLabel}
+          headingLevel={3}
+        >
+          <TextField name="name" id="kontakt-name" preset="name" label={form.fields.name} required />
+          <TextField name="email" id="kontakt-email" preset="email" label={form.fields.email} required />
+          <TextField name="telefon" id="kontakt-tel" preset="tel" label={form.fields.phone} />
+          <div class="kontakt__place">
+            <TextField name="plz" id="kontakt-plz" preset="plz" label={form.fields.plz} />
+            <TextField name="ort" id="kontakt-ort" preset="ort" label={form.fields.ort} />
+          </div>
+          <Select name="thema" id="kontakt-thema" label={form.fields.topic} options={form.topicOptions} />
+          <TextArea name="nachricht" id="kontakt-nachricht" label={form.fields.message} required />
+        </FormShell>
+      </div>
+
+      <div class="kontakt__info">
+        <div class="stack stack--xs">
+          <h2>{copy.address.h2}</h2>
+          <address class="kontakt__address" data-review={napStatus}>
+            {site.name}
+            <br />
+            {site.address.street}
+            <br />
+            {site.address.postalCode} {site.address.city}
+            <br />
+            Telefon: <a href={telHref(site.phone.e164)}>{phone}</a>
+            <br />
+            E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a>
+          </address>
+          {profile && (
+            <p>
+              <a href={profile}>{ui.rating.profileLink}</a>
+            </p>
+          )}
+        </div>
+        <div class="stack stack--xs">
+          <h2>{copy.hours.h2}</h2>
+          <ul class="list-plain kontakt__hours">
+            {hours.map((row) => (
+              <li>
+                {hoursStatus ? (
+                  <ReviewMark status={hoursStatus} note={copy.hours.note}>{`${row.days} ${row.time}`}</ReviewMark>
+                ) : (
+                  `${row.days} ${row.time}`
+                )}
+              </li>
+            ))}
+          </ul>
+          {hoursNote && <p class="text-small">{hoursNote}</p>}
+        </div>
+        <StaticMap
+          alt={copy.map.alt}
+          routeLabel={copy.actions.route}
+          mapLabel={copy.map.linkLabel}
+          attribution={copy.map.attribution}
+        />
+      </div>
     </div>
   </section>
 </PageLayout>
+
+<style>
+  @layer components {
+    .kontakt__layout {
+      display: grid;
+      gap: var(--space-xl) var(--space-xl);
+      align-items: start;
+    }
+
+    @container section (inline-size >= 64rem) {
+      .kontakt__layout {
+        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      }
+    }
+
+    .kontakt__place {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-m);
+    }
+
+    @container section (inline-size >= 30rem) {
+      .kontakt__place {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+      }
+    }
+
+    .kontakt__info {
+      display: grid;
+      gap: var(--space-l);
+    }
+
+    .kontakt__address {
+      font-style: normal;
+    }
+
+    .kontakt__hours {
+      font-variant-numeric: tabular-nums;
+    }
+  }
+</style>

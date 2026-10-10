@@ -1,21 +1,207 @@
 ---
+// Karriere (docs/design-system.md §8): PageHero, benefits, JobCards (details name="jobs"), the
+// application form (#bewerbung; a legacy redirect targets this anchor) and a FAQ. Copy:
+// src/content/pages/karriere.yaml; items with a `review` mark are wrapped in ReviewMark.
+// The job cards come from the active `jobs` entries; each also has its own page.
+import { PUBLIC_DEMO } from 'astro:env/client';
+import type { Faq as FaqEntry } from '../../lib/content';
 import PageLayout from '../../layouts/PageLayout.astro';
+import FormShell from '../../components/forms/FormShell.astro';
+import FileField from '../../components/forms/FileField.astro';
+import Select from '../../components/forms/Select.astro';
+import TextArea from '../../components/forms/TextArea.astro';
+import TextField from '../../components/forms/TextField.astro';
+import Faq from '../../components/sections/Faq.astro';
+import JobCard from '../../components/sections/JobCard.astro';
+import ReviewMark from '../../components/ui/ReviewMark.astro';
+import { getJobs, getSite } from '../../lib/content';
+import { telHref } from '../../lib/format';
+import { getPageCopy } from '../../lib/page-copy';
+import { karriereSchema } from '../../lib/page-copy/karriere';
+import { uiFormsSchema } from '../../lib/page-copy/ui-forms';
 import { url } from '../../lib/url';
+
+const copy = await getPageCopy('karriere', karriereSchema);
+const ui = await getPageCopy('ui', uiFormsSchema);
+const site = await getSite();
+const jobs = await getJobs({ active: true });
+const { application: app } = copy;
+
+// FormShell appends the link to the note, so the label at the end of the sentence is removed.
+const privacyNote = app.privacyNote.endsWith(`${app.privacyLinkLabel}.`)
+  ? app.privacyNote.slice(0, -(app.privacyLinkLabel.length + 1)).trimEnd()
+  : app.privacyNote;
+// Demo shows the label of the copy ("… nur im Livebetrieb"); the live form drops that remark.
+const cvLabel = app.fields.cv.replace(/\s*\(nur im Livebetrieb\)/, '');
+
+// The shared Faq component takes content entries; the page FAQ lives in the page copy.
+const faqs = copy.faq.map((item, i) => ({
+  id: `karriere-${i}`,
+  data: {
+    question: item.question,
+    answer: item.answer,
+    topics: ['karriere'],
+    order: i,
+    review: { status: item.review ?? 'confirmed', ...(item.note ? { note: item.note } : {}) },
+  },
+})) as unknown as FaqEntry[];
+
+type Marked = { review?: 'confirmed' | 'needs-review' | 'placeholder' | undefined; note?: string | undefined };
+const status = ({ review }: Marked) => (review && review !== 'confirmed' ? review : undefined);
+const heroStatus = status(copy.hero);
+const jobsStatus = status(copy.jobs);
+const appStatus = status(app);
+const benefits = copy.benefits.map((item) => ({ ...item, mark: status(item) }));
 ---
 
-<PageLayout
-  title="Karriere"
-  description="Karriere bei der Schreinerei Schmidt in Mannheim: offene Stellen für Bauschreiner und Parkettleger. Die Seite mit allen Details entsteht gerade."
->
+<PageLayout title={copy.seo.title} heading={copy.hero.h1} description={copy.seo.description}>
   <p class="lead" slot="lead">
-    Offene Stellen in der Werkstatt und auf der Baustelle.
+    {heroStatus ? (
+      <ReviewMark status={heroStatus} note={copy.hero.note}>
+        {copy.hero.lead}
+      </ReviewMark>
+    ) : (
+      copy.hero.lead
+    )}
   </p>
-  <section id="bewerbung" class="section">
-    <div class="prose">
-      <p>Diese Seite entsteht gerade.</p>
-      <p>
-        <a href={url('ueber-uns/')}>Über uns</a> · <a href={url('kontakt/')}>Kontakt</a>
-      </p>
+
+  <section class="section" aria-label="Das bieten wir">
+    <ul class="benefits list-plain hairline-grid">
+      {benefits.map((item) => (
+        <li class="benefits__item stack stack--xs">
+          <h3>{item.title}</h3>
+          <p>
+            {item.mark ? (
+              <ReviewMark status={item.mark} note={item.note}>
+                {item.text}
+              </ReviewMark>
+            ) : (
+              item.text
+            )}
+          </p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="stellen-title">
+    <div class="stack stack--m">
+      <div class="section-intro">
+        <h2 id="stellen-title">{copy.jobs.h2}</h2>
+        <p class="lead">
+          {jobsStatus ? (
+            <ReviewMark status={jobsStatus} note={copy.jobs.note}>
+              {copy.jobs.lead}
+            </ReviewMark>
+          ) : (
+            copy.jobs.lead
+          )}
+        </p>
+      </div>
+      <div class="jobs">
+        {jobs.map((job) => (
+          <JobCard job={job} />
+        ))}
+      </div>
+      <ul class="cluster list-plain">
+        {jobs.map((job) => (
+          <li>
+            <a class="btn btn--secondary" href={url(`karriere/${job.id}/`)}>
+              {job.data.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section id="bewerbung" class="section application" aria-labelledby="bewerbung-title">
+    <div class="application__layout">
+      <div class="stack stack--m">
+        <h2 id="bewerbung-title">{app.h2}</h2>
+        <p class="lead">
+          {appStatus ? (
+            <ReviewMark status={appStatus} note={app.note}>
+              {app.lead}
+            </ReviewMark>
+          ) : (
+            app.lead
+          )}
+        </p>
+        <p>
+          <a class="btn btn--secondary" href={telHref(site.phone.e164)}>
+            {app.callCta.replaceAll(' ', ' ')}
+          </a>
+        </p>
+      </div>
+      <FormShell
+        id="bewerbung-form"
+        danke="karriere/danke/"
+        subject="Bewerbung über die Website"
+        labelledby="bewerbung-title"
+        submitLabel={app.submit}
+        demoNotice={app.demoNotice}
+        demoSuccess={ui.form.demoSuccess}
+        sendingText={ui.form.sending}
+        summaryTitle={ui.form.errorSummaryTitle}
+        privacyNote={privacyNote}
+        privacyLinkText={app.privacyLinkLabel}
+        headingLevel={3}
+      >
+        <TextField name="name" id="bewerbung-name" preset="name" label={app.fields.name} required />
+        <TextField name="email" id="bewerbung-email" preset="email" label={app.fields.email} required />
+        <TextField name="telefon" id="bewerbung-tel" preset="tel" label={app.fields.phone} />
+        <Select name="stelle" id="bewerbung-stelle" label={app.fields.position} options={app.positions} required />
+        <TextArea name="nachricht" id="bewerbung-nachricht" label={app.fields.message} />
+        <FileField
+          name="lebenslauf"
+          id="bewerbung-cv"
+          label={PUBLIC_DEMO ? app.fields.cv : cvLabel}
+          hint={app.fields.cvHint}
+        />
+      </FormShell>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="faq-title">
+    <div class="stack stack--m">
+      <h2 id="faq-title">Häufige Fragen</h2>
+      <Faq faqs={faqs} label="Häufige Fragen zur Bewerbung" />
     </div>
   </section>
 </PageLayout>
+
+<style>
+  @layer components {
+    .benefits {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    }
+
+    .benefits__item {
+      padding: var(--space-m);
+    }
+
+    .benefits__item h3 {
+      font-size: var(--step-1);
+      hyphens: auto;
+    }
+
+    .benefits__item p {
+      color: var(--ink-muted);
+      hyphens: auto;
+    }
+
+    .application__layout {
+      display: grid;
+      gap: var(--space-l) var(--space-xl);
+      align-items: start;
+    }
+
+    @container section (inline-size >= 64rem) {
+      .application__layout {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      }
+    }
+  }
+</style>

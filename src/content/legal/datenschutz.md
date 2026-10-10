@@ -12,10 +12,11 @@ review:
 <!--
   Written for the actual stack (docs/plan.md §7, docs/architecture.md §9): Astro static site, GitHub Pages in the demo,
   form.taxi as processor in production, no cookies, no third-party requests, self-hosted fonts.
-  Tokens such as {{legalName}} are resolved from src/content/settings.yaml. Paragraphs between <!-- demo --> and
-  <!-- /demo --> render only in demo builds, those between <!-- production --> and <!-- /production --> only in production.
+  Tokens such as {{legalName}} are resolved from src/content/settings.yaml. Blocks fenced by a demo marker line and a
+  closing /demo marker line render only in demo builds; production marker lines work the same for production builds
+  (src/lib/legal-tokens.ts). The markers must stand on lines of their own and must not be written out inside this comment.
 
-The hosting section is self-contained so it can be swapped for an EU host.
+  The hosting section is self-contained so it can be swapped for an EU host.
 -->
 
 ## Verantwortlicher
