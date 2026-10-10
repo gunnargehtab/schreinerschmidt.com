@@ -3,10 +3,13 @@
 // Rest route so getStaticPaths can skip it: `npm run build:audit` (PUBLIC_DEMO=false) emits no /intern/stil/.
 import { PUBLIC_DEMO } from 'astro:env/client';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Icon from '../../../components/ui/Icon.astro';
 import Sketch from '../../../components/ui/Sketch.astro';
 import SketchPhoto from '../../../components/ui/SketchPhoto.astro';
 import Wordmark from '../../../components/ui/Wordmark.astro';
+import { ICON_NAMES } from '../../../lib/sketch/icons';
 import { shy } from '../../../lib/shy';
+import { url } from '../../../lib/url';
 import schrankwand from '../../../assets/projects/einbauschrankwand/01-geschlossen.jpg';
 import schrankwandSketch from '../../../assets/sketches/einbauschrankwand-01.jpg';
 
@@ -296,7 +299,7 @@ const steps = [
       <h2>Skizzen aus dem Bauplan</h2>
       <p class="lead">
         Vier Striche: Hilfslinien mit Überstand, Umrisse, Schraffur, ein roter Akzent. Gezeichnet beim Scrollen, fertig
-        ohne Bewegung.
+        ohne Bewegung. Der ganze Satz steht auf <a href={url('intern/stil/skizzen/')}>Blatt 11–14</a>.
       </p>
     </div>
     <ul class="sketches grid hairline-grid list-plain">
@@ -366,6 +369,37 @@ const steps = [
     </div>
   </section>
 
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 15 · Symbole</p>
+      <h2>Symbole, 24 Pixel</h2>
+      <p class="lead">
+        Ein Pfad je Symbol, Strich 1,5, runde Enden, keine Füllung. Ohne Beschriftung dekorativ; mit Beschriftung trägt
+        ein Rahmen die Rolle „Bild“.
+      </p>
+    </div>
+    <ul class="icons grid hairline-grid list-plain">
+      {ICON_NAMES.map((name) => (
+        <li class="icon-cell">
+          <Icon name={name} />
+          <code>{name}</code>
+        </li>
+      ))}
+    </ul>
+    <div class="cluster icon-uses">
+      <a class="btn btn--primary" href="#main">
+        Angebot konfigurieren
+        <Icon name="arrow-right" />
+      </a>
+      <button class="btn btn--secondary btn--icon" type="button">
+        <Icon name="menu" label="Menü" />
+      </button>
+      <p class="icon-line">
+        <Icon name="clock" label="Öffnungszeiten" />
+        <span>Mo–Fr</span>
+      </p>
+    </div>
+  </section>
   <section class="section band--ink">
     <div class="section-intro stack">
       <p class="eyebrow">Blatt 07 · Umkehrband</p>
@@ -633,6 +667,45 @@ const steps = [
     /* The SVG comes from set:html, so it has no scope class. */
     .sketch-cell--wide :global(.sketch) {
       max-inline-size: 40rem;
+    }
+
+    /* Blatt 15: UI icons */
+    .icons {
+      --cols: 3;
+    }
+
+    @container section (inline-size >= 40rem) {
+      .icons {
+        --cols: 5;
+      }
+    }
+
+    @container section (inline-size >= 64rem) {
+      .icons {
+        --cols: 7;
+      }
+    }
+
+    .icon-cell {
+      display: grid;
+      gap: var(--space-2xs);
+      justify-items: start;
+      padding: var(--space-s);
+    }
+
+    .icon-uses {
+      margin-block-start: var(--space-m);
+      align-items: center;
+    }
+
+    .icon-line {
+      display: inline-flex;
+      gap: var(--space-2xs);
+      align-items: center;
+    }
+    .icon-cell code {
+      font-size: var(--step--2);
+      color: var(--ink-muted);
     }
 
     /* Blatt 09: sketch → photo */

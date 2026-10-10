@@ -70,12 +70,14 @@ export interface Curve extends Base {
   points: Point[];
 }
 
-/** Hachure fill of a polygon without an outline. Belongs in pass 3. */
+/** Hachure (or stipple) fill of a polygon without an outline. Belongs in pass 3. */
 export interface Hatch extends Base {
   kind: 'hatch';
   points: Point[];
   angle?: number;
   gap?: number;
+  /** `dots` stipples instead of hatching (cork, granular surfaces). */
+  style?: 'hachure' | 'dots';
 }
 
 export type Primitive = Line | Polyline | Polygon | Rect | Ellipse | Arc | Curve | Hatch;
@@ -171,6 +173,8 @@ export const curve = (pass: Pass, points: Point[], extra: RoughTweaks = {}): Cur
 
 export const hatch = (points: Point[], angle = -45, gap = 4): Hatch => ({ kind: 'hatch', pass: 3, points, angle, gap });
 
+export const stipple = (points: Point[], gap = 6): Hatch => ({ kind: 'hatch', pass: 3, points, gap, style: 'dots' });
+
 // Geometry helpers for the drawings.
 
 /** Axis-aligned rectangle as a polygon, clockwise from the top-left corner. */
@@ -180,6 +184,68 @@ export const box = (x: number, y: number, w: number, h: number): Point[] => [
   [x + w, y + h],
   [x, y + h],
 ];
+
+/**
+ * Cavalier oblique: the shared convention for everything with depth that is not a floor.
+ * Depth runs up and to the right at 45°, foreshortened to one half (d → +d/2, −d/2).
+ */
+export const back = ([x, y]: Point, d: number): Point => [x + d / 2, y - d / 2];
+
+/** The top face of a box whose front face is `box(x, y, w, h)`, receding by `d`. */
+export const topFace = (x: number, y: number, w: number, d: number): Point[] => [
+  [x, y],
+  [x + w, y],
+  back([x + w, y], d),
+  back([x, y], d),
+];
+
+/** The right face of the same box. */
+export const rightFace = (x: number, y: number, w: number, h: number, d: number): Point[] => [
+  [x + w, y],
+  back([x + w, y], d),
+  back([x + w, y + h], d),
+  [x + w, y + h],
+];
+
+/** A slab in cavalier oblique: front, top and right faces as three polygons in one pass. */
+export const slab = (pass: Pass, x: number, y: number, w: number, h: number, d: number, extra: RoughTweaks = {}) => [
+  polygon(pass, box(x, y, w, h), { preserveVertices: true, ...extra }),
+  polygon(pass, topFace(x, y, w, d), { preserveVertices: true, ...extra }),
+  polygon(pass, rightFace(x, y, w, h, d), { preserveVertices: true, ...extra }),
+];
+
+/** A straight bar of `width` from `from` to `to` (rule segments, pencils, handrails) as a polygon. */
+export function bar(from: Point, to: Point, width: number): Point[] {
+  const len = Math.hypot(to[0] - from[0], to[1] - from[1]) || 1;
+  const nx = (-(to[1] - from[1]) / len) * (width / 2);
+  const ny = ((to[0] - from[0]) / len) * (width / 2);
+  return [
+    [from[0] + nx, from[1] + ny],
+    [to[0] + nx, to[1] + ny],
+    [to[0] - nx, to[1] - ny],
+    [from[0] - nx, from[1] - ny],
+  ];
+}
+
+/** Point at fraction `t` along a segment, offset sideways by `side` (perpendicular, left-hand). */
+export function along(from: Point, to: Point, t: number, side = 0): Point {
+  const len = Math.hypot(to[0] - from[0], to[1] - from[1]) || 1;
+  const nx = (-(to[1] - from[1]) / len) * side;
+  const ny = ((to[0] - from[0]) / len) * side;
+  return [from[0] + (to[0] - from[0]) * t + nx, from[1] + (to[1] - from[1]) * t + ny];
+}
+
+/**
+ * A dimension line as ONE path: tick, line, tick, drawn with the pen retracing at both ends
+ * (the Maßlinie motif from docs/design-system.md). `tick` is the half length of the end ticks.
+ */
+export function dimension(pass: Pass, from: Point, to: Point, tick = 3, extra: RoughTweaks = {}): Polyline {
+  const a = along(from, to, 0, tick);
+  const b = along(from, to, 0, -tick);
+  const c = along(from, to, 1, tick);
+  const d = along(from, to, 1, -tick);
+  return polyline(pass, [a, b, from, to, c, d], { preserveVertices: true, roughness: 0.5, ...extra });
+}
 
 /** Sutherland–Hodgman clip of a polygon against an axis-aligned rectangle. */
 export function clipPolygon(points: Point[], minX: number, minY: number, maxX: number, maxY: number): Point[] {

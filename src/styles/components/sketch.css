@@ -17,6 +17,12 @@
     stroke: var(--accent);
   }
 
+  /* Labelled UI icon (components/ui/Icon.astro): the wrapper carries role="img" and the name. */
+  .icon-wrap {
+    display: inline-flex;
+    vertical-align: middle;
+  }
+
   /* Sketch → photo: both layers share the grid cell; the photo is the finished state (motion.css). */
   .sketch-photo img {
     inline-size: 100%;
