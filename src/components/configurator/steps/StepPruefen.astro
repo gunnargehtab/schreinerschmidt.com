@@ -1,0 +1,79 @@
+---
+// Step 6: Prüfen & senden (docs/configurator.md §1, §5). JS fills `[data-review-list]` with the
+// summary (same source as the sidebar and the mail text). Without JS the step holds the privacy
+// note (no consent checkbox: Art. 6 Abs. 1 Buchst. b DSGVO, flagged for legal review), the demo
+// note and the submit button. The submit button comes BEFORE the step nav (Wizard.astro), so Enter
+// submits. Live mode adds the error panel `[data-submit-error]` (role=alert) that JS shows when
+// sending fails; the reason lines and the offline line are hidden spans JS reveals.
+import { marked } from '../../../lib/review-mark';
+import { url } from '../../../lib/url';
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import ReviewMark from '../../ui/ReviewMark.astro';
+import StepFrame from './StepFrame.astro';
+
+interface Props {
+  copy: KonfiguratorCopy;
+  live: boolean;
+}
+
+const { copy, live } = Astro.props;
+const [before = '', after = ''] = copy.privacy.text.split(copy.privacy.linkLabel);
+const status = marked(copy.privacy);
+// One string: no template whitespace around the link, so the full stop stays glued to it.
+const privacyHtml = `${before}<a href="${url('datenschutz/')}">${copy.privacy.linkLabel}</a>${after}`;
+const err = copy.errors.submit;
+---
+
+<StepFrame id="pruefen" copy={copy} introJsOnly>
+  <div class="review" data-review-summary hidden>
+    <dl class="review__list" data-review-list></dl>
+  </div>
+  {!live && (
+    <p class="form__notice" data-demo-note>
+      {copy.demo.note}
+    </p>
+  )}
+  <p class="form__privacy text-small" data-privacy>
+    {status ? (
+      <ReviewMark status={status} note={copy.privacy.note}>
+        <Fragment set:html={privacyHtml} />
+      </ReviewMark>
+    ) : (
+      <Fragment set:html={privacyHtml} />
+    )}
+  </p>
+  <div class="form__actions">
+    <button class="btn" type="submit" data-action="submit">
+      {live ? copy.nav.submit : copy.nav.submitDemo}
+    </button>
+  </div>
+  {live && (
+    <div class="submit-error error-summary" role="alert" data-submit-error hidden>
+      <p class="error-summary__title">{err.title}</p>
+      <p>{err.text}</p>
+      <p class="submit-error__reason" data-reason="network" hidden>
+        {err.reasons['network']}
+      </p>
+      <p class="submit-error__reason" data-reason="timeout" hidden>
+        {err.reasons['timeout']}
+      </p>
+      <p class="submit-error__reason" data-reason="rejected" hidden>
+        {err.reasons['rejected']}
+      </p>
+      <p class="submit-error__reason" data-reason="offline" hidden>
+        {copy.errors.offline}
+      </p>
+      <div class="cluster">
+        <button class="btn btn--small" type="button" data-action="retry">
+          {err.retry}
+        </button>
+        <button class="btn btn--secondary btn--small" type="button" data-action="mail">
+          {err.mail}
+        </button>
+        <button class="btn btn--secondary btn--small" type="button" data-action="copy">
+          {err.copy}
+        </button>
+      </div>
+    </div>
+  )}
+</StepFrame>

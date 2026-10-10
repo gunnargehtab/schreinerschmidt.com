@@ -1,0 +1,42 @@
+---
+// "Was passiert jetzt?" as a vertical dimension chain (docs/configurator.md §5): six steps from the
+// copy. Unconfirmed items (`review: needs-review`) go through ReviewMark like on every other page.
+import { marked } from '../../lib/review-mark';
+import type { KonfiguratorCopy } from '../../lib/page-copy/konfigurator';
+import ReviewMark from '../ui/ReviewMark.astro';
+
+interface Props {
+  timeline: KonfiguratorCopy['success']['timeline'];
+}
+
+const { timeline } = Astro.props;
+---
+
+<div class="timeline">
+  <h3 class="timeline__title">{timeline.h2}</h3>
+  <ol class="timeline__list list-plain">
+    {timeline.items.map((item) => {
+      const status = marked(item);
+      return (
+        <li class="timeline__item" data-review={status}>
+          <span class="timeline__tick" aria-hidden="true" />
+          <div class="timeline__body">
+            <p class="timeline__head">
+              {item.when && <span class="timeline__when">{item.when}: </span>}
+              <strong>
+                {status ? (
+                  <ReviewMark status={status} note={item.note}>
+                    {item.title}
+                  </ReviewMark>
+                ) : (
+                  item.title
+                )}
+              </strong>
+            </p>
+            {item.text && <p class="timeline__text">{item.text}</p>}
+          </div>
+        </li>
+      );
+    })}
+  </ol>
+</div>

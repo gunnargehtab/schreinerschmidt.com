@@ -1,0 +1,49 @@
+---
+// Step 1: Projekt (docs/configurator.md §1 "Step 1: typ"). Eight radio cards with a line icon each;
+// `typ` is required in the HTML. Path deep links (konfigurator/<typ>/) pass `checked`, so the
+// matching radio is checked in the HTML and :has() reveals its branch without JS.
+import { PROJECT_TYPES } from '../../../lib/configurator/conditions';
+import { FIELDS, type ProjectType } from '../../../lib/configurator/fields';
+import { LABELS, PROJECT_TYPE_LABELS } from '../../../lib/configurator/labels';
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import RadioCards from '../fields/RadioCards.astro';
+import StepFrame from './StepFrame.astro';
+
+interface Props {
+  copy: KonfiguratorCopy;
+  /** Project type that is checked in the HTML (path deep link). */
+  typ?: ProjectType | undefined;
+}
+
+const { copy, typ } = Astro.props;
+
+// One 24 px line icon per project type (square caps, no fills).
+const ICONS: Record<ProjectType, string> = {
+  moebel: 'M5 3.5h14v17H5zM12 3.5v17M9.5 11v2M14.5 11v2',
+  boden: 'M3.5 6.5h17M3.5 12h17M3.5 17.5h17M9 6.5V12M15 12v5.5',
+  treppe: 'M3.5 20.5h5v-4.5h5v-4.5h5V7h3',
+  fenster: 'M5 3.5h14v17H5zM12 3.5v17M5 12h14',
+  tuer: 'M6.5 20.5v-17h11v17M3.5 20.5h17M14.5 12v1.5',
+  terrasse: 'M3.5 20.5h17M5 20.5V8M12 20.5V8M19 20.5V8M3.5 11.5h17M3.5 16h17',
+  altbau: 'M6 20.5V10a6 6 0 0 1 12 0v10.5M3.5 20.5h17M9.5 20.5v-6h5v6',
+  sonstiges: 'M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19zM14 7l3 3',
+};
+
+const options = PROJECT_TYPES.map((value) => ({
+  value,
+  label: PROJECT_TYPE_LABELS[value].label,
+  hint: PROJECT_TYPE_LABELS[value].hint,
+  icon: ICONS[value],
+}));
+---
+
+<StepFrame id="projekt" copy={copy}>
+  <RadioCards
+    name="typ"
+    legend={LABELS['typ']?.label ?? 'Projektart'}
+    options={options}
+    layout="cards"
+    required={FIELDS['typ']?.required}
+    checked={typ}
+  />
+</StepFrame>

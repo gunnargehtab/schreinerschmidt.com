@@ -1,0 +1,41 @@
+---
+// Möbel, step 2: Möbel & Maße (docs/configurator.md §1 "Möbel, step 2", §4.2). A list of field names;
+// the furniture type decides through the generated :has() rules (data-when on each field) which
+// block is visible: Korpus (Regal, Sideboard, Einbauschrank), Tisch, Bett or Freitext. JS narrows
+// the ranges per type. The preview panel sits before this fieldset (steps/StepDetails.astro).
+import { PROJECT_TYPE_LABELS } from '../../../lib/configurator/labels';
+import FieldControl from '../fields/FieldControl.astro';
+
+interface Props {
+  /** Intro line (copy: steps.details.intros.moebel). */
+  intro: string;
+}
+
+const { intro } = Astro.props;
+---
+
+<fieldset class="branch" data-branch="moebel">
+  <legend class="visually-hidden">{PROJECT_TYPE_LABELS.moebel.label}</legend>
+  <p class="step__intro">{intro}</p>
+  <FieldControl name="moebel_art" layout="cards" />
+  <FieldControl name="moebel_breite" slider />
+  <FieldControl name="moebel_hoehe" slider />
+  <FieldControl name="moebel_tiefe" slider />
+  <FieldControl name="moebel_staerke" />
+  <FieldControl name="moebel_front" />
+  <FieldControl name="moebel_unterbau" />
+  <FieldControl name="moebel_rueckwand" />
+  <FieldControl name="moebel_faecher" />
+  <FieldControl name="moebel_griffe" />
+  <FieldControl name="moebel_dachschraege" />
+  <FieldControl name="tisch_laenge" slider />
+  <FieldControl name="tisch_breite" slider />
+  <FieldControl name="tisch_hoehe" slider />
+  <FieldControl name="tisch_platte" />
+  <FieldControl name="tisch_kante" />
+  <FieldControl name="tisch_gestell" />
+  <FieldControl name="tisch_brett" />
+  <FieldControl name="bett_liegeflaeche" />
+  <FieldControl name="bett_hoehe" />
+  <FieldControl name="moebel_beschreibung" />
+</fieldset>

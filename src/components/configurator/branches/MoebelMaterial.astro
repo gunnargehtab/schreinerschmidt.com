@@ -1,0 +1,28 @@
+---
+// Möbel, step 3: Holz & Oberfläche (docs/configurator.md §1 "Möbel, step 3"). A list of field names
+// plus the photos; see Boden.astro. The species swatches are radios (default `eiche` is filled by JS,
+// never preselected in the HTML).
+import { PROJECT_TYPE_LABELS } from '../../../lib/configurator/labels';
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import FieldControl from '../fields/FieldControl.astro';
+import Fotos from './Fotos.astro';
+
+interface Props {
+  /** Intro line (copy: steps.ausfuehrung.intros.moebel). */
+  intro: string;
+  photos: KonfiguratorCopy['photos'];
+  email: string;
+  live: boolean;
+}
+
+const { intro, photos, email, live } = Astro.props;
+---
+
+<fieldset class="branch" data-branch="moebel">
+  <legend class="visually-hidden">{PROJECT_TYPE_LABELS.moebel.label}</legend>
+  <p class="step__intro">{intro}</p>
+  <FieldControl name="moebel_holz" />
+  <FieldControl name="moebel_oberflaeche" />
+  <FieldControl name="moebel_wuensche" />
+</fieldset>
+<Fotos typ="moebel" photos={photos} email={email} live={live} />

@@ -1,0 +1,45 @@
+---
+// Fenster: branch of the quote wizard (docs/configurator.md §1). A list of field names; FieldControl
+// renders each one from fields.ts + labels.ts. `step` picks the fields of step 2 (details) or
+// step 3 (ausfuehrung, with the photos). The fieldset carries `data-branch`, so it is hidden by the
+// generated :has() rules until the project type is chosen.
+import { PROJECT_TYPE_LABELS } from '../../../lib/configurator/labels';
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import FieldControl from '../fields/FieldControl.astro';
+import Fotos from './Fotos.astro';
+
+interface Props {
+  step: 'details' | 'ausfuehrung';
+  /** Intro line of this branch and step (copy: steps.<step>.intros.fenster). */
+  intro: string;
+  photos: KonfiguratorCopy['photos'];
+  email: string;
+  live: boolean;
+}
+
+const { step, intro, photos, email, live } = Astro.props;
+---
+
+<fieldset class="branch" data-branch="fenster">
+  <legend class="visually-hidden">{PROJECT_TYPE_LABELS.fenster.label}</legend>
+  <p class="step__intro">{intro}</p>
+  {step === 'details' && (
+    <>
+      <FieldControl name="fenster_leistung" />
+      <FieldControl name="fenster_anzahl" />
+      <FieldControl name="fenster_breite" />
+      <FieldControl name="fenster_hoehe" />
+    </>
+  )}
+  {step === 'ausfuehrung' && (
+    <>
+      <FieldControl name="fenster_verglasung" />
+      <FieldControl name="fenster_denkmal" />
+      <FieldControl name="rolllaeden_anzahl" />
+      <FieldControl name="rolllaeden_antrieb" />
+      <FieldControl name="fensterbaenke_ort" />
+      <FieldControl name="fenster_zustand" />
+    </>
+  )}
+</fieldset>
+{step === 'ausfuehrung' && <Fotos typ="fenster" photos={photos} email={email} live={live} />}

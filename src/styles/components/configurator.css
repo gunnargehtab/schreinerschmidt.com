@@ -1,0 +1,613 @@
+/*
+ * Quote wizard (docs/configurator.md, docs/design-system.md §8 "Konfigurator shell").
+ * Global because the wizard script renders into this markup. Finished state only: no hidden start
+ * states, no motion. The no-JS form is one long sheet of paper on graph paper; the visibility of
+ * branches and conditions comes from konfigurator/bedingungen.css (unlayered, generated), and the
+ * Möbel/other step titles from the :has() rules at the bottom of this file.
+ */
+@layer components {
+  /* `hidden` must win over every display value below. */
+  .configurator [hidden] {
+    display: none !important;
+  }
+
+  /* Hero: the compact 3-step Maßlinie under the lead. */
+  .hero-mass {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2xs);
+    max-inline-size: 40rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .configurator__layout {
+    display: grid;
+    gap: var(--space-l);
+  }
+
+  @container section (inline-size >= 64rem) {
+    .configurator__layout:has(> .summary:not([hidden])) {
+      grid-template-columns: minmax(0, 1fr) 20rem;
+      align-items: start;
+    }
+
+    .summary {
+      position: sticky;
+      inset-block-start: calc(var(--header-sticky-h) + var(--space-s));
+    }
+
+    .summary__toggle {
+      display: none;
+    }
+  }
+
+  @container section (inline-size < 64rem) {
+    /* The <details> toggle names the box on narrow screens; the heading stays for the landmark name. */
+    .summary__title {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  .configurator__main {
+    display: grid;
+    gap: var(--space-s);
+    min-inline-size: 0;
+    max-inline-size: 56rem;
+    align-content: start;
+  }
+
+  .configurator__ribbon,
+  .configurator__nojs {
+    margin: 0;
+    font-size: var(--step--1);
+  }
+
+  .configurator__ribbon {
+    justify-self: start;
+    padding: var(--space-3xs) var(--space-xs);
+    font-weight: var(--weight-ui);
+    background: var(--surface);
+    border: var(--hairline) dashed var(--line-strong);
+  }
+
+  /* The sheet: the form sits on solid paper so text never competes with the grid. */
+  .wizard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    padding: var(--space-m-xl);
+    background: var(--surface);
+    border: var(--rule-strong);
+    box-shadow: var(--shadow-paper);
+  }
+
+  /* Steps */
+  .step {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    scroll-margin-block-start: calc(var(--header-sticky-h) + var(--space-s));
+  }
+
+  .step + .step {
+    padding-block-start: var(--space-xl);
+    border-block-start: var(--rule);
+  }
+
+  .step__title {
+    font-size: var(--step-2);
+    max-inline-size: none;
+  }
+
+  .step__title:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 4px;
+  }
+
+  [data-step-prefix] {
+    color: var(--accent);
+  }
+
+  .step__intro {
+    max-inline-size: 60ch;
+    margin: 0;
+    color: var(--ink-muted);
+  }
+
+  .branch,
+  .photos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .branch > legend,
+  .photos > legend {
+    padding: 0;
+  }
+
+  .photos > legend {
+    font-size: var(--step--1);
+    font-weight: var(--weight-ui);
+  }
+
+  .photos__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+  }
+
+  .photos__demo {
+    margin: 0;
+  }
+
+  .field {
+    min-inline-size: 0;
+  }
+
+  fieldset.field {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  /* Choices: chips (default), stacked list, and cards for project and furniture type. */
+  .choice-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .choice-group--list .choice-options {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .choice__text {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .choice__hint {
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+  }
+
+  .choice-group--chips .choice,
+  .choice-group--cards .choice {
+    background: var(--surface);
+    border: var(--hairline) solid var(--line-strong);
+  }
+
+  .choice-group--chips .choice {
+    align-items: center;
+    padding-inline: var(--space-xs);
+  }
+
+  .choice-group--chips .choice:has(:checked),
+  .choice-group--cards .choice:has(:checked) {
+    background: var(--accent-tint);
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+
+  .choice:has(:focus-visible) {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .choice-group--cards .choice-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    gap: var(--space-xs);
+  }
+
+  .choice-group--cards .choice {
+    position: relative;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2xs);
+    min-block-size: 5.5rem;
+    padding: var(--space-s);
+  }
+
+  .choice-group--cards .choice__label {
+    font-weight: var(--weight-ui);
+  }
+
+  .choice__icon {
+    inline-size: 2rem;
+    block-size: 2rem;
+    color: var(--ink);
+  }
+
+  /* The native control stays in the DOM (keyboard, screen readers); the card shows the tick. */
+  .choice-group--cards .choice > input {
+    appearance: none;
+    position: absolute;
+    inset-block-start: var(--space-2xs);
+    inset-inline-end: var(--space-2xs);
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    margin: 0;
+    border: var(--hairline) solid var(--line-strong);
+    border-radius: 50%;
+    background: var(--surface);
+  }
+
+  .choice-group--cards .choice > input:checked {
+    border-color: var(--accent);
+    background-color: var(--accent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l5 5L19 7'/%3E%3C/svg%3E");
+    background-size: 90%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .field--bool .choice {
+    padding-inline: 0;
+  }
+
+  /* Number input with the optional slider next to it. */
+  .number-range {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  .number-range > .input {
+    flex: none;
+    inline-size: 7.5rem;
+  }
+
+  .number-range__slider {
+    flex: 1 1 10rem;
+    min-inline-size: 8rem;
+    min-block-size: var(--target-min);
+    accent-color: var(--accent-fill);
+  }
+
+  /* Door-hinge explainer. */
+  .explainer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .explainer__popover,
+  .share-popover {
+    inline-size: min(26rem, calc(100vw - 2rem));
+    padding: var(--space-m);
+    color: var(--ink);
+    background: var(--surface);
+    border: var(--rule-strong);
+    box-shadow: var(--shadow-paper);
+  }
+
+  .explainer__popover > * + *,
+  .share-popover > * + * {
+    margin-block-start: var(--space-xs);
+  }
+
+  .share-popover__title {
+    font-size: var(--step-0);
+    line-height: 1.3;
+  }
+
+  /* Möbel preview: the build-time Beispielskizze; the aspect ratio is reserved via --ar. */
+  .preview {
+    display: grid;
+    gap: var(--space-2xs);
+    max-inline-size: 40rem;
+    margin: 0;
+  }
+
+  .preview__stage {
+    padding: var(--space-s);
+    background: var(--surface);
+    border: var(--rule);
+  }
+
+  /* A Regal is taller than wide: cap the width so the drawing stays within one screen height. */
+  .preview__drawing {
+    aspect-ratio: var(--ar, 4 / 3);
+    inline-size: 100%;
+    max-inline-size: 22rem;
+    margin-inline: auto;
+    color: var(--ink);
+  }
+
+  .preview__drawing .ze {
+    --ze-accent: var(--accent);
+    --ze-muted: var(--ink-muted);
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    font-family: var(--font-sans);
+  }
+
+  .preview__caption {
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+  }
+
+  /* Service area line. */
+  #einzugsgebiet {
+    display: block;
+    min-block-size: 1lh;
+  }
+
+  /* Progress line: a dimension line per step; ink when done, red and thicker when current. */
+  .progress {
+    margin-block-end: var(--space-xs);
+  }
+
+  .progress__list {
+    display: flex;
+    gap: var(--space-3xs);
+    margin: 0;
+    padding: 0;
+  }
+
+  .progress__step {
+    flex: 1 1 0;
+    min-inline-size: 0;
+    border-block-start: 2px dashed var(--line-strong);
+  }
+
+  .progress__step:has([data-done]:not([hidden])) {
+    border-block-start: 2px solid var(--ink);
+  }
+
+  .progress__step:has([aria-current='step']) {
+    border-block-start: 4px solid var(--accent);
+  }
+
+  .progress__link {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2xs);
+    inline-size: 100%;
+    min-block-size: var(--target-min);
+    padding: var(--space-2xs) var(--space-3xs);
+    font: inherit;
+    font-size: var(--step--1);
+    color: inherit;
+    text-align: start;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .progress__link:disabled {
+    cursor: default;
+    color: var(--ink-muted);
+  }
+
+  .progress__link:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .progress__n {
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+
+  .progress__link[aria-current='step'] {
+    font-weight: var(--weight-ui);
+  }
+
+  .progress__compact {
+    display: none;
+    margin: 0;
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @container section (inline-size < 40rem) {
+    .progress__step:not(:has([aria-current='step'])) .progress__label {
+      display: none;
+    }
+
+    .progress__compact {
+      display: block;
+    }
+  }
+
+  /* Step navigation (JS only). */
+  .step-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  /* Summary sidebar (JS only). */
+  .summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    min-inline-size: 0;
+    padding: var(--space-m);
+    background: var(--surface);
+    border: var(--rule-strong);
+    box-shadow: var(--shadow-paper);
+  }
+
+  .summary__title {
+    font-size: var(--step-1);
+  }
+
+  .summary__toggle {
+    min-block-size: var(--target-min);
+    font-weight: var(--weight-ui);
+    cursor: pointer;
+  }
+
+  .summary__list,
+  .review__list {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    gap: var(--space-3xs) var(--space-s);
+    margin: 0;
+    font-size: var(--step--1);
+  }
+
+  .summary__list dt,
+  .review__list dt {
+    color: var(--ink-muted);
+  }
+
+  .summary__list dd,
+  .review__list dd {
+    margin: 0;
+    font-weight: var(--weight-ui);
+  }
+
+  .summary__tools {
+    padding-block-start: var(--space-s);
+    border-block-start: var(--rule);
+  }
+
+  .draft-banner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-s);
+    background: var(--accent-tint);
+    border: var(--hairline) dashed var(--line-strong);
+  }
+
+  .draft-banner > p {
+    margin: 0;
+    font-weight: var(--weight-ui);
+  }
+
+  /* Submit errors (live mode). */
+  .submit-error {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .submit-error > p {
+    margin: 0;
+  }
+
+  /* Success view. */
+  .success {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    max-inline-size: 56rem;
+    margin-block-start: var(--space-l);
+    padding: var(--space-m-xl);
+  }
+
+  .success:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 4px;
+  }
+
+  .success > p {
+    margin: 0;
+  }
+
+  .success__body {
+    display: grid;
+    gap: var(--space-m);
+  }
+
+  @container section (inline-size >= 48rem) {
+    .success__body:has(> :not(:empty)) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .success__summary {
+    white-space: pre-line;
+  }
+
+  .success__drawing svg {
+    inline-size: 100%;
+    block-size: auto;
+  }
+
+  /* "Was passiert jetzt?": a vertical dimension chain. */
+  .timeline__title {
+    margin-block-end: var(--space-s);
+  }
+
+  .timeline__list {
+    display: grid;
+    gap: var(--space-s);
+    margin: 0;
+    padding: 0;
+  }
+
+  .timeline__item {
+    position: relative;
+    padding-inline-start: var(--space-l);
+  }
+
+  .timeline__item::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0.4rem;
+    border-inline-start: var(--hairline) solid var(--line-strong);
+  }
+
+  .timeline__tick {
+    position: absolute;
+    inset-block-start: 0.55em;
+    inset-inline-start: 0;
+    inline-size: 0.9rem;
+    border-block-start: 2px solid var(--accent);
+    rotate: -45deg;
+  }
+
+  .timeline__head,
+  .timeline__text {
+    margin: 0;
+  }
+
+  .timeline__when {
+    color: var(--ink-muted);
+  }
+
+  .timeline__text {
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+  }
+
+  /* Titles and intros that depend on the chosen project type (no JS needed). */
+  .configurator:has([name='typ'][value='moebel']:checked) [data-title-other],
+  .configurator:not(:has([name='typ'][value='moebel']:checked)) [data-title-moebel],
+  .configurator:has([name='typ']:checked) [data-intro-generic] {
+    display: none;
+  }
+
+  @media (forced-colors: active) {
+    .choice-group--cards .choice > input:checked {
+      background-color: Highlight;
+      border-color: Highlight;
+    }
+  }
+}

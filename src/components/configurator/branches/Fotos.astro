@@ -1,0 +1,56 @@
+---
+// Photos of one branch (docs/configurator.md §1 "Photo policy"). Duplicated per branch with unique
+// ids: every `[data-branch]` element belongs to exactly one branch. The fieldset carries the branch,
+// so JS disables the inputs of inactive branches together with the rest.
+// - live: one file input `fotos[]` (JPEG, PNG, WebP; max. 6 files of 10 MB are enforced by JS;
+//   MAX_FILE_SIZE is a hidden field of the form). JS fills `[data-photo-list]` with thumbnails.
+// - demo: no input; the text points to the e-mail address instead.
+import type { ProjectType } from '../../../lib/configurator/fields';
+import { LABELS } from '../../../lib/configurator/labels';
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import { describedBy } from '../../forms/mode';
+
+interface Props {
+  typ: ProjectType;
+  photos: KonfiguratorCopy['photos'];
+  email: string;
+  live: boolean;
+}
+
+const { typ, photos, email, live } = Astro.props;
+const label = LABELS['fotos[]']?.label ?? 'Fotos';
+const id = `f-fotos-${typ}`;
+const [before = '', after = ''] = photos.demoText.split('{email}');
+---
+
+<fieldset class="field photos" data-branch={typ} data-field="fotos[]" data-label={label}>
+  <legend>{label}</legend>
+  <p class="field__hint" id={`${id}-hint`}>
+    {photos.personsHint}
+  </p>
+  {live ? (
+    <>
+      <p class="field__error" id={`${id}-fehler`} hidden />
+      <input
+        class="input input--file"
+        type="file"
+        id={id}
+        name="fotos[]"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        aria-label={label}
+        aria-describedby={describedBy(`${id}-hint`, `${id}-upload`)}
+      />
+      <p class="field__hint" id={`${id}-upload`}>
+        {photos.uploadHint}
+      </p>
+      <ul class="photos__list list-plain" data-photo-list hidden />
+    </>
+  ) : (
+    <p class="photos__demo">
+      {before}
+      <a href={`mailto:${email}`}>{email}</a>
+      {after}
+    </p>
+  )}
+</fieldset>

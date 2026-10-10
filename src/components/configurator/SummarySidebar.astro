@@ -1,0 +1,88 @@
+---
+// Summary sidebar "Ihre Auswahl" (docs/configurator.md §3 "Summary sidebar"). Only JS can fill it
+// (`[data-summary-list]` is built from the data-label / data-unit of the fields), so the whole <aside>
+// is `hidden` until JS reveals it. It is not a live region.
+// - Mobile pattern: <details data-summary-details> "Ihre Auswahl (n)"; JS keeps it open on wide
+//   screens. No sticky element covers focus.
+// - "Konfiguration teilen": a button with `popovertarget`, a popover with the read-only URL and a
+//   copy button. The URL holds project data only (no PII).
+// - Draft: the checkbox has NO name and the aside sits outside the form, so none of it is ever
+//   submitted. The banner `[data-draft-banner]` offers to resume a saved draft.
+// The pricing box is not rendered: pricing stays disabled (docs/configurator.md §6).
+import type { KonfiguratorCopy } from '../../lib/page-copy/konfigurator';
+
+interface Props {
+  copy: KonfiguratorCopy;
+}
+
+const { copy } = Astro.props;
+const { summary } = copy;
+const [mobileBefore = '', mobileAfter = ''] = summary.mobile.split('{count}');
+const [bannerBefore = '', bannerAfter = ''] = summary.draft.banner.split('{date}');
+// Built as strings: template whitespace around the spans would show up as spaces ("Auswahl ( 0 )").
+const mobileHtml = `${mobileBefore}<span data-summary-count>0</span>${mobileAfter}`;
+const bannerHtml = `${bannerBefore}<span data-draft-date></span>${bannerAfter}`;
+---
+
+<aside class="summary" aria-labelledby="h-auswahl" data-summary hidden>
+  <div class="draft-banner" data-draft-banner hidden>
+    <p>
+      <Fragment set:html={bannerHtml} />
+    </p>
+    <div class="cluster">
+      <button class="btn btn--small" type="button" data-action="draft-resume">
+        {summary.draft.resume}
+      </button>
+      <button class="btn btn--secondary btn--small" type="button" data-action="draft-discard">
+        {summary.draft.discard}
+      </button>
+    </div>
+  </div>
+  <h2 class="summary__title" id="h-auswahl">
+    {summary.h2}
+  </h2>
+  <details class="summary__details" data-summary-details open>
+    <summary class="summary__toggle">
+      <Fragment set:html={mobileHtml} />
+    </summary>
+    <p class="summary__empty text-muted" data-summary-empty>
+      {summary.empty}
+    </p>
+    <dl class="summary__list" data-summary-list></dl>
+  </details>
+  <div class="summary__tools stack stack--xs">
+    <button class="btn btn--secondary btn--small" type="button" popovertarget="share-popover" data-action="share">
+      {summary.share.button}
+    </button>
+    <div class="share-popover" id="share-popover" popover>
+      <h3 class="share-popover__title">
+        <label for="share-url">{summary.share.title}</label>
+      </h3>
+      <p class="text-small">{summary.share.text}</p>
+      <input class="input" id="share-url" type="text" readonly data-share-url />
+      <div class="cluster">
+        <button class="btn btn--small" type="button" data-action="copy-link">
+          {summary.share.copy}
+        </button>
+        <button
+          class="btn btn--secondary btn--small"
+          type="button"
+          popovertarget="share-popover"
+          popovertargetaction="hide"
+        >
+          {summary.share.close}
+        </button>
+      </div>
+    </div>
+    <label class="choice">
+      <input type="checkbox" id="entwurf-speichern" data-draft-toggle />
+      <span class="choice__text">
+        <span class="choice__label">{summary.draft.checkbox}</span>
+        <span class="choice__hint">{summary.draft.hint}</span>
+      </span>
+    </label>
+    <button class="btn btn--ghost btn--small" type="button" data-action="draft-delete" hidden>
+      {summary.draft.delete}
+    </button>
+  </div>
+</aside>

@@ -2,26 +2,13 @@
 // the components render these into the DOM (`<label>`, `data-label`, `data-unit`) and the client
 // reads them back from there, so this module must never be imported by src/scripts/**.
 // Option labels are verbatim from the spec tables where the spec gives them.
-import type { ProjectType, StepId } from './fields';
+import type { ProjectType } from './fields';
 
 export interface FieldLabel {
   label: string;
   hint?: string;
   options?: Readonly<Record<string, string>>;
 }
-
-export const INTRO =
-  'In 3 Minuten zu Ihrem individuellen Angebot – Sie beschreiben Ihr Projekt, Schreinermeister Ulf Schmidt erstellt Ihr Angebot persönlich.';
-
-/** Step titles: Möbel has its own wording for steps 2 and 3. */
-export const STEP_TITLES: Readonly<Record<StepId, { moebel: string; other: string }>> = {
-  projekt: { moebel: 'Projekt', other: 'Projekt' },
-  details: { moebel: 'Möbel & Maße', other: 'Ihr Vorhaben' },
-  ausfuehrung: { moebel: 'Holz & Oberfläche', other: 'Bestand & Fotos' },
-  rahmen: { moebel: 'Zeitraum, Budget & Ort', other: 'Zeitraum, Budget & Ort' },
-  kontakt: { moebel: 'Kontakt', other: 'Kontakt' },
-  pruefen: { moebel: 'Prüfen & senden', other: 'Prüfen & senden' },
-};
 
 export const PROJECT_TYPE_LABELS: Readonly<Record<ProjectType, { label: string; hint: string }>> = {
   moebel: { label: 'Möbel nach Maß', hint: 'Schrank, Regal, Sideboard, Tisch, Bett' },

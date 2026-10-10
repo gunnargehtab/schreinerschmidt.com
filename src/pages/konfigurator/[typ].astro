@@ -1,32 +1,34 @@
 ---
 // Static variant of the configurator per project type (docs/configurator.md §1 "Deep links"):
-// service pages link to `konfigurator/<typ>/`. Placeholder until the wizard lands: same content as
-// konfigurator/index.astro. The canonical stays `konfigurator/`, the variants are not separate pages.
+// service pages link to `konfigurator/<typ>/`. The matching typ radio is `checked` in the HTML, so
+// the :has() rules reveal its branch without JS. The canonical stays `konfigurator/`, the variants
+// are not separate pages; JS replaces the URL with `konfigurator/?typ=<typ>`.
 import type { GetStaticPaths } from 'astro';
+import Lead from '../../components/configurator/Lead.astro';
+import Wizard from '../../components/configurator/Wizard.astro';
 import PageLayout from '../../layouts/PageLayout.astro';
 import { KONFIGURATOR_TYPEN, TYP_LABELS, type KonfiguratorTyp } from '../../lib/konfigurator-links';
-import { url } from '../../lib/url';
+import { getPageCopy } from '../../lib/page-copy';
+import { konfiguratorSchema } from '../../lib/page-copy/konfigurator';
+import { asset, url } from '../../lib/url';
 
 export const getStaticPaths = (() => KONFIGURATOR_TYPEN.map((typ) => ({ params: { typ } }))) satisfies GetStaticPaths;
 
 // Distinct titles: the variants are separate files, and titles must be unique per page.
 const typ = Astro.params.typ as KonfiguratorTyp;
+const copy = await getPageCopy('konfigurator', konfiguratorSchema);
+const title = `${copy.seo.title}: ${TYP_LABELS[typ]}`;
 ---
 
 <PageLayout
-  title={`Angebot konfigurieren: ${TYP_LABELS[typ]}`}
-  description="Konfigurieren Sie Möbel oder Böden online und fordern Sie ein unverbindliches Angebot der Schreinerei Schmidt an. Der Konfigurator entsteht gerade."
+  title={title}
+  description={copy.seo.description}
   canonicalPath={url('konfigurator/')}
+  crumbs={[{ label: 'Konfigurator', href: 'konfigurator/' }, { label: TYP_LABELS[typ] }]}
 >
-  <p class="lead" slot="lead">
-    In wenigen Schritten zum individuellen Angebot.
-  </p>
-  <section class="section">
-    <div class="prose">
-      <p>Diese Seite entsteht gerade.</p>
-      <p>
-        <a href={url('leistungen/')}>Zu den Leistungen</a> · <a href={url('kontakt/')}>Kontakt</a>
-      </p>
-    </div>
-  </section>
+  <link slot="head" rel="stylesheet" href={asset('konfigurator/bedingungen.css')} />
+  <div class="stack stack--xs" slot="lead">
+    <Lead hero={copy.hero} />
+  </div>
+  <Wizard typ={typ} />
 </PageLayout>

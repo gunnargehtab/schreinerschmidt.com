@@ -1,21 +1,21 @@
 ---
+// /konfigurator/: the quote wizard (docs/configurator.md). Copy: src/content/pages/konfigurator.yaml.
+// The :has() rules of the no-JS form are the static stylesheet konfigurator/bedingungen.css
+// (bedingungen.css.ts); asset(), not url(): the path has no trailing slash.
+import Lead from '../../components/configurator/Lead.astro';
+import Wizard from '../../components/configurator/Wizard.astro';
 import PageLayout from '../../layouts/PageLayout.astro';
-import { url } from '../../lib/url';
+import { getPageCopy } from '../../lib/page-copy';
+import { konfiguratorSchema } from '../../lib/page-copy/konfigurator';
+import { asset } from '../../lib/url';
+
+const copy = await getPageCopy('konfigurator', konfiguratorSchema);
 ---
 
-<PageLayout
-  title="Angebot konfigurieren"
-  description="Konfigurieren Sie Möbel oder Böden online und fordern Sie ein unverbindliches Angebot der Schreinerei Schmidt an. Der Konfigurator entsteht gerade."
->
-  <p class="lead" slot="lead">
-    In wenigen Schritten zum individuellen Angebot.
-  </p>
-  <section class="section">
-    <div class="prose">
-      <p>Diese Seite entsteht gerade.</p>
-      <p>
-        <a href={url('leistungen/')}>Zu den Leistungen</a> · <a href={url('kontakt/')}>Kontakt</a>
-      </p>
-    </div>
-  </section>
+<PageLayout title={copy.seo.title} description={copy.seo.description} heading={copy.hero.h1}>
+  <link slot="head" rel="stylesheet" href={asset('konfigurator/bedingungen.css')} />
+  <div class="stack stack--xs" slot="lead">
+    <Lead hero={copy.hero} />
+  </div>
+  <Wizard />
 </PageLayout>

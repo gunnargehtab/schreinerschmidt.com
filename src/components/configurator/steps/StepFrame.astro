@@ -1,0 +1,44 @@
+---
+// Frame of one wizard step (docs/configurator.md §1, §3 "Focus, live regions, progress"):
+// <section class="step" data-step aria-labelledby="h-<id>"> with the focus target
+// <h2 id="h-<id>" tabindex="-1">. Without JS the heading reads "Schritt n: Titel" (copy
+// nojs.stepHeading); JS replaces it with "Schritt n von 6: Titel" (progress.heading). Steps 2 and 3
+// have a Möbel title: both spans are in the HTML and the :has() rules in configurator.css show the
+// one that fits the chosen project type (JS may toggle `hidden` as well).
+import { STEPS, type StepId } from '../../../lib/configurator/fields';
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+
+interface Props {
+  id: StepId;
+  copy: KonfiguratorCopy;
+  /** The intro is the fallback for steps whose branches bring their own line (steps 2 and 3). */
+  fallbackIntro?: boolean;
+  /** Intro shown only with JS (it refers to controls JS adds). */
+  introJsOnly?: boolean;
+  class?: string;
+}
+
+const { id, copy, fallbackIntro = false, introJsOnly = false, class: className } = Astro.props;
+const step = copy.steps[id];
+const n = STEPS.indexOf(id) + 1;
+const prefix = copy.nojs.stepHeading.split('{title}')[0]?.replace('{n}', String(n)).trim() ?? '';
+const titleMoebel = 'titleMoebel' in step ? step.titleMoebel : undefined;
+---
+
+<section class:list={['step', className]} data-step={id} aria-labelledby={`h-${id}`}>
+  <h2 class="step__title" id={`h-${id}`} tabindex="-1">
+    <span data-step-prefix>{prefix}</span>{' '}
+    {titleMoebel ? (
+      <>
+        <span data-title-moebel>{titleMoebel}</span>
+        <span data-title-other>{step.title}</span>
+      </>
+    ) : (
+      <span data-title>{step.title}</span>
+    )}
+  </h2>
+  <p class:list={['step__intro', introJsOnly && 'js-only']} data-intro-generic={fallbackIntro ? '' : undefined}>
+    {step.intro}
+  </p>
+  <slot />
+</section>

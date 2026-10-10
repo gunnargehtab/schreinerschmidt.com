@@ -1,0 +1,49 @@
+---
+// Möbel preview panel (docs/configurator.md §2 point 6, §4.8). Without JS it is the build-time
+// "Beispielskizze": the front elevation of the default Regal, drawn by the same renderElevation()
+// the browser uses later. JS replaces the drawing inside `[data-preview-drawing]` with the live one
+// and reveals the 3D slot `[data-viewer]` when WebGL is available.
+// `--ar` reserves the drawing's aspect ratio so nothing shifts when the live drawing arrives.
+import { renderElevation } from '../../../lib/configurator/drawing/elevation';
+import { ART_RANGES, FIELDS } from '../../../lib/configurator/fields';
+import { generate, type CarcassParams } from '../../../lib/configurator/furniture';
+
+interface Props {
+  /** Figcaption of the build-time drawing (copy: nojs.sketchCaption). */
+  caption: string;
+}
+
+const { caption } = Astro.props;
+
+// Defaults of the Regal in mm (ART_RANGES holds cm), the board and species from the registry.
+const [, , w = 120] = ART_RANGES['regal']?.['moebel_breite'] ?? [];
+const [, , h = 200] = ART_RANGES['regal']?.['moebel_hoehe'] ?? [];
+const [, , d = 35] = ART_RANGES['regal']?.['moebel_tiefe'] ?? [];
+const params: CarcassParams = {
+  kind: 'regal',
+  width: w * 10,
+  height: h * 10,
+  depth: d * 10,
+  board: Number(FIELDS['moebel_staerke']?.def ?? 19) as CarcassParams['board'],
+  front: 'offen',
+  base: { type: 'sockel', height: 80 },
+  back: 'eingenutet',
+  shelvesPerBay: 'auto',
+  handle: 'grifflos',
+  species: (FIELDS['moebel_holz']?.def ?? 'eiche') as CarcassParams['species'],
+  finish: (FIELDS['moebel_oberflaeche']?.def ?? 'natur-geoelt') as CarcassParams['finish'],
+};
+const svg = renderElevation(generate(params), { view: 'vorne', mode: 'screen', widthPx: 640, idPrefix: 'vorschau' });
+const box = /viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ([\d.]+)"/.exec(svg);
+const ratio = box ? `${box[1]} / ${box[2]}` : '4 / 3';
+---
+
+<figure class="preview" data-preview data-branch="moebel">
+  <div class="preview__stage">
+    <div class="preview__drawing" data-preview-drawing style={`--ar: ${ratio}`}>
+      <Fragment set:html={svg} />
+    </div>
+    <div class="preview__viewer" data-viewer hidden></div>
+  </div>
+  <figcaption class="preview__caption">{caption}</figcaption>
+</figure>

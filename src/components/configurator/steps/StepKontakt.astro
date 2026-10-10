@@ -1,0 +1,22 @@
+---
+// Step 5: Kontakt (docs/configurator.md §1 "Step 5"). Name and e-mail are required in the HTML. The
+// honeypot sits in Wizard.astro (once per form).
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import FieldControl from '../fields/FieldControl.astro';
+import StepFrame from './StepFrame.astro';
+
+interface Props {
+  copy: KonfiguratorCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<StepFrame id="kontakt" copy={copy}>
+  <FieldControl name="name" />
+  <FieldControl name="email" />
+  <FieldControl name="telefon" />
+  <FieldControl name="kontaktweg" />
+  <FieldControl name="erreichbarkeit" />
+  <FieldControl name="nachricht" />
+</StepFrame>

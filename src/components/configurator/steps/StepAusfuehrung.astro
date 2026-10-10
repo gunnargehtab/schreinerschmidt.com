@@ -1,0 +1,35 @@
+---
+// Step 3: Holz & Oberfläche / Bestand & Fotos (docs/configurator.md §1). One fieldset per project
+// type plus its photos (duplicated per branch with unique ids); :has() shows the chosen one.
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import Altbau from '../branches/Altbau.astro';
+import Boden from '../branches/Boden.astro';
+import Fenster from '../branches/Fenster.astro';
+import MoebelMaterial from '../branches/MoebelMaterial.astro';
+import Sonstiges from '../branches/Sonstiges.astro';
+import Terrasse from '../branches/Terrasse.astro';
+import Treppe from '../branches/Treppe.astro';
+import Tuer from '../branches/Tuer.astro';
+import StepFrame from './StepFrame.astro';
+
+interface Props {
+  copy: KonfiguratorCopy;
+  email: string;
+  live: boolean;
+}
+
+const { copy, email, live } = Astro.props;
+const intros = copy.steps.ausfuehrung.intros;
+const branch = { step: 'ausfuehrung' as const, photos: copy.photos, email, live };
+---
+
+<StepFrame id="ausfuehrung" copy={copy} fallbackIntro>
+  <MoebelMaterial intro={intros.moebel} photos={copy.photos} email={email} live={live} />
+  <Boden {...branch} intro={intros.boden} />
+  <Treppe {...branch} intro={intros.treppe} />
+  <Fenster {...branch} intro={intros.fenster} />
+  <Tuer {...branch} intro={intros.tuer} />
+  <Terrasse {...branch} intro={intros.terrasse} />
+  <Altbau {...branch} intro={intros.altbau} />
+  <Sonstiges {...branch} intro={intros.sonstiges} />
+</StepFrame>

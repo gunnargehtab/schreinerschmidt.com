@@ -1,0 +1,23 @@
+---
+// Step 4: Zeitraum, Budget & Ort (docs/configurator.md §1 "Step 4"). Shared by every branch. Only
+// plz is required. `output#einzugsgebiet` is the service-area hint JS fills (aria-live=polite); it
+// never blocks.
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import FieldControl from '../fields/FieldControl.astro';
+import StepFrame from './StepFrame.astro';
+
+interface Props {
+  copy: KonfiguratorCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<StepFrame id="rahmen" copy={copy}>
+  <FieldControl name="zeitraum" />
+  <FieldControl name="termin" />
+  <FieldControl name="budget" />
+  <FieldControl name="plz" />
+  <output id="einzugsgebiet" class="field__hint" for="f-plz" aria-live="polite" data-service-area></output>
+  <FieldControl name="ort" />
+</StepFrame>

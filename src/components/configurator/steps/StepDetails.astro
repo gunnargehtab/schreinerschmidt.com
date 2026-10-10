@@ -1,0 +1,38 @@
+---
+// Step 2: Möbel & Maße / Ihr Vorhaben (docs/configurator.md §1). One fieldset per project type, all in
+// the HTML; the generated :has() rules show the chosen one. The Möbel branch is preceded by the
+// preview panel (build-time Beispielskizze).
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import Altbau from '../branches/Altbau.astro';
+import Boden from '../branches/Boden.astro';
+import Fenster from '../branches/Fenster.astro';
+import Moebel from '../branches/Moebel.astro';
+import Sonstiges from '../branches/Sonstiges.astro';
+import Terrasse from '../branches/Terrasse.astro';
+import Treppe from '../branches/Treppe.astro';
+import Tuer from '../branches/Tuer.astro';
+import PreviewPanel from '../preview/PreviewPanel.astro';
+import StepFrame from './StepFrame.astro';
+
+interface Props {
+  copy: KonfiguratorCopy;
+  email: string;
+  live: boolean;
+}
+
+const { copy, email, live } = Astro.props;
+const intros = copy.steps.details.intros;
+const branch = { step: 'details' as const, photos: copy.photos, email, live };
+---
+
+<StepFrame id="details" copy={copy} fallbackIntro>
+  <PreviewPanel caption={copy.nojs.sketchCaption} />
+  <Moebel intro={intros.moebel} />
+  <Boden {...branch} intro={intros.boden} />
+  <Treppe {...branch} intro={intros.treppe} />
+  <Fenster {...branch} intro={intros.fenster} />
+  <Tuer {...branch} intro={intros.tuer} />
+  <Terrasse {...branch} intro={intros.terrasse} />
+  <Altbau {...branch} intro={intros.altbau} />
+  <Sonstiges {...branch} intro={intros.sonstiges} />
+</StepFrame>

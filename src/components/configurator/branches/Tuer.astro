@@ -1,0 +1,67 @@
+---
+// Türen: branch of the quote wizard (docs/configurator.md §1 "Tür"). A list of field names; see
+// Boden.astro. tuer_anschlag gets the explainer popover for DIN links/rechts (`popovertarget`, works
+// without JS).
+import { PROJECT_TYPE_LABELS } from '../../../lib/configurator/labels';
+import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import ReviewMark from '../../ui/ReviewMark.astro';
+import FieldControl from '../fields/FieldControl.astro';
+import Fotos from './Fotos.astro';
+
+interface Props {
+  step: 'details' | 'ausfuehrung';
+  /** Intro line of this branch and step (copy: steps.<step>.intros.tuer). */
+  intro: string;
+  photos: KonfiguratorCopy['photos'];
+  email: string;
+  live: boolean;
+}
+
+const { step, intro, photos, email, live } = Astro.props;
+---
+
+<fieldset class="branch" data-branch="tuer">
+  <legend class="visually-hidden">{PROJECT_TYPE_LABELS.tuer.label}</legend>
+  <p class="step__intro">{intro}</p>
+  {step === 'details' && (
+    <>
+      <FieldControl name="tuer_art" />
+      <FieldControl name="tuer_anzahl" />
+      <FieldControl name="tuer_breite" />
+      <FieldControl name="tuer_hoehe" />
+      <FieldControl name="tuer_anschlag" />
+      <div class="explainer">
+        <button type="button" class="btn btn--ghost btn--small" popovertarget="din-erklaerung">
+          <ReviewMark note="Erklärtext zum Türanschlag: Wortlaut vom Copywriter prüfen lassen.">
+            Was bedeutet DIN links oder rechts?
+          </ReviewMark>
+        </button>
+        <div id="din-erklaerung" class="explainer__popover" popover>
+          <p>
+            <ReviewMark note="Erklärtext zum Türanschlag: Wortlaut vom Copywriter prüfen lassen.">
+              Stellen Sie sich auf die Seite, zu der die Tür aufgeht. Sitzen die Bänder (Scharniere) links, ist die Tür
+              DIN links, sitzen sie rechts, ist sie DIN rechts.
+            </ReviewMark>
+          </p>
+          <button
+            type="button"
+            class="btn btn--secondary btn--small"
+            popovertarget="din-erklaerung"
+            popovertargetaction="hide"
+          >
+            Schließen
+          </button>
+        </div>
+      </div>
+    </>
+  )}
+  {step === 'ausfuehrung' && (
+    <>
+      <FieldControl name="tuer_sicherheit" />
+      <FieldControl name="tuer_glas" />
+      <FieldControl name="tuer_stil" />
+      <FieldControl name="tuer_zustand" />
+    </>
+  )}
+</fieldset>
+{step === 'ausfuehrung' && <Fotos typ="tuer" photos={photos} email={email} live={live} />}

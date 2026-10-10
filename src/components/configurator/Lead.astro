@@ -1,0 +1,33 @@
+---
+// Lead of the configurator pages (docs/design-system.md §8 "Konfigurator shell"): the lead sentence
+// and the compact 3-step Maßlinie (copy hero.masslinie). Goes into PageLayout's `lead` slot. The
+// unconfirmed claims of the lead ("3 Minuten", "persönlich") carry the review mark.
+import { marked } from '../../lib/review-mark';
+import type { KonfiguratorCopy } from '../../lib/page-copy/konfigurator';
+import Masslinie from '../ui/Masslinie.astro';
+import ReviewMark from '../ui/ReviewMark.astro';
+
+interface Props {
+  hero: KonfiguratorCopy['hero'];
+}
+
+const { hero } = Astro.props;
+const status = marked(hero);
+---
+
+<p class="lead measure-lead">
+  {status ? (
+    <ReviewMark status={status} note={hero.note}>
+      {hero.lead}
+    </ReviewMark>
+  ) : (
+    hero.lead
+  )}
+</p>
+<ol class="hero-mass list-plain">
+  {hero.masslinie.map((label) => (
+    <li>
+      <Masslinie label={label} draw="load" />
+    </li>
+  ))}
+</ol>

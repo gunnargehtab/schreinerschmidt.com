@@ -1,0 +1,116 @@
+---
+// Radio or checkbox group of the quote wizard as fieldset/legend (docs/configurator.md §1, §2;
+// design-system §5 "Forms"). One component for every enum field; `layout` picks the look:
+//   cards  big option cards (project type, furniture type), optional line icon and hint
+//   chips  wrapping row of compact options (default for radios)
+//   list   stacked rows (default for checkbox groups)
+// DOM contract (see Wizard.astro): wrapper `.field` with data-field / data-label; `data-required`
+// on every radio of a JS-required group (on the fieldset for checkbox groups, where JS enforces
+// "at least one"); `required` only for required="html"; error slot `<id>-fehler`; option-level
+// conditions as `data-when` on the option's label. Only phrasing content inside <label>.
+import { REQUIRED_TEXT, describedBy } from '../../forms/mode';
+
+export interface RadioOption {
+  value: string;
+  label: string;
+  hint?: string | undefined;
+  /** `d` of a 24 px line icon (stroke currentColor, 1.5 px, square caps); cards layout only. */
+  icon?: string | undefined;
+  /** Condition id (OPTION_WHEN): the option only exists while it holds. */
+  when?: string | undefined;
+}
+
+interface Props {
+  name: string;
+  /** Prefix for the ids of the options and the error slot. */
+  id?: string | undefined;
+  legend: string;
+  options: RadioOption[];
+  layout?: 'cards' | 'chips' | 'list' | undefined;
+  /** Checkbox group instead of radios. */
+  multi?: boolean;
+  required?: 'html' | 'js' | undefined;
+  hint?: string | undefined;
+  /** Option that carries `checked` (path deep links only). */
+  checked?: string | undefined;
+  /** Condition id of the whole field (`data-when`). */
+  when?: string | undefined;
+  class?: string | undefined;
+}
+
+const {
+  name,
+  id = `f-${name}`,
+  legend,
+  options,
+  multi = false,
+  required,
+  hint,
+  checked,
+  when,
+  class: className,
+} = Astro.props;
+const layout = Astro.props.layout ?? (multi ? 'list' : 'chips');
+const type = multi ? 'checkbox' : 'radio';
+const groupRequired = multi && required === 'js';
+// Checkbox groups keep one plain name (`fenster_leistung`): the :has() rules of conditions.ts match
+// [name="…"], so the `[]` suffix html-validate wants for repeated checkbox names is not an option.
+const off = multi ? '<!-- [html-validate-disable form-dup-name: checkbox group, see RadioCards.astro] -->' : '';
+const on = multi ? '<!-- [html-validate-enable form-dup-name] -->' : '';
+---
+
+<Fragment set:html={off} />
+<fieldset
+  class:list={['field', 'choice-group', `choice-group--${layout}`, className]}
+  data-field={name}
+  data-label={legend}
+  data-when={when}
+  data-required={groupRequired ? 'group' : undefined}
+  aria-describedby={describedBy(hint && `${id}-hint`)}
+>
+  <legend>
+    {legend}
+    {required && <span class="field__required">{REQUIRED_TEXT}</span>}
+  </legend>
+  {hint && (
+    <p class="field__hint" id={`${id}-hint`}>
+      {hint}
+    </p>
+  )}
+  <p class="field__error" id={`${id}-fehler`} hidden></p>
+  <div class="choice-options">
+    {options.map((o) => (
+      <label class="choice" data-when={o.when}>
+        <input
+          type={type}
+          id={`${id}-${o.value}`}
+          name={name}
+          value={o.value}
+          checked={o.value === checked}
+          required={required === 'html'}
+          data-required={required === 'js' && !multi ? '' : undefined}
+        />
+        {o.icon && (
+          <svg
+            class="choice__icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="square"
+            stroke-linejoin="miter"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d={o.icon} />
+          </svg>
+        )}
+        <span class="choice__text">
+          <span class="choice__label">{o.label}</span>
+          {o.hint && <span class="choice__hint">{o.hint}</span>}
+        </span>
+      </label>
+    ))}
+  </div>
+</fieldset>
+<Fragment set:html={on} />

@@ -1,0 +1,87 @@
+---
+// Whole-number field of the quote wizard (docs/configurator.md §1, §4.11). The number input carries
+// the name; with `slider`, a range input follows that JS reveals and keeps in sync. It is `hidden`
+// in the HTML (a slider without JS has nothing to drive), has no name and is labelled
+// "<Label> (Schieberegler)".
+// Number fields use a placeholder (the default), never `value`, so a no-JS submission stays clean.
+import { REQUIRED_TEXT, describedBy } from '../../forms/mode';
+
+interface Props {
+  name: string;
+  id?: string;
+  label: string;
+  hint?: string | undefined;
+  unit?: string | undefined;
+  min: number;
+  max: number;
+  placeholder?: string | undefined;
+  required?: 'html' | 'js' | undefined;
+  slider?: boolean;
+  /** Condition id of the field (`data-when`). */
+  when?: string | undefined;
+  class?: string;
+}
+
+const {
+  name,
+  id = `f-${name}`,
+  label,
+  hint,
+  unit,
+  min,
+  max,
+  placeholder,
+  required,
+  slider = false,
+  when,
+  class: className,
+} = Astro.props;
+---
+
+<div
+  class:list={['field', 'field--number', className]}
+  data-field={name}
+  data-label={label}
+  data-unit={unit}
+  data-when={when}
+>
+  <label class="field__label" for={id}>
+    {label}
+    {required && <span class="field__required">{REQUIRED_TEXT}</span>}
+  </label>
+  {hint && (
+    <p class="field__hint" id={`${id}-hint`}>
+      {hint}
+    </p>
+  )}
+  <p class="field__error" id={`${id}-fehler`} hidden></p>
+  <div class="number-range">
+    <input
+      class="input"
+      type="number"
+      id={id}
+      name={name}
+      min={min}
+      max={max}
+      step="1"
+      inputmode="numeric"
+      placeholder={placeholder}
+      autocomplete="off"
+      required={required === 'html'}
+      data-required={required === 'js' ? '' : undefined}
+      aria-describedby={describedBy(hint && `${id}-hint`)}
+    />
+    {slider && (
+      <input
+        class="number-range__slider"
+        type="range"
+        min={min}
+        max={max}
+        step="1"
+        data-range-for={name}
+        aria-label={`${label} (Schieberegler)`}
+        hidden
+      />
+    )}
+  </div>
+</div>

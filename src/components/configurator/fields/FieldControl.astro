@@ -1,0 +1,159 @@
+---
+// One control of the quote wizard, rendered from the registry (fields.ts) and the German labels
+// (labels.ts): kind -> markup. Branch components are lists of field names, so markup, registry and
+// conditions stay in lockstep (tests/dist/konfigurator.test.ts checks both directions).
+//
+//   enum  -> RadioCards (radios; checkboxes when `multi`)
+//   int   -> NumberRange (number input; optional range slider)
+//   dec   -> text input, inputmode=decimal, pattern
+//   text  -> input, or textarea for long fields (maxLength >= 500)
+//   bool  -> single checkbox, value="1"
+//   date  -> date input
+// `file` is not rendered here (branches/Fotos.astro). Option-level conditions (OPTION_WHEN) end up as
+// `data-when` on the option's label; a field's own condition (FIELDS[name].when) as `data-when` on
+// its wrapper. DOM contract: see Wizard.astro.
+import type { HTMLAttributes } from 'astro/types';
+import { OPTION_WHEN } from '../../../lib/configurator/conditions';
+import { ART_RANGES, FIELDS } from '../../../lib/configurator/fields';
+import { LABELS } from '../../../lib/configurator/labels';
+import { REQUIRED_TEXT, describedBy } from '../../forms/mode';
+import NumberRange from './NumberRange.astro';
+import RadioCards, { type RadioOption } from './RadioCards.astro';
+
+interface Props {
+  name: string;
+  /** Enum layout; defaults to chips (radios) or list (checkbox groups). */
+  layout?: 'cards' | 'chips' | 'list';
+  /** Number fields: add the range slider (hidden until JS). */
+  slider?: boolean;
+  /** Textarea rows. */
+  rows?: number;
+  /** Option that carries `checked` (path deep links; only `typ`). */
+  checked?: string;
+  /** `d` of a line icon per option value (cards layout). */
+  icons?: Record<string, string>;
+  /** Per-option hints (cards layout), keyed by value. */
+  hints?: Record<string, string>;
+}
+
+const { name, layout, slider = false, rows = 5, checked, icons = {}, hints = {} } = Astro.props;
+const f = FIELDS[name];
+const l = LABELS[name];
+if (!f || !l) throw new Error(`FieldControl: "${name}" is not in fields.ts / labels.ts`);
+if (f.kind === 'file') throw new Error(`FieldControl: "${name}" is a file field, use branches/Fotos.astro`);
+
+const id = `f-${name}`;
+const hint = l.hint;
+const required = f.required;
+const when = f.when;
+// Defaults of the sample drawing double as placeholders (numbers never carry a value).
+const sample = (ART_RANGES['regal']?.[name] ?? ART_RANGES['esstisch']?.[name])?.[2];
+
+/** Attributes that differ from the plain text input. */
+const TEXT: Record<string, Pick<HTMLAttributes<'input'>, 'type' | 'autocomplete' | 'inputmode' | 'spellcheck'>> = {
+  plz: { inputmode: 'numeric', autocomplete: 'postal-code' },
+  ort: { autocomplete: 'address-level2' },
+  name: { autocomplete: 'name' },
+  email: { type: 'email', autocomplete: 'email', spellcheck: 'false' },
+  telefon: { type: 'tel', autocomplete: 'tel' },
+};
+const t = TEXT[name] ?? {};
+
+const options: RadioOption[] =
+  f.kind === 'enum'
+    ? (f.values ?? []).map((value) => {
+        const label = l.options?.[value];
+        if (label === undefined) throw new Error(`FieldControl: no option label for ${name}=${value}`);
+        return { value, label, hint: hints[value], icon: icons[value], when: OPTION_WHEN[name]?.[value] };
+      })
+    : [];
+---
+
+{f.kind === 'enum' && (
+  <RadioCards
+    name={name}
+    legend={l.label}
+    options={options}
+    layout={layout}
+    multi={f.multi === true}
+    required={required}
+    hint={hint}
+    checked={checked}
+    when={when}
+  />
+)}
+{f.kind === 'int' && name !== 'tisch_brett' && (
+  <NumberRange
+    name={name}
+    label={l.label}
+    hint={hint}
+    unit={f.unit}
+    min={f.min ?? 0}
+    max={f.max ?? 0}
+    placeholder={sample === undefined ? undefined : String(sample)}
+    required={required}
+    slider={slider}
+    when={when}
+  />
+)}
+{f.kind === 'bool' && (
+  <div class="field field--bool" data-field={name} data-label={l.label} data-when={when}>
+    <label class="choice">
+      <input type="checkbox" id={id} name={name} value="1" aria-describedby={describedBy(hint && `${id}-hint`)} />
+      <span class="choice__text">
+        <span class="choice__label">{l.label}</span>
+      </span>
+    </label>
+    {hint && (
+      <p class="field__hint" id={`${id}-hint`}>
+        {hint}
+      </p>
+    )}
+    <p class="field__error" id={`${id}-fehler`} hidden />
+  </div>
+)}
+{name === 'tisch_brett' && <input type="hidden" id={id} name={name} data-field={name} data-when={when} />}
+{(f.kind === 'dec' || f.kind === 'text' || f.kind === 'date') && name !== 'tisch_brett' && (
+  <div class="field" data-field={name} data-label={l.label} data-when={when}>
+    <label class="field__label" for={id}>
+      {l.label}
+      {required && <span class="field__required">{REQUIRED_TEXT}</span>}
+    </label>
+    {hint && (
+      <p class="field__hint" id={`${id}-hint`}>
+        {hint}
+      </p>
+    )}
+    <p class="field__error" id={`${id}-fehler`} hidden />
+    {f.kind === 'text' && (f.maxLength ?? 0) >= 500 ? (
+      <textarea
+        class="textarea"
+        id={id}
+        name={name}
+        rows={rows}
+        minlength={f.minLength}
+        maxlength={f.maxLength}
+        autocomplete="off"
+        required={required === 'html'}
+        data-required={required === 'js' ? '' : undefined}
+        aria-describedby={describedBy(hint && `${id}-hint`)}
+      />
+    ) : (
+      <input
+        class="input"
+        id={id}
+        name={name}
+        type={f.kind === 'date' ? 'date' : (t.type ?? 'text')}
+        inputmode={f.kind === 'dec' ? 'decimal' : t.inputmode}
+        autocomplete={t.autocomplete ?? 'off'}
+        spellcheck={t.spellcheck}
+        pattern={f.pattern}
+        minlength={f.minLength}
+        maxlength={f.maxLength}
+        required={required === 'html'}
+        data-required={required === 'js' ? '' : undefined}
+        aria-describedby={describedBy(hint && `${id}-hint`)}
+      />
+    )}
+  </div>
+)}

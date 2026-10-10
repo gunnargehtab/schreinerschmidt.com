@@ -14,7 +14,7 @@ import {
   fieldValues,
 } from '../../../src/lib/configurator/fields';
 import { PROJECT_TYPES } from '../../../src/lib/configurator/conditions';
-import { INTRO, LABELS, PROJECT_TYPE_LABELS, STEP_TITLES } from '../../../src/lib/configurator/labels';
+import { LABELS, PROJECT_TYPE_LABELS } from '../../../src/lib/configurator/labels';
 
 const entries = Object.entries(FIELDS);
 const KINDS = ['enum', 'int', 'dec', 'text', 'bool', 'date', 'file'];
@@ -199,7 +199,6 @@ describe('labels', () => {
       expect(Object.keys(options).sort(), name).toEqual(f.values!.slice().sort());
     }
     expect(Object.keys(PROJECT_TYPE_LABELS)).toEqual(PROJECT_TYPES);
-    expect(Object.keys(STEP_TITLES)).toEqual(STEPS);
   });
 
   it('uses spec wording', () => {
@@ -207,19 +206,16 @@ describe('labels', () => {
       label: 'Möbel nach Maß',
       hint: 'Schrank, Regal, Sideboard, Tisch, Bett',
     });
-    expect(STEP_TITLES.details).toEqual({ moebel: 'Möbel & Maße', other: 'Ihr Vorhaben' });
-    expect(STEP_TITLES.pruefen.other).toBe('Prüfen & senden');
     expect(LABELS['boden_leistung']!.options!['aufarbeiten']).toBe('Abschleifen & Aufarbeiten');
     expect(LABELS['treppe_leistung']!.options!['belegen']).toBe('Bestandstreppe mit Holz belegen');
     expect(LABELS['treppe_geschosshoehe']!.hint).toBe('Oberkante Fertigfußboden bis Oberkante Fertigfußboden');
     expect(LABELS['moebel_dachschraege']!.hint).toBe('Bitte Foto/Skizze beifügen');
     expect(LABELS['zeitraum']!.options!['asap']).toBe('So bald wie möglich');
     expect(LABELS['plz']!.label).toBe('Postleitzahl des Objekts');
-    expect(INTRO).toContain('Schreinermeister Ulf Schmidt');
   });
 
   it('follows the German typography rules (no straight quotes, U+202F before units)', () => {
-    const texts: string[] = [INTRO];
+    const texts: string[] = [];
     for (const l of Object.values(LABELS)) texts.push(l.label, l.hint ?? '', ...Object.values(l.options ?? {}));
     for (const p of Object.values(PROJECT_TYPE_LABELS)) texts.push(p.label, p.hint);
     for (const t of texts) {

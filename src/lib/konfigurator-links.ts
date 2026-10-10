@@ -1,21 +1,14 @@
 // Deep links from the services to the configurator (docs/configurator.md §1 "Deep links"):
 // `konfigurator/<typ>/` is a static variant of the wizard with the project type preselected.
 // Service keys (src/content/services, plural) differ from the configurator's `typ` (singular).
+import { PROJECT_TYPES } from './configurator/conditions';
+import type { ProjectType } from './configurator/fields';
 import type { ServiceKey } from './content-schema';
 
-/** Every project type the configurator knows: the 7 services plus `sonstiges`. */
-export const KONFIGURATOR_TYPEN = [
-  'moebel',
-  'boden',
-  'treppe',
-  'fenster',
-  'tuer',
-  'terrasse',
-  'altbau',
-  'sonstiges',
-] as const;
+/** Every project type the configurator knows: the 7 services plus `sonstiges` (single source: conditions.ts). */
+export const KONFIGURATOR_TYPEN: readonly ProjectType[] = PROJECT_TYPES;
 
-export type KonfiguratorTyp = (typeof KONFIGURATOR_TYPEN)[number];
+export type KonfiguratorTyp = ProjectType;
 
 export const SERVICE_TO_TYP: Record<ServiceKey, KonfiguratorTyp> = {
   moebel: 'moebel',

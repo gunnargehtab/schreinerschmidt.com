@@ -1,0 +1,48 @@
+---
+// Progress line (docs/configurator.md §3 "Focus, live regions, progress"): <nav aria-label="Fortschritt">
+// <ol> with one <li data-step-link="<id>"> per step, so the line never changes length between branches.
+// Without JS the whole nav is `hidden`: the page is one long form with "Schritt n" headings, and a
+// progress line that cannot be clicked would only add noise. JS removes `hidden`, sets
+// aria-current="step" on the current li's button, un-hides the visually hidden "abgeschlossen" text
+// of done steps and fills `[data-progress-compact]` ("2/6") for narrow screens.
+import { STEPS } from '../../lib/configurator/fields';
+import type { KonfiguratorCopy } from '../../lib/page-copy/konfigurator';
+
+interface Props {
+  copy: KonfiguratorCopy;
+}
+
+const { copy } = Astro.props;
+const steps = STEPS.map((id, i) => {
+  const s = copy.steps[id];
+  return { id, n: i + 1, title: s.title, titleMoebel: 'titleMoebel' in s ? s.titleMoebel : undefined };
+});
+---
+
+<nav class="progress" aria-label={copy.progress.label} data-progress hidden>
+  <p class="progress__compact" data-progress-compact aria-hidden="true"></p>
+  <ol class="progress__list list-plain">
+    {steps.map((s) => (
+      <li class="progress__step" data-step-link={s.id}>
+        <button class="progress__link" type="button" data-goto={s.id}>
+          <span class="progress__n" aria-hidden="true">
+            {s.n}
+          </span>
+          <span class="progress__label">
+            {s.titleMoebel ? (
+              <>
+                <span data-title-moebel>{s.titleMoebel}</span>
+                <span data-title-other>{s.title}</span>
+              </>
+            ) : (
+              s.title
+            )}
+          </span>
+          <span class="visually-hidden" data-done hidden>
+            {copy.progress.done}
+          </span>
+        </button>
+      </li>
+    ))}
+  </ol>
+</nav>
