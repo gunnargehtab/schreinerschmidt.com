@@ -1,0 +1,140 @@
+---
+// Bildansicht (docs/design-system.md §5 "Gallery and Lightbox"). One per page; `Gallery` renders it.
+// `lightbox.ts` fills it from the clicked `a[data-lightbox]`. Without JS the dialog stays closed
+// (the thumbnail links open the full image).
+---
+
+<dialog id="lightbox" class="lightbox" closedby="any" aria-label="Bildansicht">
+  <figure class="lightbox__figure">
+    <img class="lightbox__img" src="data:," alt="" width="1600" height="1200" />
+    <figcaption class="lightbox__caption" data-caption></figcaption>
+  </figure>
+  <p class="lightbox__count" aria-live="polite" data-count></p>
+  <div class="lightbox__bar">
+    <button type="button" class="btn btn--secondary btn--small" commandfor="lightbox" command="--prev" data-prev>
+      Vorheriges Bild
+    </button>
+    <button type="button" class="btn btn--secondary btn--small" commandfor="lightbox" command="--next" data-next>
+      Nächstes Bild
+    </button>
+    <button type="button" class="btn btn--small" commandfor="lightbox" command="close" autofocus>
+      Schließen
+    </button>
+  </div>
+</dialog>
+
+<script>
+  import '../../scripts/lightbox.ts';
+</script>
+
+<style is:global>
+  @layer components {
+    html:has(dialog:modal) {
+      overflow: hidden;
+    }
+
+    .lightbox {
+      inline-size: min(100% - 2 * var(--gutter, 1rem), 80rem);
+      max-inline-size: none;
+      max-block-size: calc(100dvh - 2 * var(--space-s));
+      padding: 0;
+      margin: auto;
+      overflow: auto;
+      color: var(--ink);
+      background: var(--surface);
+      border: var(--rule-strong);
+      box-shadow: var(--shadow-paper);
+      overscroll-behavior: contain;
+    }
+
+    .lightbox::backdrop {
+      background: var(--backdrop);
+    }
+
+    .lightbox__figure {
+      display: grid;
+      gap: var(--space-2xs);
+      margin: 0;
+      padding: var(--space-s) var(--space-s) 0;
+    }
+
+    .lightbox__img {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+      max-block-size: calc(100dvh - 12rem);
+      object-fit: contain;
+      background: var(--surface-panel);
+    }
+
+    .lightbox__caption {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+
+    .lightbox__caption:empty {
+      display: none;
+    }
+
+    .lightbox__count {
+      margin: 0;
+      padding: var(--space-2xs) var(--space-s) 0;
+      font-size: var(--step--1);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .lightbox__bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2xs);
+      padding: var(--space-xs) var(--space-s) var(--space-s);
+    }
+
+    .lightbox__bar .btn {
+      min-block-size: var(--target-min);
+    }
+
+    .lightbox__bar .btn[hidden] {
+      display: none;
+    }
+
+    /* Browsers without same-document view transitions: a plain fade (reduced motion: instant). */
+    @media (prefers-reduced-motion: no-preference) {
+      @supports not (view-transition-name: none) {
+        .lightbox,
+        .lightbox::backdrop {
+          opacity: 0;
+          transition:
+            opacity var(--dur-2) var(--ease-out),
+            display var(--dur-2) allow-discrete,
+            overlay var(--dur-2) allow-discrete;
+        }
+
+        .lightbox[open],
+        .lightbox[open]::backdrop {
+          opacity: 1;
+
+          @starting-style {
+            opacity: 0;
+          }
+        }
+      }
+    }
+
+    /* The image morphs between thumbnail and dialog; names are set by lightbox.ts around the transition. */
+    @media (prefers-reduced-motion: no-preference) {
+      ::view-transition-group(lightbox-img) {
+        animation-duration: var(--dur-3);
+        animation-timing-function: var(--ease-out);
+        z-index: 50;
+      }
+
+      ::view-transition-old(lightbox-img),
+      ::view-transition-new(lightbox-img) {
+        block-size: 100%;
+        inline-size: 100%;
+        object-fit: cover;
+      }
+    }
+  }
+</style>

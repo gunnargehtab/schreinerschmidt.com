@@ -1,0 +1,81 @@
+---
+// Demo-only page for visual QA and e2e tests of the interactive components: BeforeAfter, Gallery +
+// Lightbox, FilterBar. Rest route so getStaticPaths can skip it (no /intern/interaktion/ in audit builds).
+import { PUBLIC_DEMO } from 'astro:env/client';
+import { getCollection, getEntry } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Picture from '../../../components/ui/Picture.astro';
+import BeforeAfter from '../../../components/sections/BeforeAfter.astro';
+import FilterBar from '../../../components/sections/FilterBar.astro';
+import Gallery from '../../../components/sections/Gallery.astro';
+import { dataCat } from '../../../lib/referenzen-filter';
+
+export function getStaticPaths() {
+  return PUBLIC_DEMO ? [{ params: { demo: undefined } }] : [];
+}
+
+const door = await getEntry('projects', 'holzhaustuer-aufgearbeitet');
+const multi = await getEntry('projects', 'draussen-mit-holz');
+if (!door?.data.beforeAfter || !multi) throw new Error('interaktion demo: project entries missing');
+
+const projects = (await getCollection('projects')).sort((a, b) => a.id.localeCompare(b.id));
+const photos = [multi.data.cover, ...multi.data.gallery];
+---
+
+<BaseLayout
+  title="Interaktion"
+  description="Interne Demoseite: Vorher-Nachher-Vergleich, Galerie mit Bildansicht und Referenzfilter."
+  noindex
+>
+  <section class="section">
+    <div class="stack stack--m">
+      <p class="eyebrow">Intern · Interaktion</p>
+      <h1>Interaktive Bausteine</h1>
+      <p class="lead">Vorher-Nachher-Vergleich, Galerie mit Bildansicht und Referenzfilter.</p>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="ba-heading">
+    <h2 id="ba-heading">Vorher und nachher</h2>
+    <BeforeAfter before={door.data.beforeAfter.before} after={door.data.beforeAfter.after} />
+  </section>
+
+  <section class="section" aria-labelledby="gallery-heading">
+    <h2 id="gallery-heading">Galerie</h2>
+    <Gallery images={photos} />
+  </section>
+
+  <section class="section section--alt" aria-labelledby="filter-heading">
+    <h2 id="filter-heading">Referenzen</h2>
+    <FilterBar items={projects.map((p) => p.data)}>
+      {projects.map((p) => (
+        <li class="gallery__item" data-cat={dataCat(p.data.categories)}>
+          <Picture
+            src={p.data.cover.src}
+            alt=""
+            sizes="(min-width: 64em) 22rem, (min-width: 40em) 50vw, 100vw"
+            width={640}
+          />
+          <h3 class="demo-title">{p.data.title}</h3>
+        </li>
+      ))}
+    </FilterBar>
+  </section>
+</BaseLayout>
+
+<style>
+  @layer components {
+    .demo-title {
+      margin-block-start: var(--space-2xs);
+      font-size: var(--step-0);
+    }
+
+    .gallery__item :global(img) {
+      display: block;
+      inline-size: 100%;
+      max-inline-size: none;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+    }
+  }
+</style>
