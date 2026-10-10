@@ -10,7 +10,8 @@
 //   a Canvas2D filter on an OffscreenCanvas (an HTML canvas without filters as the fallback).
 // - The old textures stay until the new ones are uploaded (initTexture when idle), then `onSet` fires.
 // - LRU of 3 sets; an evicted set reports `null`, so its materials fall back to the flat colour.
-// - Kernbuche has no CC0 scan: white maple is tinted and gets a seeded reddish heart overlay (§4.4).
+// - Kernbuche has no CC0 scan: white maple is tinted by the pipeline (SPECIES_ADJUST in prepare.mjs)
+//   and gets a seeded reddish heart overlay here (§4.4).
 import { ImageBitmapLoader, NoColorSpace, RepeatWrapping, SRGBColorSpace, Texture } from 'three';
 import type { Finish, Species } from '../../../lib/configurator/furniture/types';
 import type { Backend } from './renderer';
@@ -29,9 +30,10 @@ const manifests = import.meta.glob<Record<string, ManifestEntry>>('../../../asse
   eager: true,
   import: 'default',
 });
+// `no-inline`: the small normal maps (< 4 KB) must stay hashed files, not base64 in the three chunk.
 const urls = import.meta.glob<string>('../../../assets/textures/*/*.webp', {
   eager: true,
-  query: '?url',
+  query: '?url&no-inline',
   import: 'default',
 });
 const MANIFEST: Partial<Record<Species, ManifestEntry>> = Object.values(manifests)[0] ?? {};
@@ -41,13 +43,18 @@ const urlOf = (file: string): string | undefined => urls[`../../../assets/textur
 export const DEFAULT_TEX_MM = 1200;
 const LRU = 3;
 
+// Calibrated 2026-10-10 on the real scans (§4.4 table): the oil warms and deepens, the white oil
+// lifts and desaturates only a little (the grain must stay readable), the matt lacquer seals the
+// raw tone (lighter and cooler than oiled).
 const FILTER: Record<Finish, string> = {
   'natur-geoelt': 'saturate(1.12) brightness(0.93) sepia(0.06)',
-  'weiss-geoelt': 'saturate(0.7) brightness(1.1)',
-  'lack-matt': 'saturate(1.05) brightness(0.97)',
+  'weiss-geoelt': 'saturate(0.8) brightness(1.05)',
+  'lack-matt': 'saturate(1) brightness(1.02)',
 };
-/** Kernbuche from white maple: a warm tint before the finish filter. */
-const KERNBUCHE_TINT = 'sepia(0.35) saturate(1.4) brightness(0.92)';
+/** Screen overlay of „weiß geölt“: #F4EFE7 at this alpha (materials.ts mirrors it for the flat colour). */
+const WHITE_OIL_ALPHA = 0.18;
+/** Kernbuche heart (multiply, three overlapping ellipses per zone): a red-brown, not orange. */
+const HEART = 'rgba(150, 82, 56, 0.16)';
 
 /** mulberry32: a tiny seeded PRNG for the heart overlay. */
 function prng(seed: number): () => number {
@@ -81,27 +88,43 @@ function finishAlbedo(bmp: ImageBitmap, species: Species, finish: Finish): Image
     ctx.translate(0, h);
     ctx.scale(1, -1);
   }
-  if (filters) ctx.filter = `${species === 'kernbuche' ? `${KERNBUCHE_TINT} ` : ''}${FILTER[finish]}`;
+  if (filters) ctx.filter = FILTER[finish];
   ctx.drawImage(bmp, 0, 0);
   if (filters) ctx.filter = 'none';
   if (species === 'kernbuche') {
-    // Seeded reddish heart streaks along the grain (V), multiplied in.
+    // Seeded red-brown heart zones along the grain (V), multiplied in: each zone is three
+    // overlapping, tapered ellipses (cloudy edges, no straight ends), narrow (1.5–6 % of the tile),
+    // of varying length, blurred, and wrapped on both axes so the repeat has no seam.
     const rnd = prng(0x4b45524e);
     ctx.globalCompositeOperation = 'multiply';
-    if (filters) ctx.filter = `blur(${Math.round(w / 64)}px)`;
-    ctx.fillStyle = 'rgba(176, 96, 64, 0.32)';
-    for (let i = 0; i < 5; i++) {
+    if (filters) ctx.filter = `blur(${Math.max(1, Math.round(w / 96))}px)`;
+    ctx.fillStyle = HEART;
+    const TAU = Math.PI * 2;
+    for (let i = 0; i < 6; i++) {
       const x = rnd() * w;
-      const sw = (0.05 + rnd() * 0.1) * w;
-      ctx.fillRect(x, -h * 0.1, sw, h * 1.2);
-      if (x + sw > w) ctx.fillRect(x - w, -h * 0.1, sw, h * 1.2);
+      const y = rnd() * h;
+      const sw = (0.015 + rnd() * 0.045) * w;
+      const len = (0.3 + rnd() * 0.5) * h;
+      for (let k = 0; k < 3; k++) {
+        const cx = x + (rnd() - 0.5) * sw;
+        const cy = y + (rnd() - 0.5) * len * 0.6;
+        const rx = sw * (0.4 + rnd() * 0.6);
+        const ry = len * (0.25 + rnd() * 0.35);
+        for (const dx of [0, -w, w]) {
+          for (const dy of [0, -h, h]) {
+            ctx.beginPath();
+            ctx.ellipse(cx + dx, cy + dy, rx, ry, 0, 0, TAU);
+            ctx.fill();
+          }
+        }
+      }
     }
     if (filters) ctx.filter = 'none';
     ctx.globalCompositeOperation = 'source-over';
   }
   if (finish === 'weiss-geoelt') {
     ctx.globalCompositeOperation = 'screen';
-    ctx.fillStyle = 'rgba(244, 239, 231, 0.28)';
+    ctx.fillStyle = `rgba(244, 239, 231, ${WHITE_OIL_ALPHA})`;
     ctx.fillRect(0, 0, w, h);
     ctx.globalCompositeOperation = 'source-over';
   }

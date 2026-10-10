@@ -235,8 +235,61 @@ test('Enter on „3D neu laden“ ends in ready with focus on the first view but
   await expect(panel(page).locator('[data-view-controls] button').first()).toBeFocused();
 });
 
-// Not covered: the azimuth clamp after Regal -> Einbauschrank (docs/configurator.md §4.6). The camera
-// has no test hook (no data attribute, no global), and tests may not add one.
+/** The settled camera azimuth (whole degrees) the viewer writes to `data-viewer-az` (viewer3d/index.ts). */
+const azimuth = (page: Page) =>
+  viewer(page)
+    .getAttribute('data-viewer-az')
+    .then((v) => (v === null ? NaN : Number(v)));
+
+/** Waits until the azimuth attribute stays unchanged for 400 ms (the tween or damping ended). */
+async function settledAzimuth(page: Page): Promise<number> {
+  let last = await azimuth(page);
+  await expect
+    .poll(
+      async () => {
+        await page.waitForTimeout(400);
+        const now = await azimuth(page);
+        const settled = Number.isFinite(now) && now === last;
+        last = now;
+        return settled;
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+  return last;
+}
+
+test('the orbit limit follows the furniture kind: ±120° Regal, ±60° Einbauschrank, free for the Esstisch', async ({
+  page,
+}) => {
+  await open(page);
+  await load(page);
+  expect(await settledAzimuth(page)).toBe(35); // the 3/4 preset
+
+  // 8 × 15° to the right: the Regal stops at +120°.
+  const right = panel(page).locator('[data-rotate="1"]');
+  for (let i = 0; i < 8; i++) {
+    await right.click();
+    await page.waitForTimeout(450);
+  }
+  expect(Math.abs((await settledAzimuth(page)) - 120)).toBeLessThanOrEqual(2);
+
+  // Einbauschrank: the camera is clamped to the niche's ±60° at once.
+  await radio(page, 'moebel_art', 'einbauschrank').check();
+  await expect(canvas(page)).toHaveAttribute('aria-label', /Einbauschrank/, { timeout: 5000 });
+  expect(Math.abs(await settledAzimuth(page))).toBeLessThanOrEqual(60);
+  await right.click();
+  expect(Math.abs(await settledAzimuth(page))).toBeLessThanOrEqual(60);
+
+  // Esstisch: free orbit, so rotating on passes 120°.
+  await radio(page, 'moebel_art', 'esstisch').check();
+  await expect(canvas(page)).toHaveAttribute('aria-label', /Esstisch/, { timeout: 5000 });
+  for (let i = 0; i < 6; i++) {
+    await right.click();
+    await page.waitForTimeout(450);
+  }
+  expect(Math.abs(await settledAzimuth(page))).toBeGreaterThan(120);
+});
 
 test('leaving Möbel for Bett disposes the viewer and hides the tools', async ({ page }) => {
   await open(page);
@@ -292,4 +345,66 @@ test('10 load/dispose cycles leak neither heap nor WebGL contexts', async ({ pag
   expect(stats.created).toBeGreaterThanOrEqual(11);
   expect(stats.live).toBe(0); // every viewer was disposed; no context is left alive
   expect(stats.canvases).toBe(0);
+});
+
+// The demo success view's 3D snapshot (docs/configurator.md §4.12, §5). The flow helpers of
+// konfigurator-flow.spec.ts are not exported, so the minimum is repeated here.
+const next = (page: Page) => page.locator('[data-action="next"]');
+const snapFigure = (page: Page) => page.locator('figure[data-success-snapshot]');
+const snapLink = (page: Page) => page.locator('a[data-snapshot-link]');
+
+/** From the open Regal step to the demo submit (the PLZ and contact fields are the required ones). */
+async function submitDemo(page: Page): Promise<void> {
+  await next(page).click(); // Holz & Oberfläche
+  await next(page).click(); // Zeitraum, Budget & Ort
+  await page.locator('#f-plz').fill('68161');
+  await next(page).click();
+  await page.locator('#f-name').fill('Erika Mustermann');
+  await page.locator('#f-email').fill('erika@example.com');
+  await next(page).click();
+  await page.locator('[data-action="submit"]').click();
+  await expect(page.locator('[data-success]')).toBeVisible();
+}
+
+test.describe('demo success view: 3D snapshot', () => {
+  test('with 3D loaded the figure shows the image and a working download link', async ({ page }) => {
+    await open(page);
+    await load(page);
+    await submitDemo(page);
+
+    const fig = snapFigure(page);
+    await expect(fig).toBeVisible();
+    const img = fig.locator('img');
+    await expect(img).toBeVisible();
+    await expect(img).toHaveAttribute('alt', /^3D-Ansicht: Regal/);
+    await expect.poll(() => img.evaluate((i) => (i as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+
+    const src = await img.getAttribute('src');
+    expect(src).toMatch(/^blob:/);
+    const link = snapLink(page);
+    await expect(link).toBeVisible();
+    await expect(link).toHaveText(/3D-Ansicht speichern/);
+    await expect(link).toHaveAttribute('href', src!);
+    await expect(link).toHaveAttribute('download', /^ansicht_3d\.(webp|png)$/);
+
+    const [download] = await Promise.all([page.waitForEvent('download'), link.click()]);
+    expect(download.suggestedFilename()).toMatch(/^ansicht_3d\.(webp|png)$/);
+  });
+
+  test('without 3D loaded the figure stays hidden', async ({ page }) => {
+    await open(page);
+    await submitDemo(page);
+    await expect(snapFigure(page)).toBeHidden();
+    await expect(snapFigure(page)).toHaveAttribute('hidden', '');
+    await expect(snapFigure(page).locator('img')).toHaveCount(0);
+  });
+
+  test('print hides the figure', async ({ page }) => {
+    await open(page);
+    await load(page);
+    await submitDemo(page);
+    await expect(snapFigure(page)).toBeVisible();
+    await page.emulateMedia({ media: 'print' });
+    await expect(snapFigure(page)).toBeHidden();
+  });
 });

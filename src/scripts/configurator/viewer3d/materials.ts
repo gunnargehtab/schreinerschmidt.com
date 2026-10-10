@@ -51,24 +51,26 @@ const FINISH: Record<Finish, FinishSpec> = {
   'lack-matt': { roughness: 0.5, normalScale: 0.25, clearcoat: 0.6, clearcoatRoughness: 0.38 },
 };
 
-/** Screen overlay of „weiß geölt“ (§4.4): #F4EFE7 at α .28. */
+/** Screen overlay of „weiß geölt“ (§4.4): #F4EFE7 at α .18 (textures.ts applies the same to the albedo). */
 const WHITE_OIL = new Color('#F4EFE7');
+const WHITE_OIL_ALPHA = 0.18;
 
-/** Flat species colour (sRGB hex) with the finish's albedo transform approximated in sRGB HSL. */
+/** Flat species colour (sRGB hex) with the finish's albedo transform (textures.ts FILTER) approximated in sRGB HSL. */
 export function flatColour(hex: string, finish: Finish): Color {
   const c = new Color(hex);
   const hsl = { h: 0, s: 0, l: 0 };
   c.getHSL(hsl, SRGBColorSpace);
   if (finish === 'natur-geoelt') c.setHSL(hsl.h, Math.min(1, hsl.s * 1.12), hsl.l * 0.93, SRGBColorSpace);
-  else if (finish === 'lack-matt') c.setHSL(hsl.h, Math.min(1, hsl.s * 1.05), hsl.l * 0.97, SRGBColorSpace);
+  else if (finish === 'lack-matt') c.setHSL(hsl.h, hsl.s, Math.min(1, hsl.l * 1.02), SRGBColorSpace);
   else {
-    c.setHSL(hsl.h, hsl.s * 0.7, Math.min(1, hsl.l * 1.1), SRGBColorSpace);
-    // screen(c, w) = 1 − (1 − c)(1 − w), mixed in at α = .28
+    c.setHSL(hsl.h, hsl.s * 0.8, Math.min(1, hsl.l * 1.05), SRGBColorSpace);
+    // screen(c, w) = 1 − (1 − c)(1 − w), mixed in at WHITE_OIL_ALPHA
     const w = WHITE_OIL;
+    const a = WHITE_OIL_ALPHA;
     c.setRGB(
-      c.r + 0.28 * (1 - (1 - c.r) * (1 - w.r) - c.r),
-      c.g + 0.28 * (1 - (1 - c.g) * (1 - w.g) - c.g),
-      c.b + 0.28 * (1 - (1 - c.b) * (1 - w.b) - c.b),
+      c.r + a * (1 - (1 - c.r) * (1 - w.r) - c.r),
+      c.g + a * (1 - (1 - c.g) * (1 - w.g) - c.g),
+      c.b + a * (1 - (1 - c.b) * (1 - w.b) - c.b),
     );
   }
   return c;

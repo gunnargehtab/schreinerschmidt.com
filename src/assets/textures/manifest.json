@@ -1,0 +1,52 @@
+{
+  "eiche": {
+    "textureId": "oak_veneer_01",
+    "avgColor": "#a17e57",
+    "texMm": 1830,
+    "files": {
+      "albedo1024": "eiche/albedo-1024.webp",
+      "albedo512": "eiche/albedo-512.webp",
+      "normal512": "eiche/normal-512.webp"
+    }
+  },
+  "nussbaum": {
+    "textureId": "european_walnut_veneer_04",
+    "avgColor": "#654836",
+    "texMm": 1000,
+    "files": {
+      "albedo1024": "nussbaum/albedo-1024.webp",
+      "albedo512": "nussbaum/albedo-512.webp",
+      "normal512": "nussbaum/normal-512.webp"
+    }
+  },
+  "esche": {
+    "textureId": "ash_veneer",
+    "avgColor": "#b9a082",
+    "texMm": 1000,
+    "files": {
+      "albedo1024": "esche/albedo-1024.webp",
+      "albedo512": "esche/albedo-512.webp",
+      "normal512": "esche/normal-512.webp"
+    }
+  },
+  "kernbuche": {
+    "textureId": "white_maple_veneer",
+    "avgColor": "#dec1a4",
+    "texMm": 1000,
+    "files": {
+      "albedo1024": "kernbuche/albedo-1024.webp",
+      "albedo512": "kernbuche/albedo-512.webp",
+      "normal512": "kernbuche/normal-512.webp"
+    }
+  },
+  "kirsche": {
+    "textureId": "cherry_veneer",
+    "avgColor": "#a16e56",
+    "texMm": 1000,
+    "files": {
+      "albedo1024": "kirsche/albedo-1024.webp",
+      "albedo512": "kirsche/albedo-512.webp",
+      "normal512": "kirsche/normal-512.webp"
+    }
+  }
+}

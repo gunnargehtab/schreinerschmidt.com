@@ -28,7 +28,7 @@
 //   and three.js: the page JS plus every chunk reachable from it through import() (validation +
 //   messages, summary, submit + mailto, payload), found by walking the core's import() graph without
 //   entering the preview world, the photos chunk (`image/jpeg`) or three.js: FLOW.limit, and flow +
-//   Möbel preview + 3D loader ≤ FLOW.withPreview (18.75 / 28.75 KB gz, see FLOW).
+//   Möbel preview + 3D loader ≤ FLOW.withPreview (19.0 / 29.0 KB gz, see FLOW).
 //
 // Usage: node scripts/check-budgets.mjs  (reads BASE_PATH, falls back to env/pages.env)
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -72,11 +72,13 @@ const LOADER = { name: /^load3d\./, limit: 1.5 };
 const VIEWER = { name: /^viewer3d\./, limit: 160 };
 /**
  * Full flow (core + validation + summary + submit + payload), KB gz; `withPreview` adds the Möbel
- * preview and the 3D loader. Set with the user on 2026-10-10 from the measurement after Phase 3 (18.6 / 27.1); about
- * 1 KB is Vite's module-preload helper plus the hashed dependency maps that Astro's client build adds
- * to every chunk with an import() (not switchable from astro.config in Astro 7.3; docs/configurator.md §3).
+ * preview and the 3D loader. Set with the user on 2026-10-10 from the measurement after Phase 3 (18.6 / 27.1),
+ * + 1.5 KB for the loader in Phase 4, then raised to 19.0 / 29.0 KB with the user on 2026-10-10 for the demo
+ * snapshot (submit.ts). About 1 KB is Vite's module-preload helper plus the hashed dependency maps that
+ * Astro's client build adds to every chunk with an import() (not switchable from astro.config in Astro 7.3;
+ * docs/configurator.md §3).
  */
-const FLOW = { limit: 18.75, withPreview: 28.75 };
+const FLOW = { limit: 19.0, withPreview: 29.0 };
 /** The photos chunk (on file selection) re-encodes to JPEG; nothing else in the flow does. */
 const PHOTOS_SIGNATURE = /image\/jpeg/;
 

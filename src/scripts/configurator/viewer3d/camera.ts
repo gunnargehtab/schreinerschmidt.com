@@ -67,5 +67,11 @@ export function azimuthLimit(kind: FurnitureParams['kind']): number {
   return kind === 'einbauschrank' ? 60 : kind === 'esstisch' ? Infinity : 120;
 }
 
+/** An azimuth (°) clamped to the kind's limit; a kind switch re-clamps the current camera with it. */
+export function clampAzimuth(az: number, kind: FurnitureParams['kind']): number {
+  const l = azimuthLimit(kind);
+  return Math.max(-l, Math.min(l, az));
+}
+
 /** Polar angle limits (rad): never below the floor, never exactly on top. */
 export const POLAR = { min: 0.12, max: Math.PI / 2 - 0.03 };

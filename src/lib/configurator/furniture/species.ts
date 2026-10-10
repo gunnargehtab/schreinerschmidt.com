@@ -7,24 +7,25 @@
 // ./textures.ts, which only the 3D viewer (and the texture pipeline) loads.
 //
 // OWNER TO CONFIRM (docs/owner-checklist.md "Shelf span values"): the E-moduli drive the shelf-span
-// rule and need the owner's sign-off. The average colours are the swatch/first-frame colours and are
-// placeholders until scripts/textures/prepare.mjs writes the measured values from the CC0 textures.
+// rule and need the owner's sign-off. The average colours are the swatch/first-frame colours: the
+// values scripts/textures/prepare.mjs measured on the calibrated CC0 textures (2026-10-10,
+// src/assets/textures/manifest.json); the calibration itself is needs-review against real samples.
 import type { Finish, Species } from './types';
 
 export interface SpeciesInfo {
   name: string;
   /** Modulus of elasticity in GPa (needs-review). */
   eModulusGPa: number;
-  /** Average albedo colour, sRGB hex (placeholder until measured). */
+  /** Average albedo colour of the calibrated texture, sRGB hex. */
   avgColor: string;
 }
 
 export const SPECIES: Record<Species, SpeciesInfo> = {
-  eiche: { name: 'Eiche', eModulusGPa: 10.0, avgColor: '#C9A97C' },
-  nussbaum: { name: 'Nussbaum', eModulusGPa: 10.8, avgColor: '#6E4B36' },
-  esche: { name: 'Esche', eModulusGPa: 12.3, avgColor: '#D9C6A3' },
-  kernbuche: { name: 'Kernbuche', eModulusGPa: 14.3, avgColor: '#C98F63' },
-  kirsche: { name: 'Kirsche', eModulusGPa: 10.3, avgColor: '#B5704A' },
+  eiche: { name: 'Eiche', eModulusGPa: 10.0, avgColor: '#A17E57' },
+  nussbaum: { name: 'Nussbaum', eModulusGPa: 10.8, avgColor: '#654836' },
+  esche: { name: 'Esche', eModulusGPa: 12.3, avgColor: '#B9A082' },
+  kernbuche: { name: 'Kernbuche', eModulusGPa: 14.3, avgColor: '#DEC1A4' },
+  kirsche: { name: 'Kirsche', eModulusGPa: 10.3, avgColor: '#A16E56' },
 };
 
 export const FINISH_LABEL: Record<Finish, string> = {

@@ -22,6 +22,8 @@
 //   <svg class="preview__overlay" aria-hidden="true"> dimension overlay (overlay.ts).
 //   `[data-viewer-note]` (init.note) is unhidden for Kernbuche („Holzbild beispielhaft“).
 //   `[data-view="oben"]` in the controls is unhidden for tables only.
+//   `[data-viewer]` gets data-viewer-az: the camera azimuth in whole degrees, written on the frame in
+//   which the camera settled (never per drag frame): the test hook for the per-kind orbit limits.
 //
 // Behaviour
 // - Render on demand: a frame runs only after invalidate() (controls change, texture ready, resize,
@@ -36,7 +38,7 @@
 import { Box3, BoxGeometry, MathUtils, Mesh, Vector3 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Build, Species } from '../../../lib/configurator/furniture/types';
-import { POLAR, PRESETS, azimuthLimit, directionOf, fitDistance, needsRefit } from './camera';
+import { POLAR, PRESETS, azimuthLimit, clampAzimuth, directionOf, fitDistance, needsRefit } from './camera';
 import { createContactShadow } from './contact-shadow';
 import { createMaterials } from './materials';
 import { createOverlay } from './overlay';
@@ -151,6 +153,7 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
     let dirty = false;
     let visible = true;
     let inFrame = false;
+    let settle = true;
     let labelTimer = 0;
     let refitTimer = 0;
     let sized = false;
@@ -160,7 +163,7 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
       box.max.fromArray(b.bounds.max).divideScalar(1000);
       return box;
     };
-    const clampAz = (az: number) => Math.max(-azLimit, Math.min(azLimit, az));
+    const clampAz = (az: number) => clampAzimuth(az, kind);
     const applyAzimuth = () => {
       const a = MathUtils.degToRad(azLimit);
       controls.minAzimuthAngle = -a;
@@ -182,7 +185,14 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
         dirty = false;
       }
       inFrame = false;
-      if (moving || animating) raf = requestAnimationFrame(frame);
+      if (moving || animating) {
+        settle = true;
+        raf = requestAnimationFrame(frame);
+      } else if (settle) {
+        // Test hook: the azimuth (whole degrees) on the first quiet frame after a move (or the first frame).
+        settle = false;
+        host.dataset['viewerAz'] = String(Math.round(spherical().az));
+      }
     }
     // OrbitControls dispatches 'change' from its own update() too; a frame never queues another.
     controls.addEventListener('change', () => inFrame || invalidate());

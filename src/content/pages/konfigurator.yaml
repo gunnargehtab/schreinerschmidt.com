@@ -163,6 +163,11 @@ success:
     save: 'Als Textdatei speichern'
     print: 'Drucken / als PDF speichern'
     link: 'Konfigurationslink kopieren'
+  # The 3D snapshot (docs/configurator.md §4.12), shown in the demo success view once 3D was loaded.
+  # {text} is the describe() sentence („Regal aus Eiche, natur geölt, …“).
+  snapshot:
+    alt: '3D-Ansicht: {text}'
+    download: '3D-Ansicht speichern'
   timeline:
     h2: 'Was passiert jetzt?'
     items:

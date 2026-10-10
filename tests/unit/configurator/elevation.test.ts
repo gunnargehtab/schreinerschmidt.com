@@ -150,7 +150,7 @@ describe('renderElevation', () => {
 
   it('draws parts with the species wash, hatch and tick defs, door symbols and dimension chains', () => {
     const svg = render(GOLDEN[3]![1], 'vorne');
-    expect(svg).toContain('fill="#C9A97C" fill-opacity=".12"');
+    expect(svg).toContain('fill="#A17E57" fill-opacity=".12"');
     expect(svg).toContain('<pattern id="ze-h"');
     expect(svg).toContain('<marker id="ze-k"');
     expect(svg).toContain('fill="url(#ze-h)"'); // niche walls hatched
@@ -186,7 +186,7 @@ describe('renderElevation', () => {
   });
 
   it('table: live-edge outline in the plan, rect elsewhere', () => {
-    expect(render(TISCH, 'oben')).toMatch(/<path d="M0 [\d.]+L[^"]*Z" fill="#6E4B36"/);
+    expect(render(TISCH, 'oben')).toMatch(/<path d="M0 [\d.]+L[^"]*Z" fill="#654836"/);
     expect(render(TISCH, 'vorne')).not.toMatch(/Z" fill=/);
     expect(render(TISCH, 'vorne')).toContain('>200</text>');
     expect(render(TISCH, 'seite')).toContain('>90</text>');

@@ -59,7 +59,9 @@
 //        [data-action=draft-delete]. No pricing box (pricing is disabled).
 // Success <section data-success hidden tabindex="-1" aria-labelledby="h-erfolg"> outside the form:
 //        h2#h-erfolg (demo/live variant chosen at build time), [data-anfrage-id], [data-success-summary],
-//        [data-success-drawing], [data-action=mail|copy|save|print|link] (all hidden), the timeline.
+//        [data-success-drawing], <figure data-success-snapshot hidden> (demo: the 3D snapshot as <img>
+//        via an object URL, submit.ts, plus <a data-snapshot-link>; href + download set by JS), [data-action=mail|copy|
+//        save|print|link] (all hidden), the timeline.
 // Preview figure[data-preview] > [data-preview-drawing] (build-time SVG) + [data-viewer] hidden, caption.
 // ==========================================================================
 import { getEntry } from 'astro:content';
@@ -126,6 +128,7 @@ const messages: Record<string, string> = {
   edit: copy.summary.edit,
   'link-copied-label': copy.summary.share.copied,
   'photo-remove': copy.photos.remove,
+  'snapshot-alt': copy.success.snapshot.alt,
 };
 const dataMsg = Object.fromEntries(Object.entries(messages).map(([k, v]) => [`data-msg-${k}`, v]));
 
@@ -187,6 +190,13 @@ const actions = copy.success.actions;
     <div class="success__body">
       <div class="success__summary" data-success-summary></div>
       <div class="success__drawing" data-success-drawing></div>
+      <figure class="success__snapshot" data-success-snapshot hidden>
+        <figcaption>
+          <a class="success__snapshot-link" data-snapshot-link>
+            {copy.success.snapshot.download}
+          </a>
+        </figcaption>
+      </figure>
     </div>
     <div class="cluster success__actions">
       <button class="btn btn--small" type="button" data-action="mail" hidden>

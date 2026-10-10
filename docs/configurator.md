@@ -401,7 +401,7 @@ export function swapStep(update: () => void, dir: 'fwd'|'back'): Promise<void> {
 - Core ≤ 11.25 KB.
 - Möbel preview ≤ 8.75 KB (loaded when Möbel is chosen). Re-split from 13 + 7 KB with the user on 2026-10-10: the full carcass rules + screen elevation measure 8.5 KB gz; the 20 KB total is unchanged.
 - 3D loader (`preview/load3d.ts`) ≤ 1.5 KB, loaded together with the Möbel preview; core + preview + loader ≤ 21.5 KB. The loader did not fit into the preview chunk (≈ 0.1 KB headroom against the flow cap), so it became a chunk of its own, budgeted explicitly (decided with the user on 2026-10-10; measured 1.39 KB).
-- **Full flow:** everything a completed demo or live enquiry downloads besides the preview, photos and three.js (core + validation/messages + summary + submit/mailto + payload). ≤ 18.75 KB, and with the Möbel preview and the 3D loader ≤ 28.75 KB (set with the user on 2026-10-10: 27.25 KB from the measurement after Phase 3, + 1.5 KB for the loader in Phase 4). About 1 KB of that is Vite's module-preload helper plus the hashed dependency maps Astro's client build adds to every chunk with an `import()`; Astro 7.3 does not let the config switch it off. `scripts/check-budgets.mjs` enforces it (`FLOW`) and prints the chunk list.
+- **Full flow:** everything a completed demo or live enquiry downloads besides the preview, photos and three.js (core + validation/messages + summary + submit/mailto + payload). ≤ 19.0 KB, and with the Möbel preview and the 3D loader ≤ 29.0 KB (set with the user on 2026-10-10: 27.25 KB from the measurement after Phase 3, + 1.5 KB for the loader in Phase 4; raised to 19.0 / 29.0 KB with the user on 2026-10-10 for the demo snapshot in `submit.ts`). About 1 KB of that is Vite's module-preload helper plus the hashed dependency maps Astro's client build adds to every chunk with an `import()`; Astro 7.3 does not let the config switch it off. `scripts/check-budgets.mjs` enforces it (`FLOW`) and prints the chunk list.
 - Photos ≈ 1.5 KB (on file select).
 - three.js + viewer chunk ≤ 160 KB: on request only (measured 142.4 KB in Phase 4).
 - `scripts/check-budgets.mjs` enforces these.
@@ -521,13 +521,25 @@ export declare function cutList(b: Build): CutItem[];
   - low (Save-Data, SwiftShader/llvmpipe, or `deviceMemory ≤ 2`): 512 albedo, no normal map.
   - high: 1K albedo + 512 normal.
 
-**Finishes:** applied via a Canvas2D filter on an OffscreenCanvas, cached per species × finish, with an ImageData fallback.
+**Species calibration** (`SPECIES_ADJUST` in `prepare.mjs`, `needs-review` against the owner's samples): the scans are pale, unfinished veneers with very flat tonal ranges, so each albedo gets one per-channel linear op on the sRGB values, `out = mul × (mean + (in − mean) × contrast)`, with `mean` the measured source mean. Calibrated 2026-10-10:
+
+| Species | Source mean | mul (R, G, B) | contrast | Result (avgColor) |
+|---|---|---|---|---|
+| Eiche | 161/126/87 | 1, 1, 1 | 1 | `#A17E57` (as scanned) |
+| Nussbaum | 170/137/111 | 0.60, 0.53, 0.49 | 2.2 | `#654836` (oiled chocolate brown) |
+| Esche | 172/148/125 | 1.08, 1.08, 1.05 | 1.3 | `#B9A082` (small lift to cream) |
+| Kernbuche (white maple) | 227/212/185 | 0.98, 0.91, 0.89 | 1.6 | `#DEC1A4` (pale pinkish beech; heart from the viewer overlay) |
+| Kirsche | 224/176/132 | 0.72, 0.63, 0.66 | 1.8 | `#A16E56` (deeper red-brown, apart from Kernbuche) |
+
+**Finishes:** applied via a Canvas2D filter on an OffscreenCanvas, cached per species × finish, with an ImageData fallback. Values tuned on the real textures 2026-10-10 (white oil must keep the grain readable; matt lacquer seals the raw tone, lighter and cooler than oiled).
 
 | Finish | Albedo transform | Material | roughness | normalScale | clearcoat |
 |---|---|---|---|---|---|
 | natur geölt | `saturate(1.12) brightness(0.93) sepia(0.06)` | Standard | 0.55 | 0.5 | — |
-| weiß geölt | `saturate(0.7) brightness(1.1)` + screen #F4EFE7 α .28 | Standard | 0.62 | 0.45 | — |
-| lackiert matt | `saturate(1.05) brightness(0.97)` | Physical | 0.5 | 0.25 | 0.6 / 0.38 |
+| weiß geölt | `saturate(0.8) brightness(1.05)` + screen #F4EFE7 α .18 | Standard | 0.62 | 0.45 | — |
+| lackiert matt | `saturate(1) brightness(1.02)` | Physical | 0.5 | 0.25 | 0.6 / 0.38 |
+
+**Kernbuche heart overlay** (`textures.ts`): six seeded zones of three overlapping, blurred ellipses each (1.5–6 % of the tile wide, 30–80 % long), `rgba(150, 82, 56, .16)` multiplied in, wrapped on both axes so the 1 m tile has no seam.
 
 Other materials:
 - **Metal:** `metalness 1`, `roughness .35`, #1E1E1E.
@@ -807,7 +819,7 @@ Focus moves to the heading; the session and draft are cleared.
 | `a11y` | axe with `wcag22aa` on every step, in the error state, both schemes, and the success view (`konfigurator.a11y.spec.ts`); the no-JS long form in both schemes (`konfigurator-nojs.a11y.spec.ts`: axe needs script execution, so it runs in the `a11y` project with the wizard script blocked by `page.route`, which yields the no-JS DOM; states: no choice, `konfigurator/moebel/` with Regal, Boden with conditions revealed) |
 | `motion-print` | Reduced motion: no `startViewTransition`; print shows summary + drawing + title block |
 
-**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, 3D loader ≤ 1.5 KB, core + Möbel + loader ≤ 21.5 KB; full flow (core + validation + summary + submit + payload) ≤ 18.75 KB, with the Möbel preview and loader ≤ 28.75 KB (§3 "JS budget"); three.js chunk ≤ 160 KB.
+**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, 3D loader ≤ 1.5 KB, core + Möbel + loader ≤ 21.5 KB; full flow (core + validation + summary + submit + payload) ≤ 19.0 KB, with the Möbel preview and loader ≤ 29.0 KB (§3 "JS budget"); three.js chunk ≤ 160 KB.
 
 **Manual:** NVDA + Firefox, VoiceOver + Safari, TalkBack, keyboard-only, 400% zoom, forced colours.
 

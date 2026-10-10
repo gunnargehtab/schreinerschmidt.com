@@ -288,6 +288,10 @@ describeDist('konfigurator: DOM contract', () => {
     );
     for (const b of success?.querySelectorAll('[data-action]') ?? []) expect(b.getAttribute('hidden')).not.toBeUndefined();
     expect(success?.querySelectorAll('.timeline__item')).toHaveLength(6);
+    // The 3D snapshot (§4.12): hidden until JS has a snapshot; the link gets href + download from JS.
+    const snap = success?.querySelector('figure[data-success-snapshot]');
+    expect(snap?.getAttribute('hidden')).not.toBeUndefined();
+    expect(snap?.querySelector('a[data-snapshot-link]')?.getAttribute('href')).toBeUndefined();
     const fig = page.root.querySelector('figure[data-preview]');
     expect(fig?.getAttribute('data-branch')).toBe('moebel');
     expect(fig?.querySelector('[data-preview-drawing] svg[role="img"] title')).not.toBeNull();

@@ -4,8 +4,10 @@
 // a 20 s timeout and one retry after 1.5 s for network errors, timeouts and 5xx; the time-trap and
 // the honeypot fake a success. The error panel (role=alert) offers retry, mail and copy; its German
 // reason lines come from the markup, the service's English `error_msg` is never shown. After a
-// successful send, Back shows the "Anfrage bereits gesendet" prompt. Loaded by the controller on the
-// first SUBMIT, so none of this counts against the initial core budget.
+// successful send, Back shows the "Anfrage bereits gesendet" prompt. Once 3D was loaded, the success
+// view also shows the 3D snapshot (§4.12) as an <img> via an object URL with a download link (demo)
+// and the live payload attaches it as ansicht_3d.webp. Loaded by the controller on the first SUBMIT,
+// so none of this counts against the initial core budget.
 import { FIELDS, type ProjectType } from '../../lib/configurator/fields';
 import { TYP_LABELS } from '../../lib/konfigurator-links';
 import type { Wizard } from './controller';
@@ -77,6 +79,7 @@ export function createSubmit(w: Wizard): Submit {
   const { root, form, msg, announce } = w;
   const $ = <T extends HTMLElement>(sel: string, from: ParentNode = root) => from.querySelector<T>(sel);
   const success = $<HTMLElement>('[data-success]');
+  const snapFig = $<HTMLElement>('[data-success-snapshot]', success ?? root);
   const layout = $<HTMLElement>('.configurator__layout');
   const panel = $<HTMLElement>('[data-submit-error]', form);
   const button = $<HTMLButtonElement>('[data-action="submit"]', form);
@@ -117,6 +120,7 @@ export function createSubmit(w: Wizard): Submit {
       if (mail) mail.dataset['href'] = mailto().href;
       success.hidden = false;
       if (svg && drawing) void refit(drawing).then(preparePrint);
+      if (svg && snapFig) void showSnapshot(snapFig);
     }
     clearSession();
     clearDraft();
@@ -224,6 +228,27 @@ export function createSubmit(w: Wizard): Submit {
           }));
   addEventListener('beforeprint', () => void preparePrint());
 
+  /**
+   * The 3D snapshot (§4.12) as an <img> with a download link, only once 3D was loaded (the preview
+   * chunk's snapshot3d() resolves null otherwise). The object URL is revoked in reset().
+   */
+  async function showSnapshot(fig: HTMLElement): Promise<void> {
+    const m = await preview();
+    const blob = await m.snapshot3d();
+    if (!blob) return;
+    const build = await m.buildFor(w.values());
+    const url = URL.createObjectURL(blob);
+    const link = $<HTMLAnchorElement>('[data-snapshot-link]', fig);
+    if (link) {
+      link.href = url;
+      link.download = blob.type === 'image/png' ? 'ansicht_3d.png' : 'ansicht_3d.webp';
+    }
+    const img = fig.insertBefore(new Image(), fig.firstChild);
+    img.src = url;
+    img.alt = msg('snapshot-alt').replace('{text}', build ? m.describe(build) : '');
+    fig.hidden = false;
+  }
+
   /** The summary as a .txt download (a data: URL: a few KB at most, nothing to revoke). */
   function download(): void {
     const a = document.body.appendChild(document.createElement('a'));
@@ -234,6 +259,12 @@ export function createSubmit(w: Wizard): Submit {
   }
 
   function reset(): void {
+    const img = snapFig?.querySelector('img');
+    if (img) {
+      URL.revokeObjectURL(img.src);
+      img.remove();
+    }
+    if (snapFig) snapFig.hidden = true;
     id = short = svg = '';
     printReady = null;
     if (prompt) prompt.hidden = true;

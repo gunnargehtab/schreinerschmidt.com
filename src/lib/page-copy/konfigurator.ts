@@ -110,6 +110,8 @@ export const konfiguratorSchema = z.object({
       print: z.string(),
       link: z.string(),
     }),
+    /** The 3D snapshot in the demo success view (§4.12): `{text}` in alt is the describe() sentence. */
+    snapshot: z.object({ alt: z.string(), download: z.string() }),
     timeline: z.object({ h2: z.string(), items: z.array(timelineItem).min(1) }),
   }),
   /** 3D preview (docs/configurator.md §4.6, §4.9–4.11): poster button, view buttons, canvas label. */

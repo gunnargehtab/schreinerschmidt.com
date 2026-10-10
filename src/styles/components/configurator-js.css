@@ -117,6 +117,11 @@
     display: none;
   }
 
+  /* Print shows summary, drawing and title block (docs/configurator.md §4.8); the snapshot stays on screen. */
+  .success__snapshot {
+    display: none;
+  }
+
   .success__print {
     display: block;
   }

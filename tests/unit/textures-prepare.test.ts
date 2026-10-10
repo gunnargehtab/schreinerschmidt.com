@@ -1,22 +1,29 @@
 // Texture pipeline (scripts/textures/prepare.mjs): grain orientation, normal-map channel fix,
 // a full run on synthetic images in a temp dir, and the skip-when-missing behaviour.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
 
 sharp.cache(false); // Windows: cached file handles block temp-dir cleanup
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { SPECIES } from '../../src/lib/configurator/furniture/species';
 import { SPECIES_TEXTURES } from '../../src/lib/configurator/furniture/textures';
 import {
+  IDENTITY_ADJUST,
+  SPECIES_ADJUST,
   TEXTURE_IDS,
   TEX_MM,
   detectGrainAxis,
+  linearCoefficients,
   prepare,
   rotateNormalChannels,
   toHex,
 } from '../../scripts/textures/prepare.mjs';
+
+const ROOT = new URL('../../', import.meta.url);
+const hexToRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
 
 /** Greyscale stripes: `vertical` = stripes run along y (value changes along x). */
 function stripes(size: number, vertical: boolean): Buffer {
@@ -99,6 +106,99 @@ describe('texture id table', () => {
   });
 });
 
+describe('species calibration table', () => {
+  it('has a sane adjustment for every species', () => {
+    expect(Object.keys(SPECIES_ADJUST)).toEqual(Object.keys(TEXTURE_IDS));
+    for (const a of Object.values(SPECIES_ADJUST)) {
+      expect(a.mul).toHaveLength(3);
+      for (const m of a.mul) expect(m).toBeGreaterThan(0.3);
+      for (const m of a.mul) expect(m).toBeLessThan(1.3);
+      expect(a.contrast).toBeGreaterThanOrEqual(1);
+      expect(a.contrast).toBeLessThanOrEqual(3);
+    }
+    expect(SPECIES_ADJUST['eiche']).toEqual(IDENTITY_ADJUST);
+  });
+
+  it('keeps Nussbaum dark, Kernbuche pale and Kirsche redder than Kernbuche', () => {
+    // Source means from the Poly Haven scans (prepare.mjs header comment).
+    const tone = (species: string, mean: [number, number, number]) =>
+      SPECIES_ADJUST[species]!.mul.map((m, i) => m * mean[i]!) as [number, number, number];
+    const nuss = tone('nussbaum', [170, 137, 111]);
+    const kern = tone('kernbuche', [227, 212, 185]);
+    const kirs = tone('kirsche', [224, 176, 132]);
+    expect(nuss[0]).toBeLessThan(120);
+    expect(nuss[0]).toBeGreaterThan(nuss[1]);
+    expect(nuss[1]).toBeGreaterThan(nuss[2]);
+    expect(kern[0]).toBeGreaterThan(205); // pale beech base; the heart comes from the viewer
+    expect(kern[0] - kern[2]).toBeLessThan(80); // beige, not orange
+    expect(kirs[0] - kirs[2]).toBeGreaterThan(60); // saturated red-brown
+    expect(kirs[1]).toBeLessThan(kern[1] - 40); // clearly apart from Kernbuche
+  });
+
+  it('linearCoefficients: contrast pivots on the mean, mul scales both terms', () => {
+    expect(linearCoefficients(IDENTITY_ADJUST, [100, 150, 200])).toEqual({ a: [1, 1, 1], b: [0, 0, 0] });
+    const { a, b } = linearCoefficients({ mul: [0.5, 1, 2], contrast: 2 }, [100, 100, 100]);
+    expect(a).toEqual([1, 2, 4]);
+    expect(b).toEqual([-50, -100, -200]);
+    // The mean maps to mul × mean, a value above it spreads away from the mean.
+    expect(a[0]! * 100 + b[0]!).toBe(50);
+    expect(a[0]! * 110 + b[0]!).toBe(60);
+  });
+});
+
+describe('committed textures', () => {
+  const dir = new URL('src/assets/textures/', ROOT);
+  const manifestFile = new URL('manifest.json', dir);
+  const present = existsSync(manifestFile);
+
+  it.skipIf(!present)(
+    'manifest lists every species, its files exist, and their average colour is in species.ts',
+    async () => {
+      const manifest = JSON.parse(readFileSync(manifestFile, 'utf8')) as Record<
+        string,
+        { textureId: string; avgColor: string; texMm: number; files: Record<string, string> }
+      >;
+      expect(Object.keys(manifest)).toEqual(Object.keys(TEXTURE_IDS));
+      for (const [species, entry] of Object.entries(manifest)) {
+        expect(entry.textureId).toBe(TEXTURE_IDS[species]);
+        expect(entry.texMm).toBe(TEX_MM[entry.textureId]);
+        expect(entry.avgColor.toUpperCase()).toBe(SPECIES[species as keyof typeof SPECIES].avgColor);
+        for (const file of Object.values(entry.files)) expect(existsSync(new URL(file, dir)), file).toBe(true);
+      }
+    },
+  );
+
+  it.skipIf(!present)('WebP files carry no EXIF, ICC or XMP and keep a vertical grain aspect', async () => {
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf8')) as Record<
+      string,
+      { files: Record<string, string> }
+    >;
+    for (const entry of Object.values(manifest)) {
+      for (const [key, file] of Object.entries(entry.files)) {
+        const m = await sharp(readFileSync(new URL(file, dir))).metadata();
+        expect(m.format, file).toBe('webp');
+        expect(m.exif, file).toBeUndefined();
+        expect(m.icc, file).toBeUndefined();
+        expect(m.xmp, file).toBeUndefined();
+        const edge = key === 'albedo1024' ? 1024 : 512;
+        expect(Math.max(m.width ?? 0, m.height ?? 0), file).toBeLessThanOrEqual(edge);
+      }
+    }
+  });
+
+  it.skipIf(!present)('a species × tier download stays within the §4.13 texture budget', () => {
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf8')) as Record<
+      string,
+      { files: Record<string, string> }
+    >;
+    const size = (file: string) => statSync(new URL(file, dir)).size / 1024;
+    for (const entry of Object.values(manifest)) {
+      expect(size(entry.files['albedo1024']!) + size(entry.files['normal512']!)).toBeLessThanOrEqual(260);
+      expect(size(entry.files['albedo512']!)).toBeLessThanOrEqual(50);
+    }
+  });
+});
+
 describe('prepare', () => {
   let dir: string;
   let inputDir: string;
@@ -156,7 +256,7 @@ describe('prepare', () => {
     expect(Object.keys(manifest)).toEqual(['eiche']);
     expect(manifest.eiche).toMatchObject({
       textureId: 'oak_veneer_01',
-      texMm: 1000,
+      texMm: 1830,
       files: {
         albedo1024: 'eiche/albedo-1024.webp',
         albedo512: 'eiche/albedo-512.webp',
@@ -167,24 +267,52 @@ describe('prepare', () => {
     expect(readFileSync(join(outputDir, 'manifest.json'), 'utf8').endsWith('}\n')).toBe(true);
   });
 
-  it('tints Kernbuche reddish and keeps vertical grain unrotated', async () => {
-    const id = TEXTURE_IDS['kernbuche']!;
-    mkdirSync(join(inputDir, id));
-    const grey = Buffer.alloc(600 * 1200 * 3, 200);
-    await sharp(grey, { raw: { width: 600, height: 1200, channels: 3 } }).toFile(
-      join(inputDir, id, `${id}_diff_2k.png`),
-    );
-    await sharp(grey, { raw: { width: 600, height: 1200, channels: 3 } }).toFile(
-      join(inputDir, id, `${id}_nor_gl_2k.png`),
-    );
+  it('applies the species adjustment (mul × mean on a flat image) and keeps vertical grain unrotated', async () => {
+    const flat = Buffer.alloc(600 * 1200 * 3, 200);
+    for (const species of ['kernbuche', 'nussbaum'] as const) {
+      const id = TEXTURE_IDS[species]!;
+      mkdirSync(join(inputDir, id));
+      await sharp(flat, { raw: { width: 600, height: 1200, channels: 3 } }).toFile(
+        join(inputDir, id, `${id}_diff_2k.png`),
+      );
+      await sharp(flat, { raw: { width: 600, height: 1200, channels: 3 } }).toFile(
+        join(inputDir, id, `${id}_nor_gl_2k.png`),
+      );
+    }
     await prepare({ inputDir, outputDir, ...quiet });
     const manifest = JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8'));
-    const hex: string = manifest.kernbuche.avgColor;
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    expect(r).toBeGreaterThan(g!);
-    expect(g).toBeGreaterThan(b!);
-    const m = await sharp(readFileSync(join(outputDir, 'kernbuche/albedo-1024.webp'))).metadata();
-    expect([m.width, m.height]).toEqual([512, 1024]);
+    for (const species of ['kernbuche', 'nussbaum'] as const) {
+      // A flat image has no contrast to stretch, so the result is exactly mul × 200 (± WebP noise).
+      const rgb = hexToRgb(manifest[species].avgColor);
+      const want = SPECIES_ADJUST[species]!.mul.map((m) => Math.round(m * 200));
+      for (let i = 0; i < 3; i++)
+        expect(Math.abs(rgb[i]! - want[i]!), `${species} channel ${i}`).toBeLessThanOrEqual(2);
+      const m = await sharp(readFileSync(join(outputDir, `${species}/albedo-1024.webp`))).metadata();
+      expect([m.width, m.height]).toEqual([512, 1024]);
+    }
+  });
+
+  it('stretches the grain contrast around the source mean', async () => {
+    const id = TEXTURE_IDS['nussbaum']!; // contrast 2.2
+    mkdirSync(join(inputDir, id));
+    // Two-tone vertical stripes at 190/210: mean 200, spread ±10 → ±22 after the stretch, × mul.
+    const raw = Buffer.alloc(64 * 64 * 3);
+    for (let y = 0; y < 64; y++)
+      for (let x = 0; x < 64; x++) raw.fill(((x >> 3) & 1) * 20 + 190, (y * 64 + x) * 3, (y * 64 + x) * 3 + 3);
+    await sharp(raw, { raw: { width: 64, height: 64, channels: 3 } })
+      .png()
+      .toFile(join(inputDir, id, `${id}_diff_2k.png`));
+    await sharp(Buffer.alloc(64 * 64 * 3, 128), { raw: { width: 64, height: 64, channels: 3 } })
+      .png()
+      .toFile(join(inputDir, id, `${id}_nor_gl_2k.png`));
+    await prepare({ inputDir, outputDir, ...quiet });
+    const { data } = await sharp(readFileSync(join(outputDir, 'nussbaum/albedo-1024.webp')))
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const { mul, contrast } = SPECIES_ADJUST['nussbaum']!;
+    const red = (x: number) => data[(32 * 64 + x) * 3]!;
+    expect(Math.abs(red(4) - mul[0] * (200 - 10 * contrast))).toBeLessThanOrEqual(3);
+    expect(Math.abs(red(12) - mul[0] * (200 + 10 * contrast))).toBeLessThanOrEqual(3);
   });
 
   it('CLI exits 0 with skipped warnings when nothing is present', () => {

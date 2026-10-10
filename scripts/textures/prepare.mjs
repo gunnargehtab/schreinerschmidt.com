@@ -20,22 +20,62 @@ export const TEXTURE_IDS = {
   kirsche: 'cherry_veneer',
 };
 
-// Real-world edge length of one texture tile in mm. Not verified against the Poly Haven pages.
+// Real-world edge length of one texture tile in mm: the `dimensions` of each asset in the Poly Haven
+// API (api.polyhaven.com/info/<id>, checked 2026-10-10).
 export const DEFAULT_TEX_MM = 1000;
 /** @type {Record<string, number>} */
 export const TEX_MM = {
-  oak_veneer_01: DEFAULT_TEX_MM, // needs-review
-  european_walnut_veneer_04: DEFAULT_TEX_MM, // needs-review
-  ash_veneer: DEFAULT_TEX_MM, // needs-review
-  white_maple_veneer: DEFAULT_TEX_MM, // needs-review
-  cherry_veneer: DEFAULT_TEX_MM, // needs-review
+  oak_veneer_01: 1830,
+  european_walnut_veneer_04: 1000,
+  ash_veneer: 1000,
+  white_maple_veneer: 1000,
+  cherry_veneer: 1000,
 };
 
-// Kernbuche has no CC0 texture: the white maple albedo is multiplied per channel by this warm,
-// reddish factor (sRGB values, applied as a diagonal recomb matrix). The seeded heart overlay is
-// added at runtime by the viewer, not here.
-/** @type {[number, number, number]} */
-export const KERNBUCHE_TINT = [1.0, 0.84, 0.74];
+// Per-species albedo calibration (docs/configurator.md §4.4). The Poly Haven scans are unfinished,
+// light veneers with very flat tonal ranges (walnut p1–p99 spans ~15 of 255 levels), so each one is
+// adjusted with ONE per-channel linear op on the sRGB values:
+//   out = mul × (mean + (in − mean) × contrast)
+// `mean` is the measured per-channel mean of the source, so `contrast` spreads the grain around the
+// scan's own tone and `mul` then sets the species colour. Raw data flow only: no hand-painted
+// textures. The seeded Kernbuche heart overlay is added at runtime by the viewer, not here.
+//
+// Calibrated 2026-10-10 against the source means (Eiche 161/126/87, Nussbaum 170/137/111,
+// Esche 172/148/125, white maple 227/212/185, Kirsche 224/176/132):
+/** @typedef {{ mul: [number, number, number]; contrast: number }} Adjust */
+/** @type {Record<string, Adjust>} */
+export const SPECIES_ADJUST = {
+  // Oak veneer reads as oak as scanned; kept 1:1.
+  eiche: { mul: [1, 1, 1], contrast: 1 }, // needs-review: calibrate against the owner's samples
+  // The walnut scan is a pale, unfinished veneer (mean 170/137/111). Oiled European walnut is a
+  // deep chocolate brown: darken to ≈ 102/73/54 and stretch the faint streaks ×2.2.
+  nussbaum: { mul: [0.6, 0.53, 0.49], contrast: 2.2 }, // needs-review: calibrate against the owner's samples
+  // Ash: a small lift towards the pale cream of oiled ash and a little more grain; otherwise the scan.
+  esche: { mul: [1.08, 1.08, 1.05], contrast: 1.3 }, // needs-review: calibrate against the owner's samples
+  // No CC0 Kernbuche scan: white maple becomes the pale pinkish-beige of steamed beech
+  // (≈ 222/193/165); the reddish heart streaks come from the viewer's overlay.
+  kernbuche: { mul: [0.98, 0.91, 0.89], contrast: 1.6 }, // needs-review: calibrate against the owner's samples
+  // The cherry scan is light and orange (224/176/132); oiled cherry is a deeper, less saturated
+  // red-brown (≈ 161/111/87), clearly apart from Kernbuche.
+  kirsche: { mul: [0.72, 0.63, 0.66], contrast: 1.8 }, // needs-review: calibrate against the owner's samples
+};
+/** @type {Adjust} */
+export const IDENTITY_ADJUST = { mul: [1, 1, 1], contrast: 1 };
+
+/**
+ * Coefficients for sharp's `linear(a, b)` (out = a × in + b, per channel, sRGB 0–255):
+ * a = mul × contrast, b = mul × mean × (1 − contrast).
+ * @param {Adjust} adjust
+ * @param {[number, number, number]} mean  per-channel mean of the source (sRGB 0–255)
+ * @returns {{ a: number[]; b: number[] }}
+ */
+export function linearCoefficients(adjust, mean) {
+  const { mul, contrast } = adjust;
+  return {
+    a: mul.map((m) => m * contrast),
+    b: mul.map((m, i) => m * (mean[i] ?? 0) * (1 - contrast)),
+  };
+}
 
 export const BUDGET_KB = { albedo1024: 160, albedo512: 50 };
 
@@ -142,15 +182,14 @@ async function processSpecies(species, textureId, inDir, outDir) {
 
   let albedo = sharp(diffFile).removeAlpha();
   if (rotate) albedo = albedo.rotate(90);
-  if (species === 'kernbuche') {
-    const [r, g, b] = KERNBUCHE_TINT;
-    albedo = albedo.recomb([
-      [r, 0, 0],
-      [0, g, 0],
-      [0, 0, b],
-    ]);
+  const adjust = SPECIES_ADJUST[species] ?? IDENTITY_ADJUST;
+  if (adjust.contrast !== 1 || adjust.mul.some((m) => m !== 1)) {
+    const src = await sharp(diffFile).removeAlpha().stats();
+    const mean = /** @type {[number, number, number]} */ (src.channels.slice(0, 3).map((c) => c.mean));
+    const { a, b } = linearCoefficients(adjust, mean);
+    albedo = albedo.linear(a, b);
   }
-  // Materialise once so the rotation and tint apply before both resizes.
+  // Materialise once so the rotation and calibration apply before both resizes.
   const albedoPng = await albedo.png().toBuffer();
 
   let normal;

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PRESETS,
   azimuthLimit,
+  clampAzimuth,
   directionOf,
   fitDistance,
   needsRefit,
@@ -124,5 +125,26 @@ describe('presets and limits', () => {
     expect(azimuthLimit('regal')).toBe(120);
     expect(azimuthLimit('sideboard')).toBe(120);
     expect(azimuthLimit('esstisch')).toBe(Infinity);
+  });
+
+  it('clampAzimuth: Regal ±120°, Einbauschrank ±60°, Esstisch free; a kind switch re-clamps the camera', () => {
+    expect(clampAzimuth(120, 'regal')).toBe(120);
+    expect(clampAzimuth(135, 'regal')).toBe(120);
+    expect(clampAzimuth(-135, 'sideboard')).toBe(-120);
+    expect(clampAzimuth(120, 'einbauschrank')).toBe(60); // Regal → Einbauschrank at 120°
+    expect(clampAzimuth(-120, 'einbauschrank')).toBe(-60);
+    expect(clampAzimuth(170, 'esstisch')).toBe(170);
+    expect(clampAzimuth(-179, 'esstisch')).toBe(-179);
+    fc.assert(
+      fc.property(fc.integer({ min: -180, max: 180 }), (az) => {
+        expect(Math.abs(clampAzimuth(az, 'einbauschrank'))).toBeLessThanOrEqual(60);
+        expect(Math.abs(clampAzimuth(az, 'regal'))).toBeLessThanOrEqual(120);
+        expect(clampAzimuth(az, 'esstisch')).toBe(az);
+        // Within the limit the value is untouched; outside it lands on the limit with the same sign.
+        const c = clampAzimuth(az, 'einbauschrank');
+        if (Math.abs(az) <= 60) expect(c).toBe(az);
+        else expect(c).toBe(Math.sign(az) * 60);
+      }),
+    );
   });
 });

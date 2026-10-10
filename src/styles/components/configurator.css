@@ -1077,6 +1077,24 @@
     border: var(--rule);
   }
 
+  /* Demo: the 3D snapshot (docs/configurator.md §4.12) with its download link, on its own sheet. */
+  .success__snapshot {
+    margin: 0;
+    padding: var(--space-s);
+    border: var(--rule);
+  }
+
+  .success__snapshot img {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+  }
+
+  .success__snapshot figcaption {
+    margin-block-start: var(--space-2xs);
+    font-size: var(--step--1);
+  }
+
   .success__drawing svg {
     --ze-accent: var(--accent);
     --ze-muted: var(--ink-muted);
