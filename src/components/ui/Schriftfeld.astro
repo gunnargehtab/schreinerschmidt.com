@@ -1,0 +1,95 @@
+---
+// Schriftfeld (docs/design-system.md §5 "Other components"): the title block of a technical
+// drawing as a <dl> (Projekt | Ort | Jahr | Holz). Place it inside a <figcaption>. Fields with a
+// review status carry `data-review` so the Prüfliste and the production guard can find them.
+// Unknown fields are left out rather than invented.
+export interface Field {
+  value: string;
+  status?: 'confirmed' | 'needs-review' | 'placeholder';
+}
+
+interface Props {
+  projekt?: string | Field;
+  ort?: string | Field;
+  jahr?: string | number | Field;
+  holz?: string | Field;
+  /** Sheet number in the corner, e.g. „Blatt 01“. */
+  blatt?: string;
+  class?: string;
+}
+
+const { projekt, ort, jahr, holz, blatt, class: className } = Astro.props;
+
+const toField = (input: string | number | Field | undefined): Field | undefined => {
+  if (input === undefined) return undefined;
+  if (typeof input === 'object') return input;
+  return { value: String(input) };
+};
+
+const cells = [
+  { label: 'Projekt', field: toField(projekt) },
+  { label: 'Ort', field: toField(ort) },
+  { label: 'Jahr', field: toField(jahr) },
+  { label: 'Holz', field: toField(holz) },
+].filter((c): c is { label: string; field: Field } => c.field !== undefined);
+---
+
+<dl class:list={['schriftfeld', className]}>
+  {cells.map(({ label, field }) => (
+    <div class="schriftfeld__cell">
+      <dt>{label}</dt>
+      <dd data-review={field.status}>{field.value}</dd>
+    </div>
+  ))}
+  {blatt && (
+    <div class="schriftfeld__cell schriftfeld__cell--blatt">
+      <dt class="visually-hidden">Blatt</dt>
+      <dd>{blatt}</dd>
+    </div>
+  )}
+</dl>
+
+<style>
+  @layer components {
+    /* A hairline grid of open cells, like the title block in the corner of a drawing sheet. */
+    .schriftfeld {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 0;
+      border-block-start: var(--rule-strong);
+      border-inline-start: var(--rule-strong);
+      font-size: var(--step--2);
+      line-height: 1.3;
+      color: var(--ink);
+      max-inline-size: none;
+    }
+
+    .schriftfeld__cell {
+      flex: 1 1 8rem;
+      min-inline-size: 0;
+      padding: var(--space-2xs) var(--space-xs);
+      border-inline-end: var(--rule-strong);
+      border-block-end: var(--rule-strong);
+    }
+
+    .schriftfeld__cell--blatt {
+      flex: 0 0 auto;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      font-weight: var(--weight-ui);
+    }
+
+    .schriftfeld dt {
+      font-size: var(--step--2);
+      font-weight: var(--weight-ui);
+      letter-spacing: 0.01em;
+      color: var(--ink-muted);
+    }
+
+    .schriftfeld dd {
+      margin: var(--space-3xs) 0 0;
+      font-weight: var(--weight-ui);
+      text-wrap: pretty;
+    }
+  }
+</style>

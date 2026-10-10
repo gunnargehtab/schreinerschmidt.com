@@ -13,6 +13,13 @@
   }
 }
 
+/* StatCounter (§5): the animated integer behind `counter(n)`. Unlayered, like @view-transition. */
+@property --n {
+  syntax: '<integer>';
+  inherits: false;
+  initial-value: 0;
+}
+
 @layer motion {
   /* View-transition names come from src/lib/vt.ts and reach CSS via --vt. */
   .site-header {
@@ -276,7 +283,12 @@
     }
   }
 
-  /* Scroll-driven: hero inset → full-bleed, header condense, section reveals with stagger. */
+  /*
+   * Scroll-driven: hero inset → full-bleed, header condense, counters, section reveals, Jahresringe.
+   * Base CSS = the framed hero (the finished state for Firefox and reduced motion). The clip-path
+   * only ever hides the margins outside the content column, never the image (§0.4). The inset
+   * resolves against the full-bleed figure, so it lands exactly on the content column edges.
+   */
   .hero__media {
     clip-path: inset(0 max(var(--gutter), (100% - var(--content)) / 2));
   }
@@ -291,6 +303,7 @@
         animation-range: 0 50svh;
       }
 
+      /* Header condense: the wordmark scales to .85 over the first 6rem of scroll. */
       .site-header .wordmark {
         animation-name: shrink;
         animation-timing-function: linear;
@@ -311,6 +324,116 @@
         animation-range: entry calc(10% + mod(sibling-index() - 1, var(--cols, 3)) * 6%) cover
           calc(30% + mod(sibling-index() - 1, var(--cols, 3)) * 6%);
       }
+
+      /*
+       * Counters (§5 StatCounter): `--n` counts up on the view timeline and is shown through a CSS
+       * counter in ::after; the real number stays in the DOM (visually hidden, still read out).
+       * Outside this gate nothing happens and `.stat__num` is simply the visible figure.
+       */
+      .stat__value:not(.stat__value--static) {
+        counter-reset: n var(--n);
+        animation-name: count-up;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 20% cover 45%;
+      }
+
+      .stat__value:not(.stat__value--static)::after {
+        content: counter(n);
+        content: counter(n) / '';
+      }
+
+      .stat__value:not(.stat__value--static) .stat__num {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+    }
+
+    /*
+     * Jahresringe (§6 catalogue): each milestone <li> drives a named view timeline (--m1 … --m8) that
+     * the section hoists with timeline-scope; the ring with the same index lights up as its milestone
+     * scrolls in. Base CSS already shows every milestone ring in the accent colour.
+     */
+    @supports (timeline-scope: --a) and (animation-timeline: view()) {
+      .jahresringe {
+        timeline-scope: --m1, --m2, --m3, --m4, --m5, --m6, --m7, --m8;
+      }
+
+      .jahresringe__item:nth-child(1) {
+        view-timeline: --m1 block;
+      }
+
+      .jahresringe__item:nth-child(2) {
+        view-timeline: --m2 block;
+      }
+
+      .jahresringe__item:nth-child(3) {
+        view-timeline: --m3 block;
+      }
+
+      .jahresringe__item:nth-child(4) {
+        view-timeline: --m4 block;
+      }
+
+      .jahresringe__item:nth-child(5) {
+        view-timeline: --m5 block;
+      }
+
+      .jahresringe__item:nth-child(6) {
+        view-timeline: --m6 block;
+      }
+
+      .jahresringe__item:nth-child(7) {
+        view-timeline: --m7 block;
+      }
+
+      .jahresringe__item:nth-child(8) {
+        view-timeline: --m8 block;
+      }
+
+      .rings__ring--mark {
+        animation-name: ring-mark;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-range: entry 0% cover 40%;
+      }
+
+      .rings__ring--mark[data-milestone='1'] {
+        animation-timeline: --m1;
+      }
+
+      .rings__ring--mark[data-milestone='2'] {
+        animation-timeline: --m2;
+      }
+
+      .rings__ring--mark[data-milestone='3'] {
+        animation-timeline: --m3;
+      }
+
+      .rings__ring--mark[data-milestone='4'] {
+        animation-timeline: --m4;
+      }
+
+      .rings__ring--mark[data-milestone='5'] {
+        animation-timeline: --m5;
+      }
+
+      .rings__ring--mark[data-milestone='6'] {
+        animation-timeline: --m6;
+      }
+
+      .rings__ring--mark[data-milestone='7'] {
+        animation-timeline: --m7;
+      }
+
+      .rings__ring--mark[data-milestone='8'] {
+        animation-timeline: --m8;
+      }
     }
   }
 
@@ -330,6 +453,25 @@
     from {
       opacity: 0;
       translate: 0 1rem;
+    }
+  }
+
+  @keyframes count-up {
+    from {
+      --n: 0;
+    }
+
+    to {
+      --n: var(--to);
+    }
+  }
+
+  /* currentColor (the figure's --sketch), not a light-dark() token: Chrome interpolates
+     light-dark() inside keyframes to garbage (oklab with chroma > 10). */
+  @keyframes ring-mark {
+    from {
+      stroke: currentColor;
+      stroke-width: 1.25;
     }
   }
 

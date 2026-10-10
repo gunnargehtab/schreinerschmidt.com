@@ -1,0 +1,109 @@
+---
+// StatCounter (docs/design-system.md §5 StatCounter, §8 Home 3): years since the Meisterbrief
+// (computed at build), the Google review count and the „5,0“ average. Integer values count up on
+// a view timeline (motion.css: `@property --n` + `counter()`); the real number stays in the markup
+// as `.stat__num`, so Firefox, reduced motion and no-JS show the finished figures. „5,0“ is static,
+// because CSS counters are integers only. The only inline style is the `--to` / `--digits` pair.
+import { getEntry } from 'astro:content';
+import { formatNumber } from '../../lib/format';
+
+export interface Stat {
+  /** Integer values count up; strings render as they are. */
+  value: number | string;
+  label: string;
+  /** Optional review flag for figures the owner still has to confirm. */
+  status?: 'confirmed' | 'needs-review' | 'placeholder';
+}
+
+interface Props {
+  stats?: Stat[];
+  class?: string;
+}
+
+const settings = await getEntry('settings', 'site');
+if (!settings) throw new Error('settings entry "site" is missing');
+const { owner, rating } = settings.data;
+// Build-time year in Europe/Berlin; a rebuild each year is part of the deployment routine.
+const year = Number(
+  new Intl.DateTimeFormat('en-CA', { year: 'numeric', timeZone: 'Europe/Berlin' }).format(new Date()),
+);
+
+const defaults: Stat[] = [
+  { value: year - owner.masterSince, label: 'Jahre Meisterbetrieb' },
+  { value: rating.count, label: 'Google-Bewertungen' },
+  {
+    value: formatNumber(rating.value, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    label: 'Sterne im Schnitt bei Google',
+  },
+];
+
+const { stats = defaults, class: className } = Astro.props;
+const digits = (n: number): number => String(n).length;
+---
+
+<section class:list={['section', 'section--compact', 'stats', className]} aria-label="Kennzahlen">
+  <ul class="stats__list list-plain">
+    {stats.map(({ value, label, status }) => (
+      <li class="stat" data-review={status}>
+        {typeof value === 'number' && Number.isInteger(value) ? (
+          <span class="stat__value" style={`--to: ${value}; --digits: ${digits(value)}`}>
+            <span class="stat__num">{formatNumber(value)}</span>
+          </span>
+        ) : (
+          <span class="stat__value stat__value--static">
+            <span class="stat__num">{value}</span>
+          </span>
+        )}
+        <span class="stat__label">{label}</span>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  @layer components {
+    .stats {
+      padding-block: var(--space-l);
+    }
+
+    /* Open hairline cells, like a row of fields on a drawing sheet. */
+    .stats__list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+      border-block-start: var(--rule);
+      border-inline-start: var(--rule);
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3xs);
+      padding: var(--space-s) var(--space-s-m);
+      border-inline-end: var(--rule);
+      border-block-end: var(--rule);
+    }
+
+    /*
+     * `--n` (motion.css @property) defaults to the final figure, so the counter also shows the
+     * finished number when its view timeline is inactive (a page that does not scroll).
+     */
+    .stat__value {
+      --n: var(--to, 0);
+      display: inline-block;
+      font-size: var(--step-4);
+      font-weight: var(--weight-heading);
+      line-height: 1;
+      letter-spacing: var(--tracking-heading);
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      min-inline-size: calc(var(--digits, 1) * 1ch);
+    }
+
+    .stat__label {
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+      color: var(--ink-muted);
+      text-wrap: pretty;
+    }
+  }
+</style>
