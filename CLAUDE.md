@@ -15,7 +15,7 @@ This repository holds an Astro 7 static site for a carpentry business in Mannhei
 - **Internal URLs** go through `url()` / `asset()` from `src/lib/url.ts`. The base path contains a dot (`/schreinerschmidt.com/`). Never hard-code `/…` links. In Playwright, use relative `goto('kontakt/')`.
 - **CSP:**
   - No `define:vars`. No `<style is:inline>`.
-  - No `style=""` except per-element custom properties (`--vt`, `--pos`, `--to`, `--ar`).
+  - No `style=""` except per-element custom properties (`--vt`, `--pos`, `--to`, `--ar`, `--digits`, `--dominant`, `--wordmark-mask`, `--wordmark-ar`).
   - Inline scripts live only in `src/lib/inline-scripts.mjs`.
 - **Motion:**
   - Base CSS renders the finished state.
