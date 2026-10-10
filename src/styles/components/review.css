@@ -1,7 +1,7 @@
 /*
  * Review marks (components/ui/ReviewMark.astro, plus the same span markup emitted by
  * lib/legal-tokens.ts and lib/markdown/placeholder-marks.mjs). Plain text by default; with `?pruefen`
- * in the URL ui/ReviewView.astro sets `data-pruefen` on <html>, which turns on the rules below.
+ * in the URL (or the session flag) ui/ReviewView.astro sets `data-pruefen` on <html>, which turns on the rules below.
  *
  * Global, not scoped (docs/design-system.md §4): the marks are shared and partly rendered from
  * Markdown/HTML strings and by JS. A scoped stylesheet also risked landing ahead of global.css in a
@@ -34,9 +34,13 @@
     content: ' [Platzhalter]' / '';
   }
 
-  /* The legend: generated content, like the labels above, so the switch script stays one line. */
-  :root[data-pruefen] body::after {
-    content: 'Prüfansicht: Markierte Texte sind noch nicht bestätigt (Prüfen oder Platzhalter).';
+  /* The legend: real markup (ui/ReviewView.astro), `display: none` until the review view is on. */
+  .review-legend {
+    display: none;
+  }
+
+  :root[data-pruefen] .review-legend {
+    display: block;
     position: fixed;
     inset-block-end: var(--space-s);
     inset-inline-start: var(--space-s);
@@ -48,5 +52,23 @@
     border: var(--rule-strong);
     box-shadow: var(--shadow-paper);
     font-size: var(--step--1);
+  }
+
+  .review-legend p {
+    margin: 0;
+  }
+
+  .review-legend__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-s);
+    margin-block-start: var(--space-3xs);
+  }
+
+  .review-legend a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--target-min);
+    color: var(--accent);
   }
 }

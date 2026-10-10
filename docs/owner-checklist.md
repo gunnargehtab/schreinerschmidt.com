@@ -12,6 +12,7 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] `eiche_fischgratparkett.jpeg` (Fujifilm 2011): his project? Currently not migrated.
 - [ ] Testimonials (Biggi N., Christian E., Alexander H.): source, and permission to quote them.
 - [ ] Vector logo, if one exists (sign makers usually have it).
+- [ ] Favicon and app icons are a placeholder (a drawn blocky "S", `scripts/make-icons.mjs`) until a vector logo exists. Replace them with the real mark, or approve the placeholder.
 - [ ] New photos: windows, terraces, Altbau, workshop, team.
 
 ## Legal and company details (Impressum)

@@ -1,13 +1,38 @@
 ---
 // Owner review view (docs/owner-checklist.md): with `?pruefen` in the URL, sets `data-pruefen` on
 // <html>; src/styles/components/review.css then highlights every review mark and shows the legend.
+// `?pruefen` also sets the session flag `ss-pruefen`, so the view stays on while the owner clicks
+// through the site; `?pruefen=aus` turns it off and clears the flag. `?schritt=pruefen` (configurator
+// share links) does not match: only the exact parameter name counts.
 // The marks come from ReviewMark, Schriftfeld, the legal templates and the Markdown placeholder
 // plugin, so BaseLayout renders this once per page, at the end of <body>: Astro renders a component's
 // <script> where the component first appears, and inside ReviewMark that could be within a
 // `tel:` link (html-validate tel-non-breaking). A bundled module script (processed and CSP-hashed
 // by Astro), not one of our inline scripts. Without JS (or without `?pruefen`) nothing happens.
+// The legend is `display: none` (out of the a11y tree; not the `hidden` attribute, reset.css makes that !important) until `:root[data-pruefen]` shows it. "?pruefen=aus"
+// is relative to the current page, so no url() is needed; the checklist exists in demo builds only.
+import { PUBLIC_DEMO } from 'astro:env/client';
+import { url } from '../../lib/url';
 ---
 
+<aside class="review-legend" aria-label="Prüfansicht" data-print="hide">
+  <p>Prüfansicht: Markierte Texte sind noch nicht bestätigt (Prüfen oder Platzhalter).</p>
+  <p class="review-legend__links">
+    <a href="?pruefen=aus">Prüfansicht beenden</a>
+    {PUBLIC_DEMO && <a href={url('intern/pruefliste/')}>Prüfliste</a>}
+  </p>
+</aside>
+
 <script>
-  if (location.search.includes('pruefen')) document.documentElement.dataset['pruefen'] = '';
+  {
+    const key = 'ss-pruefen';
+    const q = new URLSearchParams(location.search).get('pruefen');
+    let on = q !== null && q !== 'aus';
+    try {
+      if (q === 'aus') sessionStorage.removeItem(key);
+      else if (on) sessionStorage.setItem(key, '1');
+      else on = sessionStorage.getItem(key) === '1';
+    } catch {}
+    if (on) document.documentElement.dataset['pruefen'] = '';
+  }
 </script>

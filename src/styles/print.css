@@ -23,6 +23,18 @@
   .site-header .menu-button,
   .theme-toggle,
   .btn--icon,
+  .nav-sheet,
+  .lightbox,
+  .refs__chips,
+  .refs__status,
+  .inpage-nav,
+  .ba__buttons,
+  .ba__divider,
+  .ba__range,
+  .faq__icon,
+  .site-footer__nav,
+  .site-footer__legal ul,
+  [popover],
   [data-print='hide'] {
     display: none !important;
   }
@@ -72,5 +84,86 @@
     color: #000;
     background: none;
     border: 1px solid #000;
+  }
+
+  /* Footer: only the NAP (name, address, phone, e-mail), hours and the copyright line remain. */
+  .site-footer {
+    padding-block: 1em 0;
+    background: none;
+    border-block-start: 1px solid #000;
+  }
+
+  .site-footer__cols {
+    display: block;
+  }
+
+  .site-footer__col {
+    margin-block-end: 0.75em;
+  }
+
+  /* tel: and mailto: links print as plain text (the rule above only appends http(s) URLs). */
+  a[href^='tel:']::after,
+  a[href^='mailto:']::after {
+    content: none;
+  }
+
+  /* Finished state: nothing waits for a scroll or a timeline, nothing is clipped or animated. */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    view-transition-name: none !important;
+  }
+
+  .cv-auto {
+    content-visibility: visible;
+  }
+
+  /* No viewport-sized boxes or sticky chrome: they push the hero onto a blank first page. */
+  body {
+    min-block-size: 0;
+  }
+
+  .site-header {
+    position: static;
+  }
+
+  .hero,
+  .page-hero {
+    min-block-size: 0;
+    padding-block: 0.5em 1em;
+  }
+
+  /* BeforeAfter prints both photos side by side, also when the slider was enhanced. */
+  .ba[data-enhanced] .ba__stage {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    aspect-ratio: auto;
+    overflow: visible;
+  }
+
+  .ba[data-enhanced] .ba__side {
+    position: relative;
+    aspect-ratio: var(--ar, 4 / 3);
+    clip-path: none;
+  }
+
+  .ba[data-enhanced] .ba__after .ba__label {
+    inset-inline: auto;
+    inset-inline-start: var(--space-2xs);
+  }
+
+  /* Galleries keep each image with its caption; FAQ answers print open where supported. */
+  :is(.gallery__item, .gallery__link, .ba__side, .hero__media) {
+    break-inside: avoid;
+  }
+
+  @supports selector(::details-content) {
+    details::details-content {
+      content-visibility: visible;
+      block-size: auto;
+      overflow: visible;
+    }
   }
 }

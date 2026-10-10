@@ -1,6 +1,8 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { ROBOTS_NOINDEX, isAlwaysNoindex } from '../../src/lib/seo';
-import { describeDist, isDemo, isRedirectPage, loadPages } from '../helpers/dist';
+import { DIST, describeDist, getBase, isDemo, isRedirectPage, loadPages, stripBase } from '../helpers/dist';
 
 const pages = loadPages().filter((p) => !isRedirectPage(p));
 
@@ -61,5 +63,21 @@ describeDist('robots and canonical', () => {
     if (!page) return;
     expect(robotsOf(page.root)).toContain('noindex');
     expect(page.root.querySelector('link[rel="canonical"]')).toBeNull();
+  });
+});
+
+describeDist('og:image', () => {
+  // Every page that is not always-noindex carries an absolute og:image under site + base whose
+  // file exists in dist/. (Legal, danke, 404 and /intern/ use the default image too, see src/lib/og-default.ts.)
+  const shared = pages.filter((p) => !isAlwaysNoindex(p.urlPath) && !p.is404);
+
+  it.each(shared.map((p) => [p.rel, p] as const))('%s: og:image is absolute and exists in dist', (_rel, page) => {
+    const content = page.root.querySelector('meta[property="og:image"]')?.getAttribute('content');
+    expect(content, 'og:image').toBeTruthy();
+    const image = new URL(content ?? '');
+    expect(image.protocol).toMatch(/^https?:$/);
+    expect(image.pathname.startsWith(getBase())).toBe(true);
+    expect(existsSync(join(DIST, stripBase(image.pathname))), image.pathname).toBe(true);
+    expect(page.root.querySelector('meta[property="og:image:alt"]')?.getAttribute('content')).toBeTruthy();
   });
 });

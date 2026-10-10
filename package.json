@@ -27,6 +27,7 @@
     "assets:migrate": "node scripts/migrate-assets.mjs",
     "assets:sketches": "node scripts/make-sketch-variants.mjs",
     "assets:wordmark": "node scripts/make-wordmark.mjs",
+    "assets:icons": "node scripts/make-icons.mjs",
     "verify": "npm run format:check && npm run check && npm run test:unit && npm run build && npm run test:dist && npm run test:e2e && npm run test:links"
   },
   "dependencies": {

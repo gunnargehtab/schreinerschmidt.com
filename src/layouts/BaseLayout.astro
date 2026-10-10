@@ -6,6 +6,7 @@ import { Font } from 'astro:assets';
 import type { ComponentProps } from 'astro/types';
 import { themeInitScript, vtTypesScript, speculationRulesScript } from '../lib/inline-scripts.mjs';
 import { vt } from '../lib/vt';
+import { asset } from '../lib/url';
 import Seo from '../components/seo/Seo.astro';
 import SiteJsonLd from '../components/seo/SiteJsonLd.astro';
 import DemoBanner from '../components/layout/DemoBanner.astro';
@@ -34,6 +35,10 @@ vt(Astro.locals, 'site-header');
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFBF5" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#160D07" />
+    <link rel="icon" href={asset('favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={asset('favicon.ico')} sizes="32x32" />
+    <link rel="apple-touch-icon" href={asset('apple-touch-icon.png')} />
+    <link rel="manifest" href={asset('site.webmanifest')} />
     <Seo {...props} />
     <link rel="expect" href="#main" blocking="render" />
     <Font cssVariable="--font-sans" preload={[{ subset: 'latin' }]} />
