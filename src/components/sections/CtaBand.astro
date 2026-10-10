@@ -1,0 +1,103 @@
+---
+// Closing call to action on the inverse ink band (docs/design-system.md §5 CtaBand): h2, a Maßlinie
+// that draws on view, the configurator button, the phone number and opening hours from settings.
+// Phone and hours are unconfirmed, so they are marked for the review view.
+import ReviewMark from '../ui/ReviewMark.astro';
+import { formatHours } from '../layout/nav-data';
+import { getSite } from '../../lib/content';
+import { NNBSP, telHref } from '../../lib/format';
+import { url } from '../../lib/url';
+
+interface Props {
+  heading?: string;
+  lead?: string;
+  /** Site-relative target, e.g. `konfigurator/boeden/`. */
+  href?: string;
+  buttonLabel?: string;
+}
+
+const {
+  heading = 'In 3 Minuten zu Ihrem individuellen Angebot',
+  lead,
+  href = 'konfigurator/',
+  buttonLabel = 'Angebot konfigurieren',
+} = Astro.props;
+
+const site = await getSite();
+const hours = formatHours(site.hours.value);
+const hoursStatus = site.hours.status === 'confirmed' ? undefined : site.hours.status;
+const phoneStatus = site.review.status === 'confirmed' ? undefined : site.review.status;
+// Non-breaking spaces keep the number on one line (html-validate tel-non-breaking).
+const phone = site.phone.display.replaceAll(' ', ' ');
+---
+
+<section class="section band--ink cta-band" aria-labelledby="cta-band-title">
+  <div class="cta-band__inner">
+    <div class="cta-band__text stack">
+      <h2 id="cta-band-title">{heading}</h2>
+      {lead && <p class="lead">{lead}</p>}
+      <p class="mass" data-draw="scroll" data-ends="tick">
+        <span class="mass__line" aria-hidden="true"></span>
+        <span class="mass__label">3{NNBSP}Minuten</span>
+        <span class="mass__line" aria-hidden="true"></span>
+      </p>
+    </div>
+    <div class="cta-band__actions stack stack--m">
+      <a class="btn" href={url(href)}>
+        {buttonLabel}
+      </a>
+      <p class="cta-band__contact">
+        Oder rufen Sie uns an:
+        <a class="cta-band__tel" href={telHref(site.phone.e164)}>
+          {phoneStatus ? <ReviewMark status={phoneStatus}>{phone}</ReviewMark> : phone}
+        </a>
+      </p>
+      <ul class="cta-band__hours list-plain">
+        {hours.map((row) => (
+          <li>
+            {hoursStatus ? (
+              <ReviewMark status={hoursStatus}>{`${row.days} ${row.time}`}</ReviewMark>
+            ) : (
+              <>{`${row.days} ${row.time}`}</>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  @layer components {
+    .cta-band__inner {
+      display: grid;
+      gap: var(--space-l) var(--space-xl);
+      align-items: end;
+    }
+
+    .cta-band__text > .mass {
+      max-inline-size: 24rem;
+      margin-block-start: var(--space-m);
+    }
+
+    .cta-band__contact,
+    .cta-band__hours {
+      font-size: var(--step--1);
+    }
+
+    .cta-band__tel {
+      font-weight: var(--weight-ui);
+      white-space: nowrap;
+    }
+
+    .cta-band__hours {
+      color: var(--ink-muted);
+    }
+
+    @container section (inline-size >= 48rem) {
+      .cta-band__inner {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      }
+    }
+  }
+</style>

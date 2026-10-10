@@ -1,0 +1,215 @@
+---
+// "Ablauf" in five steps (docs/design-system.md §5 ProcessSteps). Desktop: five columns on a
+// subgrid with a Maßlinie (ol::before) above that draws on the view timeline. Mobile: a vertical
+// line. Without scroll-driven animations the full line and all steps are simply there.
+import Sketch from '../ui/Sketch.astro';
+import ReviewMark from '../ui/ReviewMark.astro';
+import { isSketchName } from '../../lib/sketch';
+
+interface Step {
+  /** Sketch name (beratung, entwurf, fertigung, montage, pflege); no drawing when it doesn't exist yet. */
+  key: string;
+  title: string;
+  text: string;
+}
+
+// needs-review: step texts are derived from the old site (Beratungsgespräch, Angebot, Aufmaß und
+// Montage) and from the sketch brief; the final copy comes with the copywriter's pages. Pflege is
+// not mentioned on the old site at all. Pages may pass their own `steps`.
+const DEFAULT_STEPS: readonly Step[] = [
+  { key: 'beratung', title: 'Beratung & Aufmaß', text: 'Wir besprechen Ihr Vorhaben und nehmen vor Ort Maß.' },
+  { key: 'entwurf', title: 'Entwurf & Angebot', text: 'Sie erhalten einen Entwurf und ein Angebot.' },
+  { key: 'fertigung', title: 'Fertigung', text: 'Ihr Stück entsteht in unserer Werkstatt.' },
+  { key: 'montage', title: 'Montage', text: 'Wir bauen es bei Ihnen ein.' },
+  { key: 'pflege', title: 'Pflege', text: 'Sie erfahren, wie Sie das Holz pflegen.' },
+];
+
+interface Props {
+  steps?: readonly Step[];
+  /** Heading level of the step titles. */
+  level?: 3 | 4;
+  /** Wrap the texts in ReviewMark (true while they are the unconfirmed defaults). */
+  review?: boolean;
+  label?: string;
+}
+
+const { steps = DEFAULT_STEPS, level = 3, review = steps === DEFAULT_STEPS, label = 'Ablauf' } = Astro.props;
+const Heading = `h${level}` as 'h3' | 'h4';
+---
+
+<div class="process">
+  <ol class="process__list list-plain reveal" aria-label={label}>
+    {steps.map((step, i) => (
+      <li class="process__step">
+        <span class="process__no" aria-hidden="true">
+          {String(i + 1).padStart(2, '0')}
+        </span>
+        <div class="process__media">{isSketchName(step.key) && <Sketch name={step.key} draw="scroll" />}</div>
+        <Heading class="process__title">{step.title}</Heading>
+        <p class="process__text">{review ? <ReviewMark>{step.text}</ReviewMark> : step.text}</p>
+      </li>
+    ))}
+  </ol>
+</div>
+
+<style>
+  @layer components {
+    .process {
+      container: process / inline-size;
+    }
+
+    .process__list {
+      --cols: 5;
+      --_line: var(--accent);
+      position: relative;
+      display: grid;
+      gap: var(--space-l) 0;
+    }
+
+    /* Mobile: a vertical line behind the numbers. */
+    .process__list::before {
+      content: '';
+      position: absolute;
+      inset-block: 0.5rem;
+      inset-inline-start: 1.25rem;
+      inline-size: var(--hairline);
+      background: var(--_line);
+      transform-origin: 50% 0;
+    }
+
+    .process__step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 2.5rem 1fr;
+      column-gap: var(--space-s);
+      align-items: start;
+      min-inline-size: 0;
+    }
+
+    .process__no {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      justify-self: start;
+      display: grid;
+      place-items: center;
+      inline-size: 2.5rem;
+      block-size: 2.5rem;
+      border: var(--hairline) solid var(--_line);
+      background: var(--surface);
+      color: var(--accent);
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .process__media {
+      grid-column: 2;
+      inline-size: 4.5rem;
+      margin-block-end: var(--space-2xs);
+    }
+
+    .process__title,
+    .process__text {
+      grid-column: 2;
+    }
+
+    .process__title {
+      font-size: var(--step-1);
+    }
+
+    .process__text {
+      margin-block-start: var(--space-3xs);
+      max-inline-size: var(--measure-card);
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+    }
+
+    /* Desktop: five columns on a subgrid; the Maßlinie runs above the numbers. */
+    @container process (inline-size >= 56rem) {
+      .process__list {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-rows: auto auto auto auto;
+        column-gap: var(--space-m);
+        row-gap: 0;
+        padding-block-start: var(--space-m);
+      }
+
+      .process__list::before {
+        inset: 0 0 auto 0;
+        inline-size: auto;
+        block-size: 0.75rem;
+        border-inline: var(--hairline) solid var(--_line);
+        background: linear-gradient(var(--_line), var(--_line)) 0 50% / 100% var(--hairline) no-repeat;
+        transform-origin: 0 50%;
+      }
+
+      .process__step {
+        grid-row: span 4;
+        grid-template-columns: 1fr;
+        grid-template-rows: subgrid;
+        row-gap: var(--space-2xs);
+      }
+
+      .process__no,
+      .process__media,
+      .process__title,
+      .process__text {
+        grid-column: 1;
+      }
+
+      .process__no {
+        grid-row: 1;
+        border: 0;
+        background: none;
+        inline-size: auto;
+        block-size: auto;
+        place-items: start;
+        font-size: var(--step-0);
+      }
+
+      .process__media {
+        grid-row: 2;
+        inline-size: 6.5rem;
+      }
+
+      .process__title {
+        grid-row: 3;
+        font-size: var(--step-0);
+      }
+
+      .process__text {
+        grid-row: 4;
+      }
+    }
+
+    /* Draw-on and stagger: only where view timelines exist and motion is welcome. */
+    @media (prefers-reduced-motion: no-preference) {
+      @supports (animation-timeline: view()) {
+        .process__list::before {
+          animation-name: mass-draw-v;
+          animation-timing-function: linear;
+          animation-fill-mode: both;
+          animation-timeline: view();
+          animation-range: entry 10% cover 60%;
+        }
+
+        @container process (inline-size >= 56rem) {
+          .process__list::before {
+            animation-name: mass-draw;
+            animation-range: entry 0% cover 35%;
+          }
+        }
+      }
+    }
+
+    @media (forced-colors: active) {
+      .process__list::before {
+        background-color: CanvasText;
+      }
+
+      .process__no {
+        border-color: CanvasText;
+      }
+    }
+  }
+</style>

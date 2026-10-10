@@ -1,0 +1,63 @@
+---
+// Hairline grid of ServiceCards: 4+3 on desktop, 2 on tablet, one column (horizontal cards) on mobile.
+// The wrapper is the `services` size container that ServiceCard queries.
+import ServiceCard from './ServiceCard.astro';
+import type { Service } from '../../lib/content';
+
+interface Props {
+  services: readonly Service[];
+  variant?: 'default' | 'large';
+  /** Heading level of the card titles. */
+  level?: 2 | 3;
+  /** Accessible name of the list. */
+  label?: string;
+  /** Set false for a second grid on the same page, so view-transition names stay unique. */
+  vt?: boolean;
+}
+
+const { services, variant = 'default', level = 3, label = 'Leistungen', vt = true } = Astro.props;
+---
+
+<div class="service-grid" data-variant={variant}>
+  <ul class="service-grid__list list-plain hairline-grid reveal" aria-label={label}>
+    {services.map((service) => (
+      <li class="service-grid__item">
+        <ServiceCard service={service} variant={variant} level={level} vt={vt} />
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  @layer components {
+    .service-grid {
+      container: services / inline-size;
+    }
+
+    .service-grid__list {
+      --cols: 1;
+      display: grid;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    }
+
+    .service-grid__item {
+      min-inline-size: 0;
+    }
+
+    @container services (inline-size >= 36rem) {
+      .service-grid:not([data-variant='large']) .service-grid__list {
+        --cols: 2;
+      }
+    }
+
+    @container services (inline-size >= 64rem) {
+      .service-grid:not([data-variant='large']) .service-grid__list {
+        --cols: 4;
+      }
+
+      .service-grid[data-variant='large'] .service-grid__list {
+        --cols: 2;
+      }
+    }
+  }
+</style>

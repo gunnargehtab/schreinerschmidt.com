@@ -1,0 +1,57 @@
+---
+// Project cards in a grid: 3 columns on desktop, 2 on tablet, 1 on mobile (container queries).
+import ProjectCard from './ProjectCard.astro';
+import type { Project } from '../../lib/content';
+
+interface Props {
+  projects: readonly Project[];
+  level?: 2 | 3;
+  /** Accessible name of the list. */
+  label?: string;
+  /** Number of leading cards that load eagerly (above the fold); default 0. */
+  eager?: number;
+}
+
+const { projects, level = 3, label = 'Projekte', eager = 0 } = Astro.props;
+---
+
+<div class="project-grid">
+  <ul class="project-grid__list list-plain" aria-label={label}>
+    {projects.map((project, i) => (
+      <li class="project-grid__item">
+        <ProjectCard project={project} level={level} loading={i < eager ? 'eager' : 'lazy'} />
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  @layer components {
+    .project-grid {
+      container: projects / inline-size;
+    }
+
+    .project-grid__list {
+      --cols: 1;
+      display: grid;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      gap: var(--space-l) var(--space-s-m);
+    }
+
+    .project-grid__item {
+      min-inline-size: 0;
+    }
+
+    @container projects (inline-size >= 36rem) {
+      .project-grid__list {
+        --cols: 2;
+      }
+    }
+
+    @container projects (inline-size >= 60rem) {
+      .project-grid__list {
+        --cols: 3;
+      }
+    }
+  }
+</style>

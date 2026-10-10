@@ -1,0 +1,150 @@
+---
+// Demo-only gallery of the shared section components with real content, for visual QA and e2e tests.
+// Rest route so getStaticPaths can skip it: `npm run build:audit` (PUBLIC_DEMO=false) emits no /intern/komponenten/.
+import { PUBLIC_DEMO } from 'astro:env/client';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CtaBand from '../../../components/sections/CtaBand.astro';
+import Faq from '../../../components/sections/Faq.astro';
+import FactList from '../../../components/sections/FactList.astro';
+import InPageNav from '../../../components/sections/InPageNav.astro';
+import JobCard from '../../../components/sections/JobCard.astro';
+import ProcessSteps from '../../../components/sections/ProcessSteps.astro';
+import ProjectGrid from '../../../components/sections/ProjectGrid.astro';
+import ServiceGrid from '../../../components/sections/ServiceGrid.astro';
+import Testimonials from '../../../components/sections/Testimonials.astro';
+import ReviewMark from '../../../components/ui/ReviewMark.astro';
+import { getFaqs, getJobs, getProjects, getServices, getTestimonials } from '../../../lib/content';
+
+export function getStaticPaths() {
+  return PUBLIC_DEMO ? [{ params: { demo: undefined } }] : [];
+}
+
+const services = await getServices();
+const featured = await getProjects({ featured: true });
+const projects = featured.slice(0, 3);
+const fact = featured.find((p) => p.data.location && p.data.year) ?? featured[0];
+const testimonials = await getTestimonials();
+const jobs = await getJobs();
+const faqs = (await getFaqs()).slice(0, 4);
+const nav = [
+  { id: 'leistungen', label: 'Leistungen' },
+  { id: 'referenzen', label: 'Referenzen' },
+  { id: 'ablauf', label: 'Ablauf' },
+  { id: 'fragen', label: 'Fragen' },
+];
+---
+
+<BaseLayout
+  title="Komponenten"
+  description="Interne Übersicht der gemeinsamen Abschnitts-Komponenten des Entwurfs: Karten, Ablauf, Fragen, Stimmen, Stellen."
+  noindex
+>
+  <section class="section">
+    <div class="stack stack--m">
+      <p class="eyebrow">Intern · Blatt 00</p>
+      <h1>Abschnitts-Komponenten</h1>
+      <p class="lead">
+        Alle Bausteine mit echten Inhalten. Mit <code>?pruefen</code> in der Adresse werden unbestätigte Texte
+        <ReviewMark>wie dieser</ReviewMark> markiert.
+      </p>
+    </div>
+  </section>
+
+  <section id="leistungen" class="section section--alt" aria-labelledby="h-leistungen">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 01 · Leistungen</p>
+      <h2 id="h-leistungen">Leistungskarten</h2>
+    </div>
+    <ServiceGrid services={services} level={3} />
+  </section>
+
+  <section class="section">
+    <div class="demo-split">
+      <InPageNav items={nav} />
+      <div class="demo-split__main stack stack--l">
+        <section id="referenzen" class="stack stack--m" aria-labelledby="h-referenzen">
+          <div class="section-intro">
+            <p class="eyebrow">Blatt 02 · Referenzen</p>
+            <h2 id="h-referenzen">Projektkarten</h2>
+          </div>
+          <ProjectGrid projects={projects} level={3} />
+          {fact && (
+            <FactList
+              facts={[
+                { label: 'Ort', value: fact.data.location },
+                { label: 'Jahr', value: fact.data.year ? String(fact.data.year) : undefined },
+                { label: 'Art', value: fact.data.categories.join(', ') },
+              ]}
+            />
+          )}
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 03 · Leistungen, groß</p>
+      <h2>Große Leistungskarten</h2>
+    </div>
+    <ServiceGrid services={services.slice(0, 3)} variant="large" level={3} vt={false} label="Leistungen, groß" />
+  </section>
+
+  <section id="ablauf" class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 04 · Ablauf</p>
+      <h2>Vom Wunsch zum Werkstück</h2>
+    </div>
+    <ProcessSteps />
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 05 · Kundenstimmen</p>
+      <h2>Das sagen Kundinnen und Kunden</h2>
+    </div>
+    <Testimonials items={testimonials} />
+  </section>
+
+  <section id="fragen" class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 06 · Fragen</p>
+      <h2>Häufige Fragen</h2>
+    </div>
+    <Faq faqs={faqs} />
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 07 · Stellen</p>
+      <h2>Offene Stellen</h2>
+    </div>
+    <div class="jobs" id="bewerbung">
+      {jobs.map((job) => (
+        <JobCard job={job} applyHref="#bewerbung" />
+      ))}
+    </div>
+  </section>
+
+  <CtaBand />
+</BaseLayout>
+
+<style>
+  @layer components {
+    .demo-split {
+      display: grid;
+      gap: var(--space-l);
+      align-items: start;
+    }
+
+    .jobs {
+      max-inline-size: 48rem;
+    }
+
+    @container section (inline-size >= 64rem) {
+      .demo-split {
+        grid-template-columns: 12rem minmax(0, 1fr);
+      }
+    }
+  }
+</style>

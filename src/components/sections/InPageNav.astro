@@ -1,0 +1,101 @@
+---
+// In-page navigation (docs/design-system.md §5 Other components). Plain anchor links, so it works
+// everywhere; Chrome adds the current-section marker via scroll-target-group + :target-current.
+// Desktop (wide `section` container): sticky sidebar list. Narrow: wrapping chips, no scrolling row.
+interface Item {
+  /** Id of the target element on the page (without `#`). */
+  id: string;
+  label: string;
+}
+
+interface Props {
+  items: readonly Item[];
+  label?: string;
+}
+
+const { items, label = 'Auf dieser Seite' } = Astro.props;
+---
+
+<nav class="inpage-nav" aria-label={label}>
+  <ol class="inpage-nav__list list-plain">
+    {items.map((item) => (
+      <li>
+        <a class="inpage-nav__link" href={`#${item.id}`}>
+          {item.label}
+        </a>
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  @layer components {
+    .inpage-nav__list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2xs);
+    }
+
+    .inpage-nav__link {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--target-min);
+      padding-inline: var(--space-xs);
+      border: var(--rule-strong);
+      color: var(--ink);
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+      text-decoration: none;
+      transition:
+        background-color var(--dur-1),
+        border-color var(--dur-1);
+    }
+
+    .inpage-nav__link:hover {
+      background-color: var(--accent-tint);
+      color: var(--ink);
+    }
+
+    @container section (inline-size >= 64rem) {
+      .inpage-nav {
+        position: sticky;
+        inset-block-start: calc(var(--header-sticky-h) + var(--space-m));
+        align-self: start;
+      }
+
+      .inpage-nav__list {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: 0;
+        border-inline-start: var(--rule);
+      }
+
+      .inpage-nav__link {
+        display: flex;
+        border: 0;
+        border-inline-start: 2px solid transparent;
+        margin-inline-start: -1px;
+        padding-inline: var(--space-s);
+      }
+    }
+
+    /* Chrome: mark the section in view. */
+    @supports (scroll-target-group: auto) {
+      .inpage-nav__list {
+        scroll-target-group: auto;
+      }
+
+      .inpage-nav__link:target-current {
+        border-color: var(--accent);
+        background-color: var(--accent-tint);
+        color: var(--accent);
+      }
+    }
+
+    @media (forced-colors: active) {
+      .inpage-nav__link:target-current {
+        border-color: Highlight;
+      }
+    }
+  }
+</style>

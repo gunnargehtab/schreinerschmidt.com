@@ -1,0 +1,99 @@
+---
+// FAQ as native details/summary (docs/design-system.md §5 Faq): works without JS, summary is at least
+// 44 px tall, questions are independent (job details use name="jobs" instead). The open/close
+// transition (::details-content + interpolate-size) is in motion.css, gated by no-preference.
+import ReviewMark from '../ui/ReviewMark.astro';
+import type { Faq } from '../../lib/content';
+
+interface Props {
+  faqs: readonly Faq[];
+  /** Index of the entry that starts open (none by default). */
+  openIndex?: number;
+  label?: string;
+}
+
+const { faqs, openIndex, label = 'Häufige Fragen' } = Astro.props;
+---
+
+<div class="faq" role="group" aria-label={label}>
+  {faqs.map((faq, i) => (
+    <details class="faq__item" open={i === openIndex}>
+      <summary class="faq__question">
+        <span>{faq.data.question}</span>
+        <svg class="icon faq__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </summary>
+      <div class="faq__answer">
+        <p>
+          {faq.data.review.status === 'confirmed' ? (
+            faq.data.answer
+          ) : (
+            <ReviewMark status={faq.data.review.status} note={faq.data.review.note}>
+              {faq.data.answer}
+            </ReviewMark>
+          )}
+        </p>
+      </div>
+    </details>
+  ))}
+</div>
+
+<style>
+  @layer components {
+    .faq {
+      max-inline-size: 48rem;
+      border-block-start: var(--rule);
+    }
+
+    .faq__item {
+      border-block-end: var(--rule);
+    }
+
+    .faq__question {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-s);
+      min-block-size: var(--target-min);
+      padding-block: var(--space-xs);
+      font-size: var(--step-0);
+      font-weight: var(--weight-ui);
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .faq__question::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq__question:hover {
+      color: var(--accent);
+    }
+
+    .faq__icon {
+      transition: rotate var(--dur-2) var(--ease-out);
+    }
+
+    .faq__item[open] .faq__icon {
+      rotate: 180deg;
+    }
+
+    .faq__answer {
+      padding-block-end: var(--space-s);
+      max-inline-size: var(--measure-prose);
+      color: var(--ink-muted);
+    }
+
+    .faq__answer p {
+      hyphens: auto;
+      hyphenate-limit-chars: 8 3 3;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .faq__icon {
+        transition: none;
+      }
+    }
+  }
+</style>

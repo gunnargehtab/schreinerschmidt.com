@@ -1,0 +1,113 @@
+---
+// Project card (docs/design-system.md §5 Cards). One link around image, title and meta. The image is
+// decorative (alt="") because the title names the project. Only projects with a detail page link
+// and carry a view-transition name (`proj-<slug>`, the morph target of the detail hero).
+import Picture from '../ui/Picture.astro';
+import { dominantColor } from '../../lib/dominant-color';
+import { getServices, type Project } from '../../lib/content';
+import { shy } from '../../lib/shy';
+import { url } from '../../lib/url';
+import { vtStyle } from '../../lib/vt';
+
+interface Props {
+  project: Project;
+  /** Heading level of the title. */
+  level?: 2 | 3;
+  /** Overrides the detail-page link (default `referenzen/<slug>/` when the project has a detail page). */
+  href?: string;
+  loading?: 'eager' | 'lazy';
+}
+
+const { project, level = 3, href, loading = 'lazy' } = Astro.props;
+const { title, year, categories, cover, detailPage } = project.data;
+const Heading = `h${level}` as 'h2' | 'h3';
+const link = href ?? (detailPage ? url(`referenzen/${project.id}/`) : undefined);
+const services = await getServices();
+const category = services.find((s) => s.data.key === categories[0])?.data.title;
+const meta = [category, year].filter((part) => part !== undefined).join(' · ');
+const dominant = await dominantColor(cover.src);
+const mediaStyle = [link ? vtStyle(Astro.locals, 'proj', project.id) : '', dominant ? `--dominant: ${dominant}` : '']
+  .filter(Boolean)
+  .join('; ');
+const Wrapper = link ? 'a' : 'div';
+---
+
+<article class="project-card card">
+  <Wrapper class="project-card__link" {...(link ? { href: link } : {})}>
+    <div class:list={['project-card__media', link && 'vt-media']} style={mediaStyle || undefined}>
+      <Picture
+        src={cover.src}
+        alt=""
+        sizes="(min-width: 64em) 24rem, (min-width: 40em) 50vw, 100vw"
+        width={576}
+        loading={loading}
+      />
+    </div>
+    <Heading class="project-card__title">{shy(title)}</Heading>
+    {meta && <p class="project-card__meta">{meta}</p>}
+  </Wrapper>
+</article>
+
+<style>
+  @layer components {
+    .project-card {
+      container: card / inline-size;
+      block-size: 100%;
+    }
+
+    .project-card__link {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: var(--space-2xs);
+      block-size: 100%;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .project-card__media {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      overflow: clip;
+      margin-block-end: var(--space-2xs);
+      background-color: var(--dominant, var(--surface-panel));
+    }
+
+    .project-card__media :global(img),
+    .project-card__media :global(picture) {
+      inline-size: 100%;
+      block-size: 100%;
+    }
+
+    .project-card__media :global(img) {
+      object-fit: cover;
+      transition: scale var(--dur-3) var(--ease-out);
+    }
+
+    .project-card__title {
+      font-size: clamp(var(--step-1), 6.5cqi, var(--step-2));
+      transition: color var(--dur-1);
+    }
+
+    .project-card__meta {
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+      font-variant-numeric: tabular-nums;
+    }
+
+    a.project-card__link:focus-visible {
+      outline-offset: var(--focus-offset);
+    }
+
+    @media (hover: hover) {
+      a.project-card__link:hover .project-card__title {
+        color: var(--accent);
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        a.project-card__link:hover .project-card__media :global(img) {
+          scale: 1.03;
+        }
+      }
+    }
+  }
+</style>
