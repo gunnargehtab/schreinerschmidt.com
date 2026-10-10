@@ -639,7 +639,7 @@ html:has(#site-menu:popover-open) { overflow: hidden; }
 | Before/after | 0.6 KB |
 | Lightbox | 2 KB |
 | Filter | 1 KB |
-| Forms | 1.5 KB |
+| Forms | 2.2 KB (accepted in the Phase 2 review; per-field messages are rendered at build time) |
 
 ## 7. Loading
 

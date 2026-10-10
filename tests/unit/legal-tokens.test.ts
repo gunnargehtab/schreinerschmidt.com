@@ -92,7 +92,8 @@ describe('resolveTokens', () => {
     const out = resolveTokens('Nr. {{craftsRegisterNo}}', site);
     expect(out).toContain('data-review="placeholder"');
     expect(out).toContain('title="Nummer vom Inhaber."');
-    expect(out.match(/\[\[Platzhalter: Handwerksrollen-Nr\.\]\]/g)).toHaveLength(1);
+    expect(out.match(/Handwerksrollen-Nr\. wird ergänzt/g)).toHaveLength(1);
+    expect(out).not.toContain('[[');
     expect(out.match(/review-mark/g)).toHaveLength(1);
   });
 
@@ -109,7 +110,8 @@ describe('resolveTokens', () => {
   it('wraps [[Platzhalter: …]] markers of the template once', () => {
     const out = resolveTokens('Fotos. [[Platzhalter: Bildnachweis]]', site);
     expect(out.match(/review-mark/g)).toHaveLength(1);
-    expect(out).toContain('[[Platzhalter: Bildnachweis]]</span>');
+    expect(out).toContain('title="Bildnachweis">wird ergänzt</span>');
+    expect(out).not.toContain('[[');
   });
 
   it('drops the paragraph of a fact that is confirmed as not applicable, and a heading left empty', () => {

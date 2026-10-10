@@ -450,7 +450,7 @@ Browsers today: Chrome/Edge 155, Safari 27, Firefox 157.
 | Before/after | 0.6 KB |
 | Lightbox | 2 KB |
 | Filter | 1 KB |
-| Forms | 1.5 KB |
+| Forms | 2.2 KB (accepted in Phase 2) |
 | **Worst content page** | **≈ 6 KB** |
 
 No framework; custom elements and event delegation.
@@ -714,6 +714,16 @@ No framework; custom elements and event delegation.
   - The audit build meets the Lighthouse targets.
   - Every page works without JS and in Firefox's fallback mode.
   - All 8 legacy redirects from §3.1 are active. (Done in Phase 1.)
+
+**Phase 3 entry: follow-ups from the Phase 2 review**
+- Service CtaBand → `/konfigurator/<typ>/`. Key→typ map: boeden→boden, tueren→tuer, terrassen→terrasse, treppen→treppe, fenster, moebel, altbau. `[key].astro` hard-codes the TypeCards section id `unsere-bodenarten`; make it data-driven.
+- `ROUTE_BUDGETS`: add the configurator rows (13 KB initial + 7 KB Möbel preview).
+- `check-budgets.mjs`: also evaluate the mobile LCP candidate (4:5 crop) or document the decision.
+- Clean up duplication: the `.gallery` grid CSS (FilterBar and Gallery), job TYPES/UNITS + salary logic (→ `src/lib/jobs.ts`), the review `marked()/status()` helpers, the project-count text. Wire or delete the dead copy keys in `ui.yaml` / `home.yaml`.
+- `src/lib/map.ts` pin sits on the street, not no. 33. Confirm the coordinates or route by address text, and list it in the Prüfliste.
+- Project bodies need owner facts (Ausgangslage / Lösung / Ergebnis, pull quote). Don't invent them.
+- Datenschutz already describes the configurator's PLZ check and storage. Keep it in sync when Phase 3 lands.
+- Tests: replace the short `waitForTimeout`s in `home-hero.spec.ts` with `expect.poll`. Optionally unit-test `jobPostingJsonLd()` and drop the demo address override.
 
 **Phase 5: configurator C + polish**
 - **Scope:**

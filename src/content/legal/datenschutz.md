@@ -39,6 +39,12 @@ Diese Website kommt ohne Cookies aus. Wir setzen keine Analyse- oder Tracking-Di
 
 <!-- hosting: GitHub Pages. Replace this whole section when the site moves to an EU host. -->
 
+<!-- production -->
+
+[[Platzhalter: Hosting-Anbieter für den Livebetrieb festlegen und diesen Abschnitt anpassen (GitHub Pages ist nur für die Demo vorgesehen).]]
+
+<!-- /production -->
+
 Diese Website wird auf GitHub Pages gehostet, einem Dienst der GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA. Beim Aufruf einer Seite überträgt Ihr Browser technisch notwendige Daten an den Server: Ihre IP-Adresse, Datum und Uhrzeit des Zugriffs, die aufgerufene Seite, die übertragene Datenmenge, den Browsertyp und das Betriebssystem. GitHub speichert diese Daten in Server-Logs, um den Dienst sicher und stabil zu betreiben und Angriffe abzuwehren. Wir selbst haben keinen Zugriff auf diese Logs.
 
 Rechtsgrundlage ist Art. 6 Abs. 1 Buchst. f DSGVO. Unser berechtigtes Interesse liegt in der sicheren und zuverlässigen Bereitstellung der Website. Die Verarbeitung findet teilweise in den USA statt. GitHub ist nach dem EU-US Data Privacy Framework zertifiziert; die Übermittlung stützt sich auf den Angemessenheitsbeschluss der Europäischen Kommission nach Art. 45 DSGVO. <!-- needs-review: DPF-Zertifizierung von GitHub, Inc. in der DPF-Liste prüfen. --> Weitere Informationen enthält die [Datenschutzerklärung von GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
@@ -107,7 +113,7 @@ Die Schriften dieser Website (Red Hat Display und Fraunces) liegen auf unserem e
 
 Diese Website enthält Links zu externen Websites, zum Beispiel zu OpenStreetMap für die Anfahrt, zu unserem Google-Unternehmensprofil und zur Handwerkskammer. Solange Sie einen solchen Link nicht anklicken, werden keine Daten an diese Anbieter übertragen. Der Kartenausschnitt auf der Kontaktseite ist ein Bild, das von unserem Server geladen wird. Nach dem Klick gilt die Datenschutzerklärung des jeweiligen Anbieters.
 
-Die Verbindung zu dieser Website ist mit TLS verschlüsselt (erkennbar am Schloss-Symbol und an „https://“ in der Adresszeile).
+Die Verbindung zu dieser Website ist mit TLS verschlüsselt (erkennbar am Schloss-Symbol und daran, dass die Adresse mit „https“ beginnt).
 
 ## Ihre Rechte
 

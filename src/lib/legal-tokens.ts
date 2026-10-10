@@ -4,7 +4,7 @@
 //   1. keep only the `<!-- demo -->` or the `<!-- production -->` blocks of the current build mode,
 //   2. drop every other HTML comment (inline `needs-review:` notes, author notes),
 //   3. resolve `{{tokens}}` from the settings entry (unconfirmed facts get a review-mark span),
-//   4. wrap `[[Platzhalter: …]]` markers in a review-mark span (first, so facts that resolve to a marker are wrapped once),
+//   4. turn `[[Platzhalter: …]]` markers into a „wird ergänzt“ review-mark span (first, so facts that resolve to a marker are wrapped once),
 //   5. drop paragraphs whose fact is confirmed "not applicable" (null), and headings left empty.
 // Pure and free of astro:content, so it is unit-tested (tests/unit/legal-tokens.test.ts).
 
@@ -91,7 +91,8 @@ type Resolved = string | null;
 function factHtml<T extends string | null>(fact: Fact<T>, label: string): Resolved {
   if (fact.status === 'confirmed') return fact.value === null ? null : escapeHtml(fact.value);
   const raw = fact.value?.trim();
-  const text = raw && !/^platzhalter$/i.test(raw) ? raw : `[[Platzhalter: ${label}]]`;
+  // Never show marker syntax publicly; the ?pruefen view adds the [Platzhalter] tag to the span.
+  const text = raw && !/^platzhalter$/i.test(raw) ? raw : `${label} wird ergänzt`;
   return reviewSpan(escapeHtml(text), fact.status, fact.note);
 }
 
@@ -125,7 +126,11 @@ export function resolveTokens(markdown: string, site: LegalSite): string {
     if (!block.trim()) return [];
     let dropped = false;
     // Markers in the template itself first, so the placeholder text inside resolved facts stays single-wrapped.
-    const marked = block.replace(/\[\[([^\]]+)\]\]/g, (all) => reviewSpan(escapeHtml(all), 'placeholder'));
+    // Template markers become a neutral „wird ergänzt“; the owner instruction moves into the title,
+    // which the ?pruefen view and the Prüfliste surface. Marker syntax is never shown publicly.
+    const marked = block.replace(/\[\[([^\]]+)\]\]/g, (_all, inner: string) =>
+      reviewSpan('wird ergänzt', 'placeholder', inner.replace(/^Platzhalter:\s*/, '')),
+    );
     const resolved = marked.replace(/\{\{\s*(\w+)\s*\}\}/g, (_all, name: string) => {
       const resolve = table[name];
       if (!resolve) throw new Error(`Legal template: unknown token {{${name}}}`);
