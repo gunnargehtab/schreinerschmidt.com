@@ -1,0 +1,184 @@
+# /konfigurator/ (docs/configurator.md §1, §3, §5; docs/plan.md §6.1). Microcopy of the wizard shell only.
+# Field labels, option labels, validation messages and service-area messages live in code (fields.ts,
+# messages.de.ts, service-area.ts) and are not duplicated here.
+# Tokens in braces ({email}, {n}, {total}, {title}, {count}, {date}, {id}, {typ}) are replaced by the components
+# or the wizard script. " " is the narrow no-break space between number and unit.
+seo:
+  title: 'Angebot konfigurieren'
+  description: 'Beschreiben Sie Ihr Projekt in sechs Schritten: Möbel, Boden, Treppe, Fenster, Tür, Terrasse oder Altbau. Möbel sehen Sie als Zeichnung und in 3D.'
+
+hero:
+  h1: 'Angebot konfigurieren'
+  lead: 'In 3 Minuten zu Ihrem individuellen Angebot – Sie beschreiben Ihr Projekt, Schreinermeister Ulf Schmidt erstellt Ihr Angebot persönlich.'
+  # Three labels for the compact Maßlinie below the lead (design-system.md "Konfigurator shell").
+  masslinie:
+    - 'Beschreiben'
+    - 'Angebot'
+    - 'Umsetzung'
+  review: needs-review
+  note: '„3 Minuten“ beschreibt die Formulardauer, nicht die Angebotszeit; die Antwortzeit ist unbestätigt (docs/owner-checklist.md). „Persönlich“ setzt voraus, dass Ulf Schmidt die Anfragen selbst bearbeitet.'
+
+# Progress line and step headings. The visible h2 reads "Schritt 2 von 6: Möbel & Maße".
+progress:
+  label: 'Fortschritt'
+  heading: 'Schritt {n} von {total}: {title}'
+  stepOf: 'Schritt {n} von {total}'
+  compact: '{n}/{total}'
+  done: 'abgeschlossen'
+
+# One entry per StepId. `title` is the default; `titleMoebel` replaces it in the Möbel branch (spec §1 table).
+# `intro` is the fallback line under the heading; `intros` holds the per-branch line for steps 2 and 3.
+steps:
+  projekt:
+    title: 'Projekt'
+    intro: 'Worum geht es? Wählen Sie die Projektart; danach fragen wir nur das, was dazu passt.'
+  details:
+    title: 'Ihr Vorhaben'
+    titleMoebel: 'Möbel & Maße'
+    intro: 'Beschreiben Sie Ihr Vorhaben. Was Sie nicht wissen, lassen Sie einfach frei.'
+    intros:
+      moebel: 'Wählen Sie die Möbelart und geben Sie die Maße an. Die Zeichnung folgt jeder Änderung.'
+      boden: 'Sagen Sie uns, was mit dem Boden geschehen soll und wie groß die Fläche ungefähr ist.'
+      treppe: 'Ein paar Angaben zur Treppe genügen. Was Sie nicht wissen, lassen Sie frei; wir messen ohnehin nach.'
+      fenster: 'Welche Arbeiten stehen an, und wie viele Fenster betrifft es? Die Maße eines typischen Fensters reichen.'
+      tuer: 'Haustür, Innentür oder Restaurierung: Geben Sie an, worum es geht und wie viele Türen betroffen sind.'
+      terrasse: 'Terrasse, Zaun oder beides? Fläche und Längen dürfen grob geschätzt sein.'
+      altbau: 'Kreuzen Sie an, welche Bereiche es betrifft. Baujahr und Denkmalschutz helfen uns bei der Einschätzung.'
+      sonstiges: 'Beschreiben Sie Ihr Vorhaben in Ihren Worten. Wir fragen nach, was wir noch wissen müssen.'
+  ausfuehrung:
+    title: 'Bestand & Fotos'
+    titleMoebel: 'Holz & Oberfläche'
+    intro: 'Angaben zum Bestand und, wenn Sie mögen, Fotos. Beides hilft uns, den Aufwand einzuschätzen.'
+    intros:
+      moebel: 'Wählen Sie Holzart und Oberfläche. Wenn Sie unsicher sind, beraten wir Sie gern vor Ort mit Mustern.'
+      boden: 'Ein paar Fragen zum Untergrund und zum jetzigen Zustand. Fotos helfen uns, den Aufwand einzuschätzen.'
+      treppe: 'Bauart und Bestand, soweit Sie es wissen. Ein Foto der Treppe sagt oft mehr als jede Beschreibung.'
+      fenster: 'Verglasung, Denkmalschutz, Rollläden: Geben Sie an, was Sie wissen, und fügen Sie gern Fotos bei.'
+      tuer: 'Sicherheit, Glas und Stil. Bei einer Restaurierung helfen uns Fotos vom jetzigen Zustand.'
+      terrasse: 'Untergrund und Lage bestimmen den Unterbau. Fotos vom Gelände helfen uns bei der Planung.'
+      altbau: 'Beschreiben Sie den Bestand und was erhalten bleiben soll. Fotos sind hier besonders hilfreich.'
+      sonstiges: 'Falls Sie Maße haben, tragen Sie sie hier ein. Fotos oder Skizzen können Sie beifügen.'
+  rahmen:
+    title: 'Zeitraum, Budget & Ort'
+    intro: 'Wann soll es losgehen, und wo steht das Objekt? Die Postleitzahl brauchen wir für die Anfahrt; ein Budgetrahmen hilft uns beim Vorschlag, ist aber freiwillig.'
+  kontakt:
+    title: 'Kontakt'
+    intro: 'Wie erreichen wir Sie? Name und E-Mail genügen; alles Weitere ist freiwillig.'
+  pruefen:
+    title: 'Prüfen & senden'
+    intro: 'Sehen Sie Ihre Angaben noch einmal durch. Über „Ändern“ springen Sie zum jeweiligen Schritt zurück.'
+
+# Without JS the steps render as sections of one long form (spec §2).
+nojs:
+  stepHeading: 'Schritt {n}: {title}'
+  intro: 'Füllen Sie die Abschnitte der Reihe nach aus. Felder, die nicht zu Ihrer Projektart gehören, bleiben ausgeblendet.'
+  sketchCaption: 'Beispielskizze'
+
+nav:
+  next: 'Weiter'
+  back: 'Zurück'
+  submit: 'Anfrage senden'
+  submitDemo: 'Anfrage abschließen (Demo)'
+
+demo:
+  ribbon: 'Demo-Modus'
+  note: 'Demo: Es werden keine Daten übertragen.'
+
+photos:
+  demoText: 'Fotos senden Sie uns einfach per E-Mail an {email} – oder zeigen Sie sie uns beim Aufmaß.'
+  personsHint: 'Bitte achten Sie darauf, dass keine Personen zu erkennen sind.'
+  uploadHint: 'Bis zu 6 Fotos, jeweils bis 10 MB (JPEG, PNG oder WebP). Vor dem Senden verkleinert Ihr Browser die Bilder und entfernt Aufnahmedaten wie den Standort.'
+  remove: 'Foto entfernen'
+  dachschraegeHint: 'Bitte Foto/Skizze beifügen'
+
+privacy:
+  text: 'Ihre Angaben nutzen wir, um Ihre Anfrage zu beantworten und ein Angebot zu erstellen (Art. 6 Abs. 1 Buchst. b DSGVO). Eine gesonderte Einwilligung ist dafür nicht nötig. Mehr dazu steht in der Datenschutzerklärung.'
+  linkLabel: 'Datenschutzerklärung'
+  review: needs-review
+  note: 'Datenschutzhinweis statt Einwilligungs-Checkbox (docs/plan.md §6.1): rechtliche Prüfung ausstehend.'
+
+summary:
+  h2: 'Ihre Auswahl'
+  mobile: 'Ihre Auswahl ({count})'
+  empty: 'Sobald Sie eine Projektart wählen, erscheint hier Ihre Zusammenfassung.'
+  edit: 'Ändern'
+  share:
+    button: 'Konfiguration teilen'
+    title: 'Link zu dieser Konfiguration'
+    text: 'Der Link enthält nur die Angaben zum Projekt, keine Namen, Adressen oder Fotos.'
+    copy: 'Link kopieren'
+    copied: 'Link kopiert'
+    close: 'Schließen'
+  draft:
+    checkbox: 'Entwurf auf diesem Gerät speichern'
+    hint: 'Bleibt 30 Tage nur in diesem Browser gespeichert. Ohne Haken wird nichts abgelegt.'
+    banner: 'Gespeicherter Entwurf vom {date}'
+    resume: 'Fortsetzen'
+    discard: 'Verwerfen'
+    delete: 'Entwurf löschen'
+
+errors:
+  summaryTitle: 'Bitte prüfen Sie Ihre Angaben'
+  submit:
+    title: 'Ihre Anfrage konnte nicht gesendet werden.'
+    text: 'Ihre Eingaben bleiben erhalten.'
+    retry: 'Erneut senden'
+    mail: 'Per E-Mail senden'
+    copy: 'Zusammenfassung kopieren'
+    # Short reason lines, appended to `text` depending on the SubmitError (spec §5).
+    reasons:
+      network: 'Die Verbindung zum Formulardienst ist fehlgeschlagen.'
+      timeout: 'Der Formulardienst hat nicht rechtzeitig geantwortet.'
+      rejected: 'Der Formulardienst hat die Anfrage abgelehnt.'
+  offline: 'Sie sind gerade offline. Ihre Eingaben bleiben erhalten; sobald die Verbindung wieder steht, können Sie die Anfrage senden.'
+  alreadySent:
+    text: 'Anfrage bereits gesendet – neue Anfrage starten?'
+    confirm: 'Neue Anfrage starten'
+    cancel: 'Abbrechen'
+
+success:
+  h2: 'Danke, Ihre Anfrage ist unterwegs'
+  text: 'Wir sehen uns Ihre Angaben und die Zeichnung an und melden uns mit Rückfragen oder einem Angebot.'
+  h2Demo: 'Ihre Anfrage ist fertig (Demo)'
+  textDemo: 'In dieser Vorabversion wurde nichts übertragen. Senden Sie uns die Zusammenfassung per E-Mail, oder speichern Sie sie für später.'
+  idLine: 'Vorgangsnummer {id}'
+  actions:
+    mail: 'Per E-Mail senden'
+    copy: 'Zusammenfassung kopieren'
+    save: 'Als Textdatei speichern'
+    print: 'Drucken / als PDF speichern'
+    link: 'Konfigurationslink kopieren'
+  timeline:
+    h2: 'Was passiert jetzt?'
+    items:
+      - when: 'Heute'
+        title: 'Anfrage eingegangen'
+        text: 'Mit Ihrer Vorgangsnummer finden wir Ihre Anfrage sofort wieder.'
+      - when: 'Innerhalb von 2 Werktagen'
+        title: 'Rückfragen'
+        text: 'Wir melden uns, wenn uns Angaben fehlen oder etwas unklar ist.'
+        review: needs-review
+        note: 'Antwortzeit vom Inhaber unbestätigt (docs/configurator.md §5, docs/owner-checklist.md).'
+      - title: 'Aufmaß vor Ort'
+        text: 'Wir messen bei Ihnen nach und besprechen die Details.'
+        review: needs-review
+        note: 'Ob und was das Aufmaß kostet, ist unbestätigt (docs/configurator.md §5, §9).'
+      - title: 'Schriftliches Angebot'
+        text: 'Sie erhalten ein Angebot, in dem steht, was genau gebaut wird.'
+      - title: 'Fertigung in unserer Werkstatt in Mannheim'
+        text: 'Ihr Stück entsteht bei uns, aus dem Holz, das wir gemeinsam ausgesucht haben.'
+      - title: 'Montage & Übergabe'
+        text: 'Wir liefern, montieren und übergeben.'
+
+# Polite live region (debounced). {typ} is the project-type label, e.g. "Boden".
+announce:
+  typePreselected: 'Projektart {typ} vorausgewählt'
+  typeSwitched: 'Projektart {typ} gewählt. Ihre Angaben zur vorherigen Projektart bleiben erhalten.'
+  draftSaved: 'Entwurf gespeichert'
+  draftDeleted: 'Entwurf gelöscht'
+  linkCopied: 'Link kopiert'
+  summaryCopied: 'Zusammenfassung kopiert'
+  viewer:
+    loading: '3D-Ansicht wird geladen'
+    ready: '3D-Ansicht bereit'
+    unavailable: '3D-Ansicht nicht verfügbar, die Zeichnung bleibt sichtbar'

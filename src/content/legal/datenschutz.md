@@ -59,15 +59,15 @@ Rechtsgrundlage ist Art. 6 Abs. 1 Buchst. b DSGVO, wenn es um ein Angebot od
 
 ## Anfrageformulare (Kontakt und Konfigurator)
 
-Über das Kontaktformular und den Konfigurator können Sie uns eine Anfrage senden. Dabei verarbeiten wir die Angaben, die Sie in das Formular eintragen: Name, E-Mail-Adresse, Telefonnummer, Postleitzahl, Ort und Ihre Nachricht. Im Konfigurator kommen die Angaben zu Ihrem Projekt hinzu (zum Beispiel Maße, Holzart, Oberfläche, Zeitraum und, wenn Sie es angeben, ein Budgetrahmen) sowie, falls Sie welche hochladen, Fotos Ihres Raums. Auf Wunsch wird außerdem die Zeichnung und das 3D-Bild Ihrer Konfiguration mitgesendet. Fotos werden vor dem Versand in Ihrem Browser verkleinert und von Metadaten (zum Beispiel Aufnahmeort) befreit.
+Über das Kontaktformular und den Konfigurator können Sie uns eine Anfrage senden. Dabei verarbeiten wir die Angaben, die Sie in das Formular eintragen: Name, E-Mail-Adresse, Telefonnummer, Postleitzahl, Ort und Ihre Nachricht. Im Konfigurator kommen die Angaben zu Ihrem Projekt hinzu (zum Beispiel Maße, Holzart, Oberfläche, Zeitraum und, wenn Sie es angeben, ein Budgetrahmen) sowie, falls Sie welche hochladen, Fotos Ihres Raums. Auf Wunsch wird außerdem die Zeichnung und das 3D-Bild Ihrer Konfiguration mitgesendet. Fotos werden vor dem Versand in Ihrem Browser verkleinert und von Metadaten (zum Beispiel Aufnahmeort) befreit. Sie werden ausschließlich mit der Anfrage übertragen und weder in der Seitenadresse noch im Speicher Ihres Browsers abgelegt.
 
 Zweck der Verarbeitung ist die Bearbeitung Ihrer Anfrage und die Erstellung eines Angebots. Rechtsgrundlage ist Art. 6 Abs. 1 Buchst. b DSGVO (Durchführung vorvertraglicher Maßnahmen). Eine gesonderte Einwilligung holen wir deshalb nicht ein. <!-- needs-review: Datenschutzhinweis statt Einwilligungs-Checkbox (docs/architecture.md §8), rechtlich prüfen. -->
 
-Die Felder Postleitzahl und Ort nutzen wir, um einzuschätzen, ob Ihr Vorhaben in unserem Einzugsgebiet liegt. Diese Prüfung findet in Ihrem Browser statt; es werden dafür keine Daten übertragen.
+Anhand der Postleitzahl zeigt der Konfigurator an, ob Ihr Vorhaben in unserem Einzugsgebiet liegt. Diese Prüfung findet vollständig in Ihrem Browser statt; es werden dafür keine Daten übertragen. Die Postleitzahl selbst erhalten wir erst, wenn Sie die Anfrage absenden.
 
 <!-- demo -->
 
-In dieser Vorabversion der Website werden keine Formulardaten übertragen. Ihre Eingaben werden nur in Ihrem Browser geprüft und angezeigt; eine Verbindung zu einem Server wird beim Absenden nicht aufgebaut. Wenn Sie uns erreichen möchten, nutzen Sie bitte Telefon oder E-Mail.
+In dieser Vorabversion der Website werden keine Formulardaten übertragen. Ihre Eingaben werden nur in Ihrem Browser geprüft und angezeigt; eine Verbindung zu einem Server wird beim Absenden nicht aufgebaut. Das gilt auch für den Konfigurator: Mit „Anfrage abschließen (Demo)“ wird nichts gesendet, und im Konfigurator gibt es in der Vorabversion keinen Foto-Upload. Die Zusammenfassung Ihrer Konfiguration können Sie selbst per E-Mail an uns schicken, kopieren, speichern oder drucken. Wenn Sie uns erreichen möchten, nutzen Sie bitte Telefon oder E-Mail.
 <!-- /demo -->
 
 <!-- production -->
@@ -75,7 +75,7 @@ In dieser Vorabversion der Website werden keine Formulardaten übertragen. Ihre 
 Zur Übermittlung der Formulare nutzen wir den Dienst form.taxi ([[Platzhalter: Anbieter und Anschrift laut Auftragsverarbeitungsvertrag]]). Der Dienst nimmt die Formulardaten entgegen und leitet sie per E-Mail an uns weiter. Mit dem Anbieter haben wir einen Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO geschlossen; die Verarbeitung findet auf Servern in Deutschland statt. <!-- needs-review: Serverstandort und Speicherdauer laut AVV bestätigen. --> Der Anbieter speichert die Daten nur so lange, wie es für die Weiterleitung und die Abwehr von Missbrauch nötig ist. [[Platzhalter: Speicherdauer laut AVV]] Die Übertragung erfolgt verschlüsselt (TLS).
 <!-- /production -->
 
-Zum Schutz vor automatisierten Einsendungen enthalten die Formulare ein Feld, das für Menschen nicht sichtbar ist, und messen die Zeit zwischen der ersten Eingabe und dem Absenden. Wird das unsichtbare Feld ausgefüllt oder das Formular in unter drei Sekunden abgeschickt, werten wir die Eingabe als automatisiert und verarbeiten sie nicht weiter. Dabei entstehen keine zusätzlichen personenbezogenen Daten, und es werden keine Dritten eingebunden.
+Zum Schutz vor automatisierten Einsendungen enthalten die Formulare ein Feld, das für Menschen nicht sichtbar ist, und messen die Zeit zwischen der ersten Eingabe und dem Absenden. Wird das unsichtbare Feld ausgefüllt oder das Formular in unter drei Sekunden (im Konfigurator: unter fünf Sekunden) abgeschickt, werten wir die Eingabe als automatisiert und verarbeiten sie nicht weiter. Dabei entstehen keine zusätzlichen personenbezogenen Daten, und es werden keine Dritten eingebunden.
 
 Für die Speicherdauer gilt das Gleiche wie bei der Kontaktaufnahme per E-Mail oder Telefon.
 
@@ -102,10 +102,10 @@ Für die Übermittlung des Bewerbungsformulars einschließlich der hochgeladenen
 Diese Website setzt keine Cookies. An drei Stellen speichert sie Daten direkt in Ihrem Browser, damit die Website so funktioniert, wie Sie es verlangen. Rechtsgrundlage ist § 25 Abs. 2 Nr. 2 TDDDG: Die Speicherung ist unbedingt erforderlich, um den von Ihnen ausdrücklich gewünschten Dienst bereitzustellen; eine Einwilligung ist dafür nicht nötig. Diese Daten verlassen Ihren Browser nicht und werden nicht an uns oder Dritte übertragen. Sie können sie jederzeit über die Einstellungen Ihres Browsers löschen.
 
 - **Farbschema (`ss-theme`).** Erst wenn Sie unter „Darstellung“ aktiv „Hell“ oder „Werkstatt bei Nacht“ wählen, merkt sich Ihr Browser diese Wahl im Local Storage. Mit „Wie System“ wird der Eintrag wieder gelöscht. Ohne Ihre Wahl wird nichts gespeichert.
-- **Zwischenstand im Konfigurator.** Während Sie den Konfigurator ausfüllen, hält Ihr Browser den aktuellen Stand im Session Storage, damit nichts verloren geht, wenn Sie zwischen den Schritten wechseln. Diese Daten werden gelöscht, sobald Sie den Browser-Tab schließen.
-- **Entwurf speichern (optional).** Wenn Sie im Konfigurator „Entwurf speichern“ wählen, legt Ihr Browser Ihre bisherigen Angaben im Local Storage ab, damit Sie später weitermachen können. Der Entwurf wird nach 30 Tagen automatisch gelöscht; über „Entwurf löschen“ entfernen Sie ihn sofort. Ohne diese Auswahl wird kein Entwurf gespeichert.
+- **Zwischenstand im Konfigurator (`ss-konfigurator-v1`).** Während Sie den Konfigurator ausfüllen, hält Ihr Browser Ihre Eingaben im Session Storage, damit nichts verloren geht, wenn Sie zwischen den Schritten wechseln oder die Seite neu laden. Fotos werden dabei nicht gespeichert. Diese Daten werden gelöscht, sobald Sie die Anfrage abgeschickt haben oder den Browser-Tab schließen.
+- **Entwurf speichern (optional, `ss-konfigurator-entwurf-v1`).** Erst wenn Sie im Konfigurator das Kästchen „Entwurf auf diesem Gerät speichern“ ankreuzen, legt Ihr Browser Ihre bisherigen Angaben (ohne Fotos) im Local Storage ab, damit Sie später auf demselben Gerät weitermachen können. Der Entwurf wird nach 30 Tagen automatisch gelöscht; wenn Sie das Kästchen wieder abwählen oder „Entwurf löschen“ wählen, wird er sofort entfernt. Ohne Ihr Ankreuzen wird kein Entwurf gespeichert.
 
-Der Teilen-Link des Konfigurators enthält nur die Angaben zum Projekt (zum Beispiel Möbeltyp und Maße), keine Namen, Adressen oder Kontaktdaten.
+Während Sie den Konfigurator ausfüllen, schreibt er Ihre Projektauswahl (zum Beispiel Möbeltyp, Maße und Holzart) in die Adresse der Seite, damit Sie die Konfiguration als Link speichern oder teilen können. Diese Adresse und der Teilen-Link enthalten nur solche nicht personenbezogenen Angaben, niemals Namen, Postleitzahl, Kontaktdaten, Freitext oder Fotos.
 
 ## Schriften, externe Links und Verschlüsselung
 
