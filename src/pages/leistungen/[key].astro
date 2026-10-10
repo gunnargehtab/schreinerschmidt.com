@@ -82,7 +82,12 @@ const navItems = [
 // --- Hero, SEO ------------------------------------------------------------------------------
 vt(Astro.locals, 'page-title');
 const dominant = await dominantColor(hero.src);
-const mediaStyle = [vtStyle(Astro.locals, 'hero-media', key), dominant ? `--dominant: ${dominant}` : '']
+// `--pos` (an allowed inline custom property) moves the crop focus; `hero.position` is optional.
+const mediaStyle = [
+  vtStyle(Astro.locals, 'hero-media', key),
+  dominant ? `--dominant: ${dominant}` : '',
+  hero.position ? `--pos: ${hero.position}` : '',
+]
   .filter(Boolean)
   .join('; ');
 
@@ -219,6 +224,7 @@ const jsonLd = [
 
     .service-hero__media :global(img) {
       object-fit: cover;
+      object-position: var(--pos, center);
     }
 
     @container section (inline-size >= 48rem) {
@@ -271,11 +277,12 @@ const jsonLd = [
       display: inline;
     }
 
-    .service-section :global(p:has(> .review-mark[data-review='placeholder']:only-child)) {
+    /* Paragraphs that consist of nothing but a marker (flagged at build time by placeholder-marks.mjs). */
+    .service-section :global(p[data-placeholder-only]) {
       display: none;
     }
 
-    :global(:root[data-pruefen]) .service-section :global(p:has(> .review-mark[data-review='placeholder']:only-child)) {
+    :global(:root[data-pruefen]) .service-section :global(p[data-placeholder-only]) {
       display: block;
     }
   }

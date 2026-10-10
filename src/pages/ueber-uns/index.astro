@@ -64,7 +64,7 @@ const careersMark = marked(copy.careersTeaser.review);
     </p>
     {showPortrait && portrait && (
       <figure class="about-lead__portrait" data-review={portraitConsent ? undefined : 'needs-review'}>
-        <Picture src={portrait} alt={portraitAlt ?? ''} sizes="(min-width: 48em) 14rem, 10rem" width={224} />
+        <Picture src={portrait} alt={portraitAlt ?? ''} sizes="(min-width: 60em) 14rem, 10rem" width={224} />
         <figcaption>
           {ulf.data.name}, {ulf.data.role}
           {!portraitConsent && (
@@ -186,7 +186,7 @@ const careersMark = marked(copy.careersTeaser.review);
 
     .about-lead__portrait {
       margin: 0;
-      inline-size: min(100%, 14rem);
+      inline-size: min(100%, 10rem);
     }
 
     .about-lead__portrait :global(img) {
@@ -202,10 +202,16 @@ const careersMark = marked(copy.careersTeaser.review);
       color: var(--ink-muted);
     }
 
-    @container section (inline-size >= 48rem) {
+    /* Side by side only once the lead keeps a readable measure next to the 14rem portrait
+       (at 48rem the lead column dropped to ~20 characters per line). */
+    @container section (inline-size >= 60rem) {
       .about-lead {
         grid-template-columns: minmax(0, 1fr) auto;
         gap: var(--space-xl);
+      }
+
+      .about-lead__portrait {
+        inline-size: 14rem;
       }
     }
 
@@ -233,9 +239,16 @@ const careersMark = marked(copy.careersTeaser.review);
       font-size: var(--step--1);
     }
 
+    /* No `margin: 0` here: the reset already zeroes it, and a components-layer margin would beat
+       the `.stack` rhythm that separates the photo from the intro. */
     .team-photo {
-      margin: 0;
       max-inline-size: 56rem;
+    }
+
+    /* The consent note is a visible demo mark: give it its own line instead of running into the name. */
+    .about-lead__portrait figcaption :global(.review-mark) {
+      display: block;
+      margin-block-start: var(--space-3xs);
     }
 
     .team-photo :global(img) {

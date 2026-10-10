@@ -325,7 +325,7 @@ Example: `--space-s: clamp(1rem, 0.9167rem + 0.3704vw, 1.25rem)`. Generate the r
 
 ## 4. CSS architecture
 
-- **Layer order:** `@layer reset, tokens, base, layout, components, utilities, motion;` goes in an inline `<style>` at the very top of `<head>`.
+- **Layer order:** `@layer astro.images, reset, tokens, base, layout, components, utilities, motion;` goes in an inline `<style>` at the very top of `<head>`. `astro.images` is Astro's responsive-image layer (`:where([data-astro-image]) { height: auto }` …); declared first it is the weakest layer. Left to Astro it would be declared last and its `height: auto` would beat every `block-size: 100%` a component puts on a `<Picture>` (found in the Phase 2 visual QA: the before/after stage and project cards collapsed to the intrinsic image height).
 - **`@view-transition`** stays unlayered, inside `@media (prefers-reduced-motion: no-preference)`.
 - **Files** in `src/styles/`:
   - `global.css` (imports)

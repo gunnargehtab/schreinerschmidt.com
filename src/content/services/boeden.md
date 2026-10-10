@@ -9,6 +9,7 @@ seo:
 hero:
   src: ../../assets/projects/fischgraetparkett-eiche/01-parkett.jpg
   alt: Fischgrätparkett aus Eiche in einem Altbauzimmer mit roter Wand, weißen Sockelleisten und Fenster
+  position: center bottom
 types:
   - name: Stabparkett
     text: Stabparkett ist der Klassiker unter den Parkettböden. Die massiven Holzstücke überzeugen mit ihren klassischen Abmessungen durch große Stabilität und Langlebigkeit. Lassen Sie uns gemeinsam die Holzart und den Härtegrad in Abhängigkeit von Ihrer Raumnutzung wählen.

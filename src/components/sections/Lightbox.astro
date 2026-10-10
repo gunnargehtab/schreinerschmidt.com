@@ -33,9 +33,16 @@
       overflow: hidden;
     }
 
+    /*
+     * The sheet hugs the photo: `fit-content` plus viewport-based caps on the image (no percentages,
+     * which would be cyclic inside a fit-content box), so a 4:3 photo on a wide screen is not
+     * mounted on a letterboxed mat that spans the whole viewport.
+     */
     .lightbox {
-      inline-size: min(100% - 2 * var(--gutter, 1rem), 80rem);
-      max-inline-size: none;
+      --_pad: var(--space-s);
+      inline-size: fit-content;
+      min-inline-size: min(100% - 2 * var(--gutter, 1rem), 20rem);
+      max-inline-size: min(100% - 2 * var(--gutter, 1rem), 80rem);
       max-block-size: calc(100dvh - 2 * var(--space-s));
       padding: 0;
       margin: auto;
@@ -55,16 +62,27 @@
       display: grid;
       gap: var(--space-2xs);
       margin: 0;
-      padding: var(--space-s) var(--space-s) 0;
+      padding: var(--_pad) var(--_pad) 0;
     }
 
     .lightbox__img {
       display: block;
-      inline-size: 100%;
+      inline-size: auto;
       block-size: auto;
+      max-inline-size: min(100vw - 2 * var(--gutter, 1rem) - 2 * var(--_pad) - 2px, 80rem - 2 * var(--_pad) - 2px);
       max-block-size: calc(100dvh - 12rem);
       object-fit: contain;
       background: var(--surface-panel);
+    }
+
+    /* Below the minimum sheet width (phones) the photo fills the sheet again. */
+    .lightbox__figure,
+    .lightbox__img {
+      min-inline-size: 0;
+    }
+
+    .lightbox__caption {
+      max-inline-size: var(--measure-caption);
     }
 
     .lightbox__caption {

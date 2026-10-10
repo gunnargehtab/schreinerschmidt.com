@@ -120,7 +120,8 @@ const year = new Date().getFullYear();
   @layer components {
     .site-footer {
       container: footer / inline-size;
-      margin-block-start: var(--space-xl-3xl);
+      /* No top margin: the last section's padding sets the distance, and the ink CTA band meets
+         the footer's hairline directly instead of leaving an orphaned cream strip. */
       padding-block: var(--space-xl) var(--space-m);
       font-size: var(--step--1);
       background: var(--surface-alt);

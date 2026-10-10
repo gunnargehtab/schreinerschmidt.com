@@ -5,7 +5,9 @@ import { describeDist, isRedirectPage, loadPages, type DistPage } from '../helpe
 // layer statement, but Astro orders a page's stylesheets by cumulative import index
 // (docs/design-system.md §4): a component stylesheet that lands ahead of global.css declares its
 // layer first and demotes it (e.g. `components` below `reset`), which silently breaks colours.
-const EXPECTED = ['reset', 'tokens', 'base', 'layout', 'components', 'utilities', 'motion'];
+// `astro` (Astro's responsive-image layer `astro.images`) is declared first on purpose, so its
+// `height: auto` never outranks a component's `block-size: 100%` (docs/design-system.md §4).
+const EXPECTED = ['astro', 'reset', 'tokens', 'base', 'layout', 'components', 'utilities', 'motion'];
 
 const pages = loadPages().filter((p) => !isRedirectPage(p));
 
@@ -35,7 +37,6 @@ describeDist('Cascade layer order', () => {
   });
 
   it.each(pages.map((p) => [p.rel, p] as const))('%s: layers first appear in the design-system order', (_rel, page) => {
-    // Layers of other origins (Astro's responsive-image `astro` layer) may follow, never precede.
     expect(layerOrder(pageCss(page)).slice(0, EXPECTED.length)).toEqual(EXPECTED);
   });
 });

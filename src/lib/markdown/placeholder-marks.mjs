@@ -36,7 +36,20 @@ export function placeholderMarks() {
     name: 'placeholder-marks',
     text(node, ctx) {
       const nodes = splitPlaceholders(node.value);
-      if (nodes) ctx.replaceNode(node, nodes);
+      if (!nodes) return;
+      // A paragraph that is nothing but markers gets `data-placeholder-only`, so the page can hide
+      // it outside the review view. CSS cannot tell "only a span" from "text plus a span"
+      // (`:only-child` ignores text nodes), so the decision is made here, at build time.
+      const parent = ctx.parent(node);
+      if (
+        parent?.type === 'element' &&
+        parent.tagName === 'p' &&
+        parent.children.length === 1 &&
+        nodes.every((n) => n.type === 'element' || (n.type === 'text' && n.value.trim() === ''))
+      ) {
+        ctx.setProperty(parent, 'dataPlaceholderOnly', '');
+      }
+      ctx.replaceNode(node, nodes);
     },
   };
 }

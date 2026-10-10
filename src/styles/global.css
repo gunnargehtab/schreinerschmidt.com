@@ -2,8 +2,13 @@
  * Design system "Workshop Sketchbook" (docs/design-system.md §4).
  * The layer statement must be the very first rule of the bundled stylesheet: Vite inlines the
  * imports below in order, so this file is the single entry point. BaseLayout imports it first.
+ *
+ * `astro.images` is Astro's responsive-image layer (`:where([data-astro-image]) { height: auto }`
+ * etc.). Astro emits it after this file, which would make it the strongest layer and let its
+ * `height: auto` beat every `block-size: 100%` a component sets on a <Picture> (before/after
+ * stage, project cards). Declaring it first makes it the weakest, like a second reset.
  */
-@layer reset, tokens, base, layout, components, utilities, motion;
+@layer astro.images, reset, tokens, base, layout, components, utilities, motion;
 
 @import './reset.css';
 @import './tokens/color.css';

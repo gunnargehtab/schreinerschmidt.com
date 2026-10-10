@@ -24,7 +24,16 @@ const services = defineCollection({
       order: z.number().int(),
       teaser: z.string().max(180),
       seo: Seo,
-      hero: z.object({ src: image(), alt, sketch: z.string().optional() }),
+      hero: z.object({
+        src: image(),
+        alt,
+        sketch: z.string().optional(),
+        /** `object-position` of the hero crop (e.g. `center bottom`); defaults to `center`. */
+        position: z
+          .string()
+          .regex(/^(?:(?:left|center|right|top|bottom)|\d{1,3}%)(?: (?:(?:left|center|right|top|bottom)|\d{1,3}%))?$/)
+          .optional(),
+      }),
       types: z
         .array(
           z.object({
