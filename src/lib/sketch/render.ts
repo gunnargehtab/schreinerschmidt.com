@@ -5,7 +5,7 @@
 import rough from 'roughjs';
 import type { Options } from 'roughjs/bin/core';
 import { optimize } from 'svgo';
-import type { Drawing, Pass, Primitive } from './primitives';
+import type { Drawing, Pass, Point, Primitive } from './primitives';
 
 export interface RenderOptions {
   /** Extra class names; `sketch` is always present. */
@@ -17,13 +17,17 @@ export interface RenderOptions {
 }
 
 const PASSES: readonly Pass[] = [1, 2, 3, 4];
-/** Per-pass presentation attributes (§3: hatching at 0.75 stroke, opacity .55). */
-const PASS_ATTRS: Record<Pass, string> = {
-  1: '',
-  2: '',
-  3: ' stroke-width=".75" opacity=".55"',
-  4: '',
-};
+
+/** Hatching runs at half the drawing's stroke (§3: 0.75 on a 1.5 icon, 1 on hero art) at opacity .55. */
+export const hatchStrokeWidth = (drawing: Drawing): number => drawing.strokeWidth / 2;
+
+/** Formats a number the way SVGO's cleanupNumericValues does (no leading zero, ≤ 2 decimals). */
+export const svgNumber = (n: number): string => String(Number(n.toFixed(2))).replace(/^0\./, '.');
+
+/** Per-pass presentation attributes. */
+function passAttrs(drawing: Drawing, pass: Pass): string {
+  return pass === 3 ? ` stroke-width="${svgNumber(hatchStrokeWidth(drawing))}" opacity=".55"` : '';
+}
 
 const generator = rough.generator();
 
@@ -44,7 +48,7 @@ function roughOptions(drawing: Drawing, p: Primitive, index: number): Options {
   if (p.kind === 'hatch') {
     options.stroke = 'none';
     options.fill = '#000';
-    options.fillStyle = 'hachure';
+    options.fillStyle = p.style ?? 'hachure';
     options.hachureAngle = p.angle ?? -45;
     options.hachureGap = p.gap ?? 4;
     options.fillWeight = 1;
@@ -52,6 +56,12 @@ function roughOptions(drawing: Drawing, p: Primitive, index: number): Options {
   }
   return options;
 }
+
+/**
+ * rough.js rotates polygon points in place while hatching and rotates them back, which leaves
+ * floating-point residue on the drawing's own arrays and breaks determinism. Always hand it copies.
+ */
+const copy = (points: Point[]): Point[] => points.map(([x, y]) => [x, y]);
 
 function pathData(drawing: Drawing, p: Primitive, index: number): string[] {
   const o = roughOptions(drawing, p, index);
@@ -73,9 +83,9 @@ function pathData(drawing: Drawing, p: Primitive, index: number): string[] {
       return g.toPaths(g.line(x1, y1, x2, y2, o)).map((info) => info.d);
     }
     case 'polyline':
-      return g.toPaths(g.linearPath(p.points, o)).map((info) => info.d);
+      return g.toPaths(g.linearPath(copy(p.points), o)).map((info) => info.d);
     case 'polygon':
-      return g.toPaths(g.polygon(p.points, o)).map((info) => info.d);
+      return g.toPaths(g.polygon(copy(p.points), o)).map((info) => info.d);
     case 'rect':
       return g.toPaths(g.rectangle(p.x, p.y, p.w, p.h, o)).map((info) => info.d);
     case 'ellipse':
@@ -83,13 +93,48 @@ function pathData(drawing: Drawing, p: Primitive, index: number): string[] {
     case 'arc':
       return g.toPaths(g.arc(p.cx, p.cy, p.w, p.h, p.start, p.end, false, o)).map((info) => info.d);
     case 'curve':
-      return g.toPaths(g.curve(p.points, o)).map((info) => info.d);
+      return g.toPaths(g.curve(copy(p.points), o)).map((info) => info.d);
     case 'hatch':
+      if (p.style === 'dots') return [stipplePath(p.points, p.gap ?? 6, o.seed ?? 1)];
       return g
-        .toPaths(g.polygon(p.points, o))
+        .toPaths(g.polygon(copy(p.points), o))
         .filter((info) => info.d.trim() !== '')
         .map((info) => info.d);
   }
+}
+
+/**
+ * Stipple as ONE path of tiny circles on a jittered grid, clipped to the polygon. rough.js's own
+ * dot filler calls Math.random() and cannot be seeded, so this uses the same LCG rough.js uses.
+ */
+function stipplePath(points: Point[], gap: number, seed: number): string {
+  let state = seed;
+  const next = () => ((2 ** 31 - 1) & (state = Math.imul(48271, state))) / 2 ** 31;
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  const r = 0.55;
+  const parts: string[] = [];
+  for (let y = Math.min(...ys) + gap / 2; y < Math.max(...ys); y += gap) {
+    for (let x = Math.min(...xs) + gap / 2; x < Math.max(...xs); x += gap) {
+      const cx = x + (next() - 0.5) * gap * 0.6;
+      const cy = y + (next() - 0.5) * gap * 0.6;
+      if (!pointInPolygon([cx, cy], points)) continue;
+      parts.push(`M${f(cx - r)} ${f(cy)}a${r} ${r} 0 1 0 ${f(2 * r)} 0a${r} ${r} 0 1 0 ${f(-2 * r)} 0`);
+    }
+  }
+  return parts.join('');
+}
+
+const f = (n: number): string => String(Number(n.toFixed(1)));
+
+function pointInPolygon([x, y]: Point, polygon: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i] as Point;
+    const [xj, yj] = polygon[j] as Point;
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
 }
 
 /** Renders the drawing to a bare SVG (no class, no data-draw): the cacheable part. */
@@ -100,10 +145,12 @@ export function renderDrawing(drawing: Drawing): string {
       .filter(([p]) => p.pass === pass)
       .flatMap(([p, i]) => pathData(drawing, p, i))
       .map((d) => `<path d="${d}" pathLength="1"/>`);
-    return paths.length ? `<g data-pass="${pass}"${PASS_ATTRS[pass]}>${paths.join('')}</g>` : '';
+    return paths.length ? `<g data-pass="${pass}"${passAttrs(drawing, pass)}>${paths.join('')}</g>` : '';
   });
   const [w, h] = drawing.viewBox;
-  const raw = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${groups.join('')}</svg>`;
+  // The root stroke width is present during optimisation so SVGO does not treat the hatching
+  // group's stroke-width="1" (hero art) as the default and strip it. The root tag is rebuilt below.
+  const raw = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" stroke-width="${drawing.strokeWidth}">${groups.join('')}</svg>`;
   const { data } = optimize(raw, {
     multipass: true,
     plugins: [

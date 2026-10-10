@@ -1,0 +1,49 @@
+---
+// UI icon (docs/design-system.md §3): 24 px viewBox, stroke 1.5, currentColor. Decorative by
+// default (aria-hidden). With `label`, a wrapper carries role="img" and the label; the SVG stays
+// hidden and holds no <title> (SVGs carry no text). Sizing comes from `.icon` in utilities.css.
+import { ICONS, type IconName } from '../../lib/sketch/icons';
+
+interface Props {
+  name: IconName;
+  /** Accessible name; omit for a purely decorative icon next to visible text. */
+  label?: string;
+  class?: string;
+}
+
+const { name, label, class: className } = Astro.props;
+const d = ICONS[name];
+const classes = ['icon', className].filter(Boolean).join(' ');
+---
+
+{label ? (
+  <span class="icon-wrap" role="img" aria-label={label}>
+    <svg
+      class={classes}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={d} />
+    </svg>
+  </span>
+) : (
+  <svg
+    class={classes}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d={d} />
+  </svg>
+)}

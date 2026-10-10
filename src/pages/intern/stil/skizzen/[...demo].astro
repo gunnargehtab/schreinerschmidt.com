@@ -1,0 +1,225 @@
+---
+// Demo-only style sheet, part 2: the full sketch set (docs/design-system.md §3).
+// Its own page because 19 inline SVGs plus the icons push the HTML past the 30 KB page budget.
+// Rest route like /intern/stil/: `npm run build:audit` (PUBLIC_DEMO=false) emits nothing.
+import { PUBLIC_DEMO } from 'astro:env/client';
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import Sketch from '../../../../components/ui/Sketch.astro';
+import { shy } from '../../../../lib/shy';
+import { url } from '../../../../lib/url';
+
+export function getStaticPaths() {
+  return PUBLIC_DEMO ? [{ params: { demo: undefined } }] : [];
+}
+
+// The accent is named in each caption.
+const services = [
+  ['moebel', 'Möbel', 'Einbauschrank mit offener Tür, Schwenkbogen in Rot.'],
+  ['boeden', 'Böden', 'Fischgrät in Perspektive, das nächste Brett in Rot.'],
+  ['treppen', 'Treppen', 'Wangentreppe in der Ansicht, Handlauf in Rot.'],
+  ['fenster', 'Fenster', 'Zweiflügliges Sprossenfenster, Öffnungsdreieck in Rot.'],
+  ['tueren', 'Türen', 'Haustür mit Oberlicht und Füllungen, Öffnungsdreieck in Rot.'],
+  ['altbau', 'Altbau', 'Gründerzeit-Türbekleidung, die Verdachung in Rot.'],
+  ['terrassen', 'Terrassen', 'Dielen auf Unterkonstruktion, die nächste Diele in Rot.'],
+] as const;
+
+const process = [
+  ['beratung', 'Beratung & Aufmaß', 'Zollstock und Block, das notierte Maß in Rot.'],
+  ['entwurf', 'Entwurf & Angebot', 'Blatt mit Schriftfeld, Zimmermannsbleistift, Maßlinie in Rot.'],
+  ['fertigung', 'Fertigung', 'Hobelbank und Hobel, der Span in Rot.'],
+  ['montage', 'Montage', 'Montagebus, die Wasserwaage in Rot.'],
+  ['pflege', 'Pflege', 'Ölkanne und der rote Putzlappen.'],
+] as const;
+
+// Names follow the `types` in src/content/services/boeden.md.
+const floors = [
+  ['boden-stabparkett', 'Stabparkett'],
+  ['boden-hochkantlamellen', 'Hochkantlamellenparkett'],
+  ['boden-mosaik', 'Mosaikparkett'],
+  ['boden-fertigparkett', 'Fertigparkett'],
+  ['boden-massivdielen', 'Massivdielen und Landhausdielen'],
+  ['boden-kork-linoleum', 'Kork und Linoleum'],
+] as const;
+---
+
+<BaseLayout
+  title="Stilvorlage: Skizzen"
+  description="Interne Stilvorlage des Entwurfs, Teil 2: Skizzen der Leistungen, des Ablaufs, des Konfigurators, Bodenmuster und Symbole."
+  noindex
+>
+  <section class="section">
+    <div class="stack stack--m">
+      <p class="eyebrow">Intern · Blatt 11–14</p>
+      <h1>Skizzen und Symbole</h1>
+      <p class="lead">
+        Vier Striche je Zeichnung: Hilfslinien mit Überstand, Umrisse, Schraffur, ein roter Akzent. Gezeichnet beim
+        Scrollen, fertig ohne Bewegung. Farben, Schrift und Bauteile stehen auf der{' '}
+        <a href={url('intern/stil/')}>Stilvorlage</a>.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 11 · Leistungen</p>
+      <h2>Sieben Leistungen, eine Hand</h2>
+      <p class="lead">
+        Ansichten für alles, was man von vorn sieht; Kavalierperspektive für alles mit Tiefe; Fluchtpunkt nur für den
+        Boden. Strich 1,5, Schraffur 0,75, ein roter Akzent.
+      </p>
+    </div>
+    <ul class="sketches sketches--4 grid hairline-grid list-plain">
+      {services.map(([name, title, text]) => (
+        <li class="sketch-cell">
+          <Sketch name={name} draw="scroll" size="7rem" />
+          <h3>{title}</h3>
+          <p>{text}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 12 · Ablauf</p>
+      <h2>Fünf Schritte</h2>
+      <p class="lead">Werkzeug und Werkstück je Schritt, alles liegt auf dem Tisch oder steht auf dem Boden.</p>
+    </div>
+    <ul class="sketches sketches--5 grid hairline-grid list-plain">
+      {process.map(([name, title, text]) => (
+        <li class="sketch-cell">
+          <Sketch name={name} draw="scroll" size="7rem" />
+          <h3>{title}</h3>
+          <p>{text}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="section section--alt">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 13 · Konfigurator</p>
+      <h2>Der Korpus, auseinandergezogen</h2>
+      <p class="lead">
+        Hero-Format 640 × 480, Strich 2. Zeichnet sich beim Scrollen: erst die Fluchten, dann die Teile, die
+        Hirnholzschraffur, zuletzt die Breite in Rot.
+      </p>
+    </div>
+    <figure class="hero-sketch frame">
+      <Sketch name="konfigurator" draw="scroll" />
+      <figcaption>
+        Seiten, Boden, Deckel und ein Fachboden auf ihren Fluchtlinien; die Maßlinie fragt nach der Breite.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="section">
+    <div class="section-intro">
+      <p class="eyebrow">Blatt 14 · Bodenmuster</p>
+      <h2>Sechs Bodenarten</h2>
+      <p class="lead">
+        Kleine Musterkacheln in der Draufsicht, benannt nach den Bodenarten der Leistungsseite. Fertigparkett zeigt als
+        Einzige den Schichtaufbau im Schnitt.
+      </p>
+    </div>
+    <ul class="floors grid hairline-grid list-plain">
+      {floors.map(([name, title]) => (
+        <li class="floor-cell">
+          <Sketch name={name} draw="scroll" size="4.5rem" />
+          <h3 set:html={shy(title)} />
+          <code>{name}</code>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  @layer components {
+    /* Blatt 11–12: the service and process sets */
+    .sketches {
+      --cols: 1;
+    }
+
+    @container section (inline-size >= 40rem) {
+      .sketches {
+        --cols: 2;
+      }
+    }
+
+    @container section (inline-size >= 64rem) {
+      .sketches--4 {
+        --cols: 4;
+      }
+
+      .sketches--5 {
+        --cols: 5;
+      }
+    }
+
+    .sketch-cell {
+      display: grid;
+      gap: var(--space-xs);
+      align-content: start;
+      padding: var(--space-m);
+    }
+
+    .sketch-cell h3 {
+      font-size: var(--step-1);
+    }
+
+    .sketch-cell p {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+      max-inline-size: var(--measure-card);
+    }
+
+    /* Blatt 13: hero sketch. The SVG comes from set:html, so it has no scope class. */
+    .hero-sketch {
+      --frame-pad: var(--space-m);
+      max-inline-size: 44rem;
+    }
+
+    .hero-sketch :global(.sketch) {
+      max-inline-size: 100%;
+    }
+
+    .hero-sketch figcaption {
+      margin-block-start: var(--space-s);
+    }
+
+    /* Blatt 14: floor minis */
+    .floors {
+      --cols: 2;
+    }
+
+    @container section (inline-size >= 40rem) {
+      .floors {
+        --cols: 3;
+      }
+    }
+
+    @container section (inline-size >= 64rem) {
+      .floors {
+        --cols: 6;
+      }
+    }
+
+    .floor-cell {
+      display: grid;
+      gap: var(--space-xs);
+      align-content: start;
+      padding: var(--space-s);
+    }
+
+    .floor-cell h3 {
+      font-size: var(--step--1);
+      hyphens: manual;
+    }
+
+    .floor-cell code {
+      font-size: var(--step--2);
+      color: var(--ink-muted);
+    }
+  }
+</style>
