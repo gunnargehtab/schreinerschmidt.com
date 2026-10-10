@@ -3,7 +3,15 @@
 // "Beispielskizze": the front elevation of the default Regal, drawn by the same renderElevation()
 // the browser uses later. JS replaces the drawing inside `[data-preview-drawing]` with the live one
 // and reveals the 3D slot `[data-viewer]` when WebGL is available.
-// `--ar` reserves the drawing's aspect ratio so nothing shifts when the live drawing arrives.
+//
+// Size: the screen renderer sets 12 px labels for the pixel width it is given, so the sketch is
+// rendered SKETCH_W px wide and shown through `.preview__sketch`, which configurator.css caps at the
+// same width (centred in the cell). The narrowest cell (360 px viewport) is ~244 px, so the labels
+// never fall below 11 px, and in wider cells the sketch stays at its render size. The cell itself
+// (`[data-preview-drawing]`) is not capped: the live drawing (preview/index.ts) measures it and
+// renders at the real width once. `--ar` is the sheet's width/height as a NUMBER: configurator.css
+// multiplies it with a height cap to size the cell, so a tall drawing stays inside the sticky
+// viewport (and a phone screen).
 import { renderElevation } from '../../../lib/configurator/drawing/elevation';
 import { ART_RANGES, FIELDS } from '../../../lib/configurator/fields';
 import { generate, type CarcassParams } from '../../../lib/configurator/furniture';
@@ -14,6 +22,9 @@ interface Props {
 }
 
 const { caption } = Astro.props;
+
+/** Render width (px) of the sketch; `.preview__sketch` in configurator.css caps the display at the same value. */
+const SKETCH_W = 260;
 
 // Defaults of the Regal in mm (ART_RANGES holds cm), the board and species from the registry.
 const [, , w = 120] = ART_RANGES['regal']?.['moebel_breite'] ?? [];
@@ -33,15 +44,22 @@ const params: CarcassParams = {
   species: (FIELDS['moebel_holz']?.def ?? 'eiche') as CarcassParams['species'],
   finish: (FIELDS['moebel_oberflaeche']?.def ?? 'natur-geoelt') as CarcassParams['finish'],
 };
-const svg = renderElevation(generate(params), { view: 'vorne', mode: 'screen', widthPx: 640, idPrefix: 'vorschau' });
+const svg = renderElevation(generate(params), {
+  view: 'vorne',
+  mode: 'screen',
+  widthPx: SKETCH_W,
+  idPrefix: 'vorschau',
+});
 const box = /viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ([\d.]+)"/.exec(svg);
-const ratio = box ? `${box[1]} / ${box[2]}` : '4 / 3';
+const ratio = box ? (Number(box[1]) / Number(box[2])).toFixed(3) : '1.333';
 ---
 
 <figure class="preview" data-preview data-branch="moebel">
   <div class="preview__stage">
     <div class="preview__drawing" data-preview-drawing style={`--ar: ${ratio}`}>
-      <Fragment set:html={svg} />
+      <div class="preview__sketch">
+        <Fragment set:html={svg} />
+      </div>
     </div>
     <div class="preview__viewer" data-viewer hidden></div>
   </div>

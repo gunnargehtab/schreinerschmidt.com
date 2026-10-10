@@ -12,42 +12,30 @@
     border-block-start: 0;
   }
 
-  /* Review step: the „Ändern“ button follows its value. */
+  /* Review step: the „Ändern“ ghost button follows its value (summary.ts renderList). */
   .review__edit {
     margin-inline-start: var(--space-2xs);
     vertical-align: baseline;
   }
 
-  /* „Anfrage bereits gesendet“ prompt (Back after a successful send). */
-  .already-sent {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-s);
-    background: var(--accent-tint);
-    border: var(--hairline) dashed var(--line-strong);
-  }
+  /* „Anfrage bereits gesendet“ prompt (submit.ts, Back after a successful send): styled with the
+     draft banner in configurator.css (.draft-banner, .already-sent). */
 
-  .already-sent > p {
-    margin: 0;
-    font-weight: var(--weight-ui);
-  }
-
-  .already-sent:focus-visible {
-    outline: var(--focus-width) solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  /* Photo thumbnails (live mode). */
+  /* Photo thumbnails (photos.ts, live mode): contact prints on a hairline strip, name, remove. */
   .photos__item {
     display: flex;
     align-items: center;
     gap: var(--space-2xs);
     max-inline-size: 100%;
+    padding: var(--space-3xs);
+    padding-inline-end: var(--space-2xs);
     font-size: var(--step--1);
+    background: var(--surface);
+    border: var(--hairline) solid var(--line);
   }
 
   .photos__item img {
+    flex: none;
     inline-size: 3.5rem;
     block-size: 3.5rem;
     object-fit: cover;
@@ -55,6 +43,8 @@
   }
 
   .photos__item span {
+    min-inline-size: 0;
+    max-inline-size: 14rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

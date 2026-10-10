@@ -61,6 +61,52 @@
     .summary__toggle {
       display: none;
     }
+
+    /*
+     * Möbel, step 2 (JS): the drawing/fields split needs the whole content width (with the sidebar
+     * next to it the fields would get ~260 px at 1280 px), and the live drawing already shows the
+     * values. The sidebar moves below the sheet as a two-column band: list on the left, tools on
+     * the right. Without JS the sidebar is hidden, so nothing changes there.
+     */
+    .configurator__layout:has(> .summary:not([hidden])):has([name='typ'][value='moebel']:checked):has(
+        .step[data-step='details']:not([hidden])
+      ) {
+      grid-template-columns: minmax(0, 1fr);
+
+      > .summary {
+        position: static;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 20rem;
+        grid-template-rows: auto auto 1fr;
+        gap: 0 var(--space-xl);
+      }
+
+      > .summary > .draft-banner {
+        grid-row: 1;
+        grid-column: 1 / -1;
+        margin-block-end: var(--space-s);
+      }
+
+      > .summary > .summary__title {
+        grid-row: 2;
+        grid-column: 1;
+        margin-block-end: var(--space-s);
+      }
+
+      > .summary > .summary__details {
+        grid-row: 3;
+        grid-column: 1;
+      }
+
+      > .summary > .summary__tools {
+        grid-row: 2 / 4;
+        grid-column: 2;
+        padding-block-start: 0;
+        padding-inline-start: var(--space-xl);
+        border-block-start: 0;
+        border-inline-start: var(--rule);
+      }
+    }
   }
 
   @container section (inline-size < 64rem) {
@@ -295,8 +341,11 @@
     padding-inline-end: calc(var(--space-s) + 1.5rem);
   }
 
+  /* Long compounds („Einbauschrank“) hyphenate instead of running under the tick box. */
   .choice-group--cards .choice__label {
     font-weight: var(--weight-ui);
+    hyphens: auto;
+    hyphenate-limit-chars: 8 4 4;
   }
 
   .choice__icon {
@@ -413,14 +462,49 @@
     gap: var(--space-xs);
   }
 
+  /* Popovers (DIN explainer, share link): a sheet anchored below its button. The reset zeroes the
+     UA margin that would centre a popover, so browsers without anchor positioning centre it
+     explicitly. */
+  .explainer > [popovertarget] {
+    anchor-name: --explainer;
+  }
+
+  .summary__tools > [popovertarget] {
+    anchor-name: --share;
+  }
+
   .explainer__popover,
   .share-popover {
+    inset: auto;
+    margin: var(--space-2xs) 0 0;
     inline-size: min(26rem, calc(100vw - 2rem));
     padding: var(--space-m);
     color: var(--ink);
     background: var(--surface);
     border: var(--rule-strong);
     box-shadow: var(--shadow-paper);
+    position-area: block-end span-inline-end;
+    position-try-fallbacks:
+      flip-block,
+      flip-inline,
+      flip-block flip-inline;
+  }
+
+  .explainer__popover {
+    position-anchor: --explainer;
+  }
+
+  .share-popover {
+    position-anchor: --share;
+  }
+
+  @supports not (anchor-name: --a) {
+    .explainer__popover,
+    .share-popover {
+      inset: 0;
+      margin: auto;
+      block-size: fit-content;
+    }
   }
 
   .explainer__popover > * + *,
@@ -434,10 +518,21 @@
     line-height: 1.3;
   }
 
-  /* Möbel preview: a 4:3 viewport on paper. The build-time Beispielskizze reserves its own
-     ratio via --ar; the viewer (JS) shares the cell, so swapping them never shifts the layout. */
+  /*
+   * Möbel preview: a viewport on paper, at least 4:3; a tall drawing extends it (the automatic
+   * minimum size of an aspect-ratio box). The drawing cell is sized from a height cap so a portrait
+   * Regal fits the screen: the cell's inline size is the cap times `--ar` (the sheet's width/height
+   * as a number, set by PreviewPanel.astro). The live drawing (JS) measures the cell and renders at
+   * that width with 12 px labels; the build-time Beispielskizze is shown through `.preview__sketch`,
+   * capped at its own render width (PreviewPanel SKETCH_W) so its labels keep ~12 px as well.
+   * The viewer (JS) shares the stage cell, so swapping them never shifts the layout.
+   */
   .preview {
+    --_cap: min(55svh, 28rem);
     display: grid;
+    /* A definite track: with an auto track the stage's aspect ratio would transfer the drawing's
+       height into the column width and overflow the page. */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2xs);
     inline-size: 100%;
     max-inline-size: 40rem;
@@ -448,25 +543,27 @@
     display: grid;
     aspect-ratio: 4 / 3;
     padding: var(--space-s);
-    overflow: clip;
     background: var(--surface);
     border: var(--rule);
   }
 
+  /* No min-block-size: 0 here: the items' content minimum is what lets the stage grow. */
   .preview__stage > * {
     grid-area: 1 / 1;
     place-self: center;
     min-inline-size: 0;
-    min-block-size: 0;
     max-inline-size: 100%;
-    max-block-size: 100%;
   }
 
   .preview__drawing {
-    display: grid;
-    aspect-ratio: var(--ar, 4 / 3);
-    block-size: 100%;
+    inline-size: 100%;
+    max-inline-size: calc(var(--_cap) * var(--ar, 1.333));
     color: var(--ink);
+  }
+
+  .preview__sketch {
+    max-inline-size: 16.25rem; /* = SKETCH_W 260 px */
+    margin-inline: auto;
   }
 
   .preview__drawing .ze {
@@ -474,7 +571,6 @@
     --ze-muted: var(--ink-muted);
     display: block;
     inline-size: 100%;
-    max-block-size: 100%;
     block-size: auto;
     font-family: var(--font-sans);
   }
@@ -484,28 +580,50 @@
     color: var(--ink-muted);
   }
 
-  /* Wide containers with Möbel chosen: drawing 7 columns (sticky), title and fields 5 columns. */
+  /*
+   * Wide containers with Möbel chosen: the drawing (sticky) on the left, title, intro and fields on
+   * the right. The fields keep at least 22rem (two option cards per row); the drawing takes the
+   * rest and is capped so it fits below the sticky header. The branches sit in `.step__fields`
+   * (StepDetails.astro), so the preview spans explicit rows.
+   */
   @container section (inline-size >= 64rem) {
     .configurator:has([name='typ'][value='moebel']:checked) .step[data-step='details'] {
       display: grid;
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      grid-template-rows: auto 1fr;
-      column-gap: var(--space-l);
+      grid-template-columns: minmax(0, 7fr) minmax(22rem, 5fr);
+      grid-template-rows: auto auto 1fr;
+      gap: 0 var(--space-l);
       align-items: start;
     }
 
     .configurator:has([name='typ'][value='moebel']:checked) .step[data-step='details'] > * {
-      grid-column: 8 / -1;
+      grid-column: 2;
+    }
+
+    /* The generic intro (row 2) is hidden once a type is checked; the margin keeps the rhythm. */
+    .configurator:has([name='typ'][value='moebel']:checked) .step[data-step='details'] > .step__fields {
+      margin-block-start: var(--space-m);
     }
 
     .configurator:has([name='typ'][value='moebel']:checked) .step[data-step='details'] > .preview {
+      --_cap: calc(100svh - var(--header-sticky-h) - 8rem);
       position: sticky;
       inset-block-start: calc(var(--header-sticky-h) + var(--space-s));
-      grid-column: 1 / 8;
-      grid-row: 1 / 3;
+      grid-column: 1;
+      grid-row: 1 / -1;
       align-self: start;
       max-inline-size: none;
     }
+
+    .configurator:has([name='typ'][value='moebel']:checked) .step[data-step='details'] > .step__fields {
+      grid-row: 3;
+    }
+  }
+
+  .step__fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    min-inline-size: 0;
   }
 
   /* Service area line: reserved under the PLZ field so filling it never shifts the form. */
@@ -730,13 +848,33 @@
     cursor: pointer;
   }
 
+  /* Label | value rows. In the 20rem sidebar the label column is capped so long values („Mit
+     Rückwand“, an e-mail address) keep a usable column instead of breaking mid-word. */
   .summary__list,
   .review__list {
     display: grid;
-    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-    gap: var(--space-3xs) var(--space-s);
+    grid-template-columns: fit-content(6.5rem) minmax(0, 1fr);
+    gap: var(--space-3xs) var(--space-xs);
+    align-items: baseline;
     margin: 0;
     font-size: var(--step--1);
+  }
+
+  .review__list {
+    grid-template-columns: fit-content(14rem) minmax(0, 1fr);
+    column-gap: var(--space-s);
+  }
+
+  /* Narrow sheet: label above value, so an e-mail address and its „Ändern“ keep one line each. */
+  @container section (inline-size < 40rem) {
+    .review__list {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 0;
+    }
+
+    .review__list dt {
+      margin-block-start: var(--space-2xs);
+    }
   }
 
   .summary__list dt,
@@ -748,6 +886,7 @@
   .review__list dd {
     margin: 0;
     font-weight: var(--weight-ui);
+    overflow-wrap: anywhere;
   }
 
   .summary__tools {
@@ -755,7 +894,10 @@
     border-block-start: var(--rule);
   }
 
-  .draft-banner {
+  /* Prompts on paper: the draft banner (sidebar) and the „Anfrage bereits gesendet“ prompt that
+     submit.ts puts above the success view share one look: a dashed red-tinted note with a button row. */
+  .draft-banner,
+  .already-sent {
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -764,9 +906,15 @@
     border: var(--hairline) dashed var(--line-strong);
   }
 
-  .draft-banner > p {
+  .draft-banner > p,
+  .already-sent > p {
     margin: 0;
     font-weight: var(--weight-ui);
+  }
+
+  .already-sent:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 2px;
   }
 
   /* Submit errors (live mode). */
@@ -787,6 +935,7 @@
     gap: var(--space-m);
     max-inline-size: 56rem;
     margin-block-start: var(--space-l);
+    margin-inline: auto;
     padding: var(--space-m-xl);
   }
 
@@ -814,9 +963,25 @@
     white-space: pre-line;
   }
 
+  /* The drawing (the live SVG, moved over by submit.ts) on its own sheet of paper. */
+  .success__drawing:has(svg) {
+    padding: var(--space-s);
+    border: var(--rule);
+  }
+
   .success__drawing svg {
+    --ze-accent: var(--accent);
+    --ze-muted: var(--ink-muted);
+    display: block;
     inline-size: 100%;
     block-size: auto;
+    color: var(--ink);
+    font-family: var(--font-sans);
+  }
+
+  .success__actions {
+    padding-block: var(--space-xs);
+    border-block: var(--rule);
   }
 
   /* "Was passiert jetzt?": a vertical dimension chain. */
