@@ -1,21 +1,136 @@
 ---
+// Referenzen overview (docs/design-system.md §8). Filter chips (CSS `:has()`, enhanced by
+// referenzen-filter.ts) over all projects. Projects with a detail page link to it (`proj-<slug>`
+// morphs into the detail hero). Single-photo projects open their cover in the lightbox, unless the
+// photo is `cardOnly` (legacy or small): those cards stay plain, so no small photo is enlarged.
+import { getImage } from 'astro:assets';
 import PageLayout from '../../layouts/PageLayout.astro';
-import { url } from '../../lib/url';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import FilterBar from '../../components/sections/FilterBar.astro';
+import Lightbox from '../../components/sections/Lightbox.astro';
+import ProjectCard from '../../components/sections/ProjectCard.astro';
+import Picture from '../../components/ui/Picture.astro';
+import { getPageCopy } from '../../lib/page-copy';
+import { referenzenSchema } from '../../lib/page-copy/referenzen';
+import { projectCount, uiReferenzenSchema } from '../../lib/page-copy/ui-referenzen';
+import { getProjects, getServices } from '../../lib/content';
+import { dominantColor } from '../../lib/dominant-color';
+import { isCardOnly } from '../../lib/project-assets';
+import { dataCat } from '../../lib/referenzen-filter';
+import { shy } from '../../lib/shy';
+
+const copy = await getPageCopy('referenzen', referenzenSchema);
+const ui = await getPageCopy('ui', uiReferenzenSchema);
+const projects = await getProjects();
+const services = await getServices();
+
+const cards = await Promise.all(
+  projects.map(async (project) => {
+    const { cover, categories, year, detailPage } = project.data;
+    const lightbox = !detailPage && !isCardOnly(cover.src);
+    const full = lightbox
+      ? (await getImage({ src: cover.src, format: 'webp', width: Math.min(2000, cover.src.width) })).src
+      : undefined;
+    const category = services.find((s) => s.data.key === categories[0])?.data.title;
+    return {
+      project,
+      lightbox,
+      full,
+      dominant: lightbox ? await dominantColor(cover.src) : undefined,
+      meta: [category, year].filter((part) => part !== undefined).join(' · '),
+    };
+  }),
+);
 ---
 
-<PageLayout
-  title="Referenzen"
-  description="Referenzen der Schreinerei Schmidt aus Mannheim: Möbel nach Maß, Böden, Treppen, Fenster und Türen. Die Projektübersicht entsteht gerade."
->
-  <p class="lead" slot="lead">
-    Ausgewählte Arbeiten aus Mannheim und Umgebung.
-  </p>
+<PageLayout title={copy.seo.title ?? copy.hero.h1} heading={copy.hero.h1} description={copy.seo.description}>
+  <div class="stack" slot="lead">
+    <p class="lead">{copy.hero.lead}</p>
+    <p class="refs-count text-muted">{projectCount(ui, projects.length)}</p>
+  </div>
   <section class="section">
-    <div class="prose">
-      <p>Diese Seite entsteht gerade.</p>
-      <p>
-        <a href={url('leistungen/')}>Zu den Leistungen</a> · <a href={url('kontakt/')}>Kontakt</a>
-      </p>
-    </div>
+    <FilterBar items={projects.map((p) => p.data)} legend={ui.filter.label} reveal>
+      {cards.map(({ project, lightbox, full, dominant, meta }, i) => (
+        <li
+          class="gallery__item"
+          data-cat={dataCat(project.data.categories)}
+          style={`--ar:${project.data.cover.src.width} / ${project.data.cover.src.height}`}
+        >
+          {lightbox ? (
+            <article class="rcard">
+              <a class="rcard__link" href={full} data-lightbox data-caption={project.data.title}>
+                <div class="rcard__media" style={dominant ? `--dominant: ${dominant}` : undefined}>
+                  <Picture
+                    src={project.data.cover.src}
+                    alt={project.data.cover.alt}
+                    sizes="(min-width: 64em) 24rem, (min-width: 40em) 50vw, 100vw"
+                    width={576}
+                    loading={i < 3 ? 'eager' : 'lazy'}
+                  />
+                </div>
+              </a>
+              <h2 class="rcard__title">{shy(project.data.title)}</h2>
+              {meta && <p class="rcard__meta">{meta}</p>}
+            </article>
+          ) : (
+            <ProjectCard project={project} level={2} loading={i < 3 ? 'eager' : 'lazy'} />
+          )}
+        </li>
+      ))}
+    </FilterBar>
   </section>
+  <CtaBand heading={copy.ctaBand.h2} lead={copy.ctaBand.text} />
+  <Lightbox />
 </PageLayout>
+
+<style>
+  @layer components {
+    .refs-count {
+      font-size: var(--step--1);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Lightbox cards mirror ProjectCard (4:3 media, title, meta); only the image is the link. */
+    .rcard {
+      container: card / inline-size;
+      display: grid;
+      gap: var(--space-2xs);
+      align-content: start;
+    }
+
+    .rcard__link {
+      display: block;
+      margin-block-end: var(--space-2xs);
+      cursor: zoom-in;
+    }
+
+    .rcard__link:focus-visible {
+      outline: var(--focus-width) solid var(--focus);
+      outline-offset: var(--focus-offset);
+    }
+
+    .rcard__media {
+      aspect-ratio: 4 / 3;
+      overflow: clip;
+      background-color: var(--dominant, var(--surface-panel));
+    }
+
+    .rcard__media :global(picture),
+    .rcard__media :global(img) {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+      object-fit: cover;
+    }
+
+    .rcard__title {
+      font-size: clamp(var(--step-1), 6.5cqi, var(--step-2));
+    }
+
+    .rcard__meta {
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+</style>

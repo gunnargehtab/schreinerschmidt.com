@@ -1,0 +1,312 @@
+---
+// Project detail page (docs/design-system.md §8 "Projekt detail"). Only projects with `detailPage: true`.
+// Hero: landscape photos break out of the content column; portrait or `cardOnly` photos (legacy or
+// small, docs/architecture.md §6) stay contained at no more than their pixel size and never open in
+// the lightbox. The hero image carries `proj-<slug>`, the morph target of the card on /referenzen/.
+import type { GetStaticPaths } from 'astro';
+import { Picture as AstroPicture } from 'astro:assets';
+import { getCollection, render } from 'astro:content';
+import PageLayout from '../../layouts/PageLayout.astro';
+import BeforeAfter from '../../components/sections/BeforeAfter.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import FactList from '../../components/sections/FactList.astro';
+import Gallery from '../../components/sections/Gallery.astro';
+import ProjectGrid from '../../components/sections/ProjectGrid.astro';
+import Testimonials from '../../components/sections/Testimonials.astro';
+import Picture from '../../components/ui/Picture.astro';
+import JsonLd from '../../components/seo/JsonLd.astro';
+import { getAdjacentProjects, getProjects, getRelatedProjects, getServices, getTestimonials } from '../../lib/content';
+import { breadcrumbJsonLd } from '../../lib/jsonld';
+import { getPageCopy } from '../../lib/page-copy';
+import { referenzenSchema } from '../../lib/page-copy/referenzen';
+import { uiReferenzenSchema } from '../../lib/page-copy/ui-referenzen';
+import { isCardOnly } from '../../lib/project-assets';
+import { shy } from '../../lib/shy';
+import { absolute, url } from '../../lib/url';
+import { vtStyle } from '../../lib/vt';
+
+export const getStaticPaths = (async () => {
+  const projects = (await getProjects()).filter((p) => p.data.detailPage);
+  return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
+}) satisfies GetStaticPaths;
+
+const { project } = Astro.props;
+const { title, summary, categories, woods, location, year, cover, gallery, beforeAfter, review } = project.data;
+const slug = project.id;
+
+const copy = await getPageCopy('referenzen', referenzenSchema);
+const ui = await getPageCopy('ui', uiReferenzenSchema);
+const services = await getServices();
+const woodEntries = await getCollection('woods');
+const { prev, next } = await getAdjacentProjects(slug);
+const related = await getRelatedProjects(slug, 3);
+const testimonials = (await getTestimonials()).filter((t) => t.data.project?.id === slug);
+const { Content } = await render(project);
+
+// Project facts come from the project entry, so they carry its review status.
+const pending = review.status === 'confirmed' ? undefined : review.status;
+const facts = [
+  {
+    label: 'Kategorie',
+    value: categories.map((c) => services.find((s) => s.data.key === c)?.data.title ?? c).join(', '),
+  },
+  { label: 'Ort', value: location, ...(pending && { review: pending }) },
+  { label: 'Jahr', value: year === undefined ? undefined : String(year), ...(pending && { review: pending }) },
+  {
+    label: 'Holz',
+    value: woods.map((w) => woodEntries.find((e) => e.id === w.id)?.data.name ?? w.id).join(', '),
+    ...(pending && { review: pending }),
+  },
+];
+
+// SEO: the page part of the <title> has at most 38 characters; the description follows the
+// architecture §7 template and is shortened at a word boundary when it would exceed 158.
+const chars = (s: string) => [...s].length;
+const seoTitle = chars(title) <= 38 ? title : (title.split(':')[0] ?? title);
+const SUFFIX = ' – Referenzprojekt der Schreinerei Schmidt, Mannheim.';
+const lead = summary.replace(/[.\s]+$/, '');
+const room = 158 - chars(SUFFIX) - chars(`${title}: `) - 1;
+const short =
+  chars(lead) <= room + 1
+    ? lead
+    : `${lead
+        .slice(0, room)
+        .replace(/[\s,;:]*\S*$/, '')
+        .replace(/[,;:]$/, '')}…`;
+const description = `${title}: ${short}${SUFFIX}`;
+
+// Hero layout: breakout only for large landscape photos.
+const coverCardOnly = isCardOnly(cover.src);
+const landscape = cover.src.width > cover.src.height;
+const breakout = landscape && !coverCardOnly;
+
+const galleryBig = gallery.filter((g) => !isCardOnly(g.src));
+const gallerySmall = gallery.filter((g) => isCardOnly(g.src));
+const baPortrait = beforeAfter ? beforeAfter.before.src.height > beforeAfter.before.src.width : false;
+
+const home = absolute(url(''), Astro.site!);
+const crumbs = [
+  { name: 'Startseite', url: home },
+  { name: copy.hero.h1, url: absolute(url('referenzen/'), Astro.site!) },
+  { name: title, url: absolute(url(`referenzen/${slug}/`), Astro.site!) },
+];
+---
+
+<PageLayout
+  title={seoTitle}
+  heading={title}
+  description={description}
+  crumbs={[{ label: copy.hero.h1, href: 'referenzen/' }, { label: title }]}
+  image={coverCardOnly ? undefined : { src: cover.src, alt: cover.alt }}
+>
+  <JsonLd slot="head" data={breadcrumbJsonLd(crumbs)} />
+  <div class="stack stack--m" slot="lead">
+    <p class="lead">{summary}</p>
+    <!-- Schriftfeld: the drawing title block for these facts replaces FactList at merge. -->
+    <FactList facts={facts} />
+  </div>
+
+  <section class="section section--compact">
+    <figure
+      class:list={['proj-hero', breakout ? 'breakout proj-hero--wide' : 'proj-hero--contained']}
+      style={`--ar:${cover.src.width} / ${cover.src.height}`}
+    >
+      <AstroPicture
+        class="vt-media proj-hero__img"
+        style={vtStyle(Astro.locals, 'proj', slug)}
+        data-hero
+        src={cover.src}
+        alt={cover.alt}
+        sizes={breakout ? '(min-width: 84rem) 84rem, 100vw' : '(min-width: 40em) 32rem, 100vw'}
+        widths={breakout ? [640, 960, 1280, 1600, 2000] : [400, 640, 800]}
+        formats={['avif', 'webp']}
+        loading="eager"
+        fetchpriority="high"
+        decoding="auto"
+      />
+      {cover.caption && <figcaption class="proj-hero__caption">{cover.caption}</figcaption>}
+    </figure>
+  </section>
+
+  <section class="section section--compact" aria-label="Beschreibung">
+    <div class="prose">
+      <Content />
+    </div>
+  </section>
+
+  {galleryBig.length > 0 && (
+    <section class="section section--compact" aria-labelledby="proj-gallery">
+      <h2 id="proj-gallery">{copy.detail.gallery}</h2>
+      <Gallery images={galleryBig} />
+    </section>
+  )}
+
+  {gallerySmall.length > 0 && (
+    <section class="section section--compact" aria-labelledby="proj-images">
+      <h2 id="proj-images">{copy.detail.gallery}</h2>
+      <ul class="proj-small list-plain">
+        {gallerySmall.map((image) => (
+          <li>
+            <figure>
+              <Picture src={image.src} alt={image.alt} sizes="(min-width: 40em) 25rem, 100vw" width={image.src.width} />
+              {image.caption && <figcaption class="proj-hero__caption">{image.caption}</figcaption>}
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {beforeAfter && (
+    <section class="section section--compact" aria-labelledby="proj-ba">
+      <h2 id="proj-ba">{copy.detail.beforeAfter}</h2>
+      <div class:list={['proj-ba', baPortrait && 'proj-ba--portrait']}>
+        <BeforeAfter
+          before={beforeAfter.before}
+          after={beforeAfter.after}
+          ratio={`${beforeAfter.before.src.width} / ${beforeAfter.before.src.height}`}
+          sizes="(min-width: 48em) 30rem, 100vw"
+        />
+      </div>
+    </section>
+  )}
+
+  {testimonials.length > 0 && (
+    <section class="section section--compact" aria-label="Kundenstimme">
+      <Testimonials items={testimonials} rating={false} />
+    </section>
+  )}
+
+  {(prev || next) && (
+    <nav class="section section--compact proj-nav" aria-label="Projektnavigation">
+      <ul class="proj-nav__list list-plain">
+        <li class="proj-nav__prev">
+          {prev && (
+            <a href={url(`referenzen/${prev.id}/`)} rel="prev">
+              <span class="proj-nav__dir">{ui.links.prevProject}</span>
+              <span class="proj-nav__title">{shy(prev.data.title)}</span>
+            </a>
+          )}
+        </li>
+        <li class="proj-nav__next">
+          {next && (
+            <a href={url(`referenzen/${next.id}/`)} rel="next">
+              <span class="proj-nav__dir">{ui.links.nextProject}</span>
+              <span class="proj-nav__title">{shy(next.data.title)}</span>
+            </a>
+          )}
+        </li>
+      </ul>
+    </nav>
+  )}
+
+  <section class="section" aria-labelledby="proj-more">
+    <h2 id="proj-more">{ui.links.moreProjects}</h2>
+    <ProjectGrid projects={related} level={3} label={ui.links.moreProjects} />
+    <p>
+      <a href={url('referenzen/')}>{ui.links.allProjects}</a>
+    </p>
+  </section>
+
+  <CtaBand heading={copy.ctaBand.h2} lead={copy.ctaBand.text} />
+</PageLayout>
+
+<style>
+  @layer components {
+    .proj-hero {
+      margin: 0;
+    }
+
+    .proj-hero :global(picture),
+    .proj-hero :global(img) {
+      display: block;
+      inline-size: 100%;
+    }
+
+    .proj-hero--wide :global(img) {
+      aspect-ratio: 16 / 9;
+      block-size: auto;
+      object-fit: cover;
+    }
+
+    /* Portrait and card-only photos: never wider than the file itself. */
+    .proj-hero--contained {
+      max-inline-size: min(100%, 32rem);
+    }
+
+    .proj-hero--contained :global(img) {
+      block-size: auto;
+      aspect-ratio: var(--ar);
+      object-fit: cover;
+    }
+
+    .proj-hero__caption {
+      margin-block-start: var(--space-3xs);
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+
+    .proj-small {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-s);
+      margin: 0;
+      padding: 0;
+    }
+
+    .proj-small li {
+      flex: 0 1 min(100%, 25rem);
+      min-inline-size: 0;
+    }
+
+    .proj-small figure {
+      margin: 0;
+    }
+
+    .proj-small :global(img) {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+    }
+
+    .proj-ba--portrait {
+      max-inline-size: 32rem;
+    }
+
+    .proj-nav__list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+      gap: var(--space-s);
+      margin: 0;
+      padding: 0;
+    }
+
+    .proj-nav__next {
+      text-align: end;
+    }
+
+    .proj-nav__list a {
+      display: grid;
+      gap: var(--space-3xs);
+      min-block-size: var(--target-min);
+      padding-block: var(--space-xs);
+      color: inherit;
+      text-decoration: none;
+      border-block: var(--rule);
+    }
+
+    .proj-nav__dir {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+
+    .proj-nav__title {
+      font-size: var(--step-1);
+      font-weight: var(--weight-ui);
+    }
+
+    .proj-nav__list a:hover .proj-nav__title {
+      color: var(--accent);
+    }
+  }
+</style>

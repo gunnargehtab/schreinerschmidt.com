@@ -1,0 +1,18 @@
+# Referenzen overview (docs/design-system.md §8). Short factual draft; the copywriter may polish it.
+seo:
+  title: 'Referenzen aus Mannheim'
+  description: 'Referenzen der Schreinerei Schmidt in Mannheim: Möbel nach Maß, Böden, Treppen, Türen, Fenster, Altbau und Terrassen. Ausgewählte Projekte im Überblick.'
+
+hero:
+  h1: 'Referenzen'
+  lead: 'Ausgewählte Arbeiten aus Mannheim und Umgebung. Filtern Sie nach Kategorie oder öffnen Sie ein Projekt.'
+  review: needs-review
+  note: 'Kurzer Entwurf ohne neue Fakten. Die Zuordnung der Projekte (Altfotos 2009–2012) bestätigt der Inhaber.'
+
+ctaBand:
+  h2: 'Ihr Projekt als Nächstes?'
+  text: 'Im Konfigurator beschreiben Sie Ihr Vorhaben in wenigen Schritten. Oder Sie rufen an, und wir besprechen es.'
+
+detail:
+  gallery: 'Bilder'
+  beforeAfter: 'Vorher und nachher'
