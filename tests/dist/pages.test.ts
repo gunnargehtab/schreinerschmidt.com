@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { ROBOTS_NOINDEX, isAlwaysNoindex } from '../../src/lib/seo';
 import { describeDist, isDemo, isRedirectPage, loadPages } from '../helpers/dist';
 
 const pages = loadPages().filter((p) => !isRedirectPage(p));
@@ -42,6 +43,10 @@ describeDist('robots and canonical', () => {
       const canonical = page.root.querySelector('link[rel="canonical"]');
       if (demo) {
         expect(robots).toContain('noindex');
+        expect(canonical).toBeNull();
+      } else if (isAlwaysNoindex(page.urlPath)) {
+        // Danke pages (and /intern/, absent in production): the same rule as Seo.astro (src/lib/seo.ts).
+        expect(robots).toBe(ROBOTS_NOINDEX);
         expect(canonical).toBeNull();
       } else {
         expect(robots).not.toContain('noindex');

@@ -18,9 +18,9 @@ benefits:
     review: needs-review
     note: '4-Tage-Woche laut Altseite und join.com; Stundenverteilung unbekannt.'
   - title: 'Überdurchschnittlicher Lohn'
-    text: 'Gute Arbeit soll sich lohnen. Als Orientierung: 36.000 bis 42.000 € im Jahr, je nach Erfahrung. [[Platzhalter: Gehaltsspanne vom Inhaber bestätigen]]'
+    text: 'Gute Arbeit soll sich lohnen.'
     review: needs-review
-    note: 'Spanne laut join.com (Drittquelle). „Überdurchschnittlich“ ist die Formulierung der Altseite.'
+    note: '„Überdurchschnittlich“ ist die Formulierung der Altseite. Die Gehaltsspanne steht separat unter salary.'
   - title: 'Eigener Montagebus'
     text: 'Du bekommst einen eigenen Montagebus mit Ausrüstung und fährst damit direkt zur Baustelle.'
     review: needs-review
@@ -29,6 +29,15 @@ benefits:
     text: 'Gutes Werkzeug, gute Maschinen und ein Team, in dem Du Entscheidungen im Projekt mit triffst.'
     review: needs-review
     note: 'Aus „Cooles Team & Equipment“ und „Eigenverantwortung und Mitbestimmung im Projektwesen“ (Parkettleger-Anzeige).'
+
+# Salary range (join.com, a third-party source), kept out of the benefit text: the page shows it under
+# the benefit named in `benefit`, in the demo only (inside a review mark). Production shows it only once
+# an active job in src/content/jobs/ has a confirmed baseSalary. The space before € is U+202F (narrow no-break space).
+salary:
+  benefit: 'Überdurchschnittlicher Lohn'
+  text: 'Als Orientierung: 36.000 bis 42.000 € im Jahr, je nach Erfahrung.'
+  review: needs-review
+  note: 'Spanne laut join.com (Drittquelle), vom Inhaber bestätigen. Muss zum baseSalary der Stellen passen.'
 
 jobs:
   h2: 'Offene Stellen'

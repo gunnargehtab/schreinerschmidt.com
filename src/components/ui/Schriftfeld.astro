@@ -1,8 +1,11 @@
 ---
 // Schriftfeld (docs/design-system.md §5 "Other components"): the title block of a technical
 // drawing as a <dl> (Projekt | Ort | Jahr | Holz). Place it inside a <figcaption>. Fields with a
-// review status carry `data-review` so the Prüfliste and the production guard can find them.
+// review status carry `data-review` so the Prüfliste and the production guard can find them, and
+// unconfirmed values are wrapped in ReviewMark (highlighted in the `?pruefen` view).
 // Unknown fields are left out rather than invented.
+import ReviewMark from './ReviewMark.astro';
+
 export interface Field {
   value: string;
   status?: 'confirmed' | 'needs-review' | 'placeholder';
@@ -38,7 +41,13 @@ const cells = [
   {cells.map(({ label, field }) => (
     <div class="schriftfeld__cell">
       <dt>{label}</dt>
-      <dd data-review={field.status}>{field.value}</dd>
+      <dd data-review={field.status}>
+        {field.status && field.status !== 'confirmed' ? (
+          <ReviewMark status={field.status}>{field.value}</ReviewMark>
+        ) : (
+          field.value
+        )}
+      </dd>
     </div>
   ))}
   {blatt && (

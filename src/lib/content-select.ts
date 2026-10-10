@@ -34,12 +34,15 @@ export function sortProjects<T extends ProjectLike>(projects: readonly T[]): T[]
 export interface ProjectFilter {
   featured?: boolean | undefined;
   category?: string | undefined;
+  /** Only projects with (true) or without (false) a detail page. */
+  detailPage?: boolean | undefined;
 }
 
 export function filterProjects<T extends ProjectLike>(projects: readonly T[], filter: ProjectFilter = {}): T[] {
   return sortProjects(projects).filter(
     (p) =>
       (filter.featured === undefined || p.data.featured === filter.featured) &&
+      (filter.detailPage === undefined || p.data.detailPage === filter.detailPage) &&
       (filter.category === undefined || p.data.categories.includes(filter.category)),
   );
 }

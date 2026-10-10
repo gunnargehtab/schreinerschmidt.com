@@ -63,11 +63,37 @@ test.describe('Referenzen overview', () => {
     const links = page.locator('.refs a[data-lightbox]');
     expect(await links.count()).toBeGreaterThan(0);
     // Every card is either linked (detail or lightbox) or a plain card with a small photo.
-    await expect(page.locator('.refs div.project-card__link')).toHaveCount(TOTAL - DETAIL - (await links.count()));
+    await expect(page.locator('.refs div.project-card__link:not(:has(a[data-lightbox]))')).toHaveCount(
+      TOTAL - DETAIL - (await links.count()),
+    );
+    // The link is named by the photo's alt text (ProjectCard `lightbox`).
+    await expect(links.first().locator('img')).toHaveAttribute('alt', /.{12,}/);
     await links.first().click();
     const dialog = page.locator('dialog#lightbox');
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('.lightbox__img')).toHaveAttribute('src', /\.webp$/);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+  });
+
+  test('the lightbox only steps through the cards the filter shows', async ({ page }) => {
+    await page.goto('referenzen/');
+    const chips = page.locator('.refs .chip');
+    // Pick the category with the fewest (but at least one) lightbox cards, so hidden ones exist.
+    let best: { i: number; n: number } | undefined;
+    for (let i = 0; i < (await chips.count()); i++) {
+      await chips.nth(i).click();
+      const n = await page.locator('.refs .gallery__item:visible a[data-lightbox]').count();
+      if (n > 0 && (!best || n < best.n)) best = { i, n };
+    }
+    expect(best, 'a category with lightbox cards').toBeDefined();
+    if (!best) return;
+    expect(best.n).toBeLessThan(await page.locator('.refs a[data-lightbox]').count());
+    await chips.nth(best.i).click();
+    await page.locator('.refs .gallery__item:visible a[data-lightbox]').first().click();
+    const dialog = page.locator('dialog#lightbox');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-count]')).toHaveText(`Bild 1 von ${best.n}`);
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
   });
@@ -100,7 +126,9 @@ test.describe('Project detail', () => {
       .poll(() => hero.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth))
       .toBeGreaterThan(0);
     expect(await hero.evaluate((img) => getComputedStyle(img).opacity)).toBe('1');
-    await expect(page.locator('.fact-list')).toContainText('Möbel');
+    // The Schriftfeld (drawing title block) captions the hero; unknown facts are left out.
+    await expect(page.locator('figure.proj-hero .schriftfeld dt').first()).toHaveText('Projekt');
+    await expect(page.locator('figure.proj-hero .schriftfeld')).toContainText('Raumhohe Einbauschrankwand');
 
     const raw = await page.locator('script[type="application/ld+json"]').allTextContents();
     const docs = raw.map((t) => JSON.parse(t) as { '@graph'?: { '@type': string }[]; '@type'?: string });
@@ -139,10 +167,10 @@ test.describe('Project detail', () => {
       if (i === slugs.length - 1) await expect(next).toHaveCount(0);
       else await expect(next).toHaveAttribute('href', new RegExp(`/referenzen/${slugs[i + 1]}/$`));
 
-      const more = page.locator('#proj-more ~ .project-grid .project-card');
+      const more = page.locator('section:has(> #proj-more) .project-grid .project-card');
       await expect(more).toHaveCount(3);
       const hrefs = await page
-        .locator('#proj-more ~ .project-grid a.project-card__link')
+        .locator('section:has(> #proj-more) .project-grid a.project-card__link')
         .evaluateAll((els) => els.map((el) => el.getAttribute('href')));
       expect(hrefs.join(' ')).not.toContain(`/referenzen/${slug}/`);
     }

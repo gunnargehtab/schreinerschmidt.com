@@ -50,9 +50,10 @@ form:
 address:
   h2: 'Adresse'
 
+# The hours themselves come from settings.yaml (`hours`); `remark` is the sentence shown below them.
 hours:
   h2: 'Erreichbarkeit'
-  text: 'Montag bis Freitag, 7 bis 17 Uhr. Auf der Baustelle gehen wir nicht immer ans Telefon; wir rufen zurück.'
+  remark: 'Auf der Baustelle gehen wir nicht immer ans Telefon; wir rufen zurück.'
   review: needs-review
   note: 'Öffnungszeiten laut werkenntdenbesten (Drittquelle), vom Inhaber bestätigen. „Wir rufen zurück“ ist ein Versprechen des Inhabers.'
 

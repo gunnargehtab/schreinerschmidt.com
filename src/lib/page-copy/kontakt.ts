@@ -29,7 +29,8 @@ export const kontaktSchema = z.object({
     errors: z.record(z.string(), z.string()),
   }),
   address: z.object({ h2: z.string() }),
-  hours: reviewable({ h2: z.string(), text: z.string() }),
+  /** The hours come from settings.yaml; `remark` is the hours-free sentence below them. */
+  hours: reviewable({ h2: z.string(), remark: z.string() }),
   map: z.object({ alt: z.string(), attribution: z.string(), linkLabel: z.string() }),
   danke: z.object({ title: z.string().max(38), text: z.string() }),
 });

@@ -1,0 +1,52 @@
+/*
+ * Review marks (components/ui/ReviewMark.astro, plus the same span markup emitted by
+ * lib/legal-tokens.ts and lib/markdown/placeholder-marks.mjs). Plain text by default; with `?pruefen`
+ * in the URL ui/ReviewView.astro sets `data-pruefen` on <html>, which turns on the rules below.
+ *
+ * Global, not scoped (docs/design-system.md §4): the marks are shared and partly rendered from
+ * Markdown/HTML strings and by JS. A scoped stylesheet also risked landing ahead of global.css in a
+ * page's CSS and demoting the `components` layer (tests/dist/layers.test.ts guards the order).
+ */
+@layer components {
+  :root[data-pruefen] .review-mark {
+    background: var(--accent-tint);
+    outline: var(--hairline) dashed var(--error);
+    outline-offset: 1px;
+    cursor: help;
+  }
+
+  :root[data-pruefen] .review-mark[data-review='placeholder'] {
+    outline-style: solid;
+    outline-width: 2px;
+  }
+
+  /* Colour is not the only cue: a text label follows each mark. */
+  :root[data-pruefen] .review-mark::after {
+    content: ' [prüfen]';
+    content: ' [prüfen]' / '';
+    font-size: var(--step--2);
+    font-weight: var(--weight-ui);
+    color: var(--error);
+  }
+
+  :root[data-pruefen] .review-mark[data-review='placeholder']::after {
+    content: ' [Platzhalter]';
+    content: ' [Platzhalter]' / '';
+  }
+
+  /* The legend: generated content, like the labels above, so the switch script stays one line. */
+  :root[data-pruefen] body::after {
+    content: 'Prüfansicht: Markierte Texte sind noch nicht bestätigt (Prüfen oder Platzhalter).';
+    position: fixed;
+    inset-block-end: var(--space-s);
+    inset-inline-start: var(--space-s);
+    z-index: 90;
+    max-inline-size: 22rem;
+    margin: 0;
+    padding: var(--space-2xs) var(--space-xs);
+    background: var(--surface);
+    border: var(--rule-strong);
+    box-shadow: var(--shadow-paper);
+    font-size: var(--step--1);
+  }
+}

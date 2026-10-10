@@ -9,13 +9,13 @@ import { getCollection, render } from 'astro:content';
 import PageLayout from '../../layouts/PageLayout.astro';
 import BeforeAfter from '../../components/sections/BeforeAfter.astro';
 import CtaBand from '../../components/sections/CtaBand.astro';
-import FactList from '../../components/sections/FactList.astro';
 import Gallery from '../../components/sections/Gallery.astro';
 import ProjectGrid from '../../components/sections/ProjectGrid.astro';
 import Testimonials from '../../components/sections/Testimonials.astro';
 import Picture from '../../components/ui/Picture.astro';
+import Schriftfeld, { type Field } from '../../components/ui/Schriftfeld.astro';
 import JsonLd from '../../components/seo/JsonLd.astro';
-import { getAdjacentProjects, getProjects, getRelatedProjects, getServices, getTestimonials } from '../../lib/content';
+import { getAdjacentProjects, getProjects, getRelatedProjects, getTestimonials } from '../../lib/content';
 import { breadcrumbJsonLd } from '../../lib/jsonld';
 import { getPageCopy } from '../../lib/page-copy';
 import { referenzenSchema } from '../../lib/page-copy/referenzen';
@@ -26,38 +26,33 @@ import { absolute, url } from '../../lib/url';
 import { vtStyle } from '../../lib/vt';
 
 export const getStaticPaths = (async () => {
-  const projects = (await getProjects()).filter((p) => p.data.detailPage);
+  const projects = await getProjects({ detailPage: true });
   return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
 }) satisfies GetStaticPaths;
 
 const { project } = Astro.props;
-const { title, summary, categories, woods, location, year, cover, gallery, beforeAfter, review } = project.data;
+const { title, summary, woods, location, year, cover, gallery, beforeAfter, review } = project.data;
 const slug = project.id;
 
 const copy = await getPageCopy('referenzen', referenzenSchema);
 const ui = await getPageCopy('ui', uiReferenzenSchema);
-const services = await getServices();
 const woodEntries = await getCollection('woods');
 const { prev, next } = await getAdjacentProjects(slug);
 const related = await getRelatedProjects(slug, 3);
 const testimonials = (await getTestimonials()).filter((t) => t.data.project?.id === slug);
 const { Content } = await render(project);
 
-// Project facts come from the project entry, so they carry its review status.
+// Schriftfeld (drawing title block) under the hero: Projekt | Ort | Jahr | Holz. The facts come from
+// the project entry, so they carry its review status; unknown ones are left out.
 const pending = review.status === 'confirmed' ? undefined : review.status;
-const facts = [
-  {
-    label: 'Kategorie',
-    value: categories.map((c) => services.find((s) => s.data.key === c)?.data.title ?? c).join(', '),
-  },
-  { label: 'Ort', value: location, ...(pending && { review: pending }) },
-  { label: 'Jahr', value: year === undefined ? undefined : String(year), ...(pending && { review: pending }) },
-  {
-    label: 'Holz',
-    value: woods.map((w) => woodEntries.find((e) => e.id === w.id)?.data.name ?? w.id).join(', '),
-    ...(pending && { review: pending }),
-  },
-];
+const fact = (value: string | number): Field => ({ value: String(value), ...(pending && { status: pending }) });
+const woodNames = woods.map((w) => woodEntries.find((e) => e.id === w.id)?.data.name ?? w.id).join(', ');
+const schriftfeld = {
+  projekt: title,
+  ...(location ? { ort: fact(location) } : {}),
+  ...(year !== undefined ? { jahr: fact(year) } : {}),
+  ...(woodNames ? { holz: fact(woodNames) } : {}),
+};
 
 // SEO: the page part of the <title> has at most 38 characters; the description follows the
 // architecture §7 template and is shortened at a word boundary when it would exceed 158.
@@ -79,6 +74,15 @@ const description = `${title}: ${short}${SUFFIX}`;
 const coverCardOnly = isCardOnly(cover.src);
 const landscape = cover.src.width > cover.src.height;
 const breakout = landscape && !coverCardOnly;
+// LCP image. `sizes` follows the real slot (the gutters on mobile; the 32rem cap on contained heroes),
+// and 720 fills the gap a ~380 css px phone at DPR 1.75 (≈ 660 device px) would otherwise round up to
+// 800 or 960. Widths above the file's own size are dropped.
+const heroSizes = breakout
+  ? '(min-width: 89rem) 84rem, calc(100vw - 2rem)'
+  : '(min-width: 34rem) 32rem, calc(100vw - 2rem)';
+const heroWidths = (breakout ? [640, 720, 960, 1280, 1600, 2000] : [400, 640, 720, 800]).filter(
+  (w, i) => i === 0 || w <= cover.src.width,
+);
 
 const galleryBig = gallery.filter((g) => !isCardOnly(g.src));
 const gallerySmall = gallery.filter((g) => isCardOnly(g.src));
@@ -100,11 +104,9 @@ const crumbs = [
   image={coverCardOnly ? undefined : { src: cover.src, alt: cover.alt }}
 >
   <JsonLd slot="head" data={breadcrumbJsonLd(crumbs)} />
-  <div class="stack stack--m" slot="lead">
-    <p class="lead">{summary}</p>
-    <!-- Schriftfeld: the drawing title block for these facts replaces FactList at merge. -->
-    <FactList facts={facts} />
-  </div>
+  <p class="lead" slot="lead">
+    {summary}
+  </p>
 
   <section class="section section--compact">
     <figure
@@ -117,14 +119,17 @@ const crumbs = [
         data-hero
         src={cover.src}
         alt={cover.alt}
-        sizes={breakout ? '(min-width: 84rem) 84rem, 100vw' : '(min-width: 40em) 32rem, 100vw'}
-        widths={breakout ? [640, 960, 1280, 1600, 2000] : [400, 640, 800]}
+        sizes={heroSizes}
+        widths={heroWidths}
         formats={['avif', 'webp']}
         loading="eager"
         fetchpriority="high"
         decoding="auto"
       />
-      {cover.caption && <figcaption class="proj-hero__caption">{cover.caption}</figcaption>}
+      <figcaption class="proj-hero__figcaption">
+        {cover.caption && <p class="proj-hero__caption">{cover.caption}</p>}
+        <Schriftfeld {...schriftfeld} />
+      </figcaption>
     </figure>
   </section>
 
@@ -134,15 +139,17 @@ const crumbs = [
     </div>
   </section>
 
+  {/* Below the fold: `cv-auto` (content-visibility) keeps Chrome from laying these out, and so from
+      fetching their lazy images, during the first render, where they competed with the LCP hero. */}
   {galleryBig.length > 0 && (
-    <section class="section section--compact" aria-labelledby="proj-gallery">
+    <section class="section section--compact cv-auto" aria-labelledby="proj-gallery">
       <h2 id="proj-gallery">{copy.detail.gallery}</h2>
       <Gallery images={galleryBig} />
     </section>
   )}
 
   {gallerySmall.length > 0 && (
-    <section class="section section--compact" aria-labelledby="proj-images">
+    <section class="section section--compact cv-auto" aria-labelledby="proj-images">
       <h2 id="proj-images">{copy.detail.gallery}</h2>
       <ul class="proj-small list-plain">
         {gallerySmall.map((image) => (
@@ -158,7 +165,7 @@ const crumbs = [
   )}
 
   {beforeAfter && (
-    <section class="section section--compact" aria-labelledby="proj-ba">
+    <section class="section section--compact cv-auto" aria-labelledby="proj-ba">
       <h2 id="proj-ba">{copy.detail.beforeAfter}</h2>
       <div class:list={['proj-ba', baPortrait && 'proj-ba--portrait']}>
         <BeforeAfter
@@ -202,9 +209,15 @@ const crumbs = [
 
   <section class="section" aria-labelledby="proj-more">
     <h2 id="proj-more">{ui.links.moreProjects}</h2>
-    <ProjectGrid projects={related} level={3} label={ui.links.moreProjects} />
+    {/* Only the cards are skipped: content after a skipped box may overlap it while the box still
+        has its placeholder size, which a11y tools read as an obscured target. */}
+    <div class="cv-auto">
+      <ProjectGrid projects={related} level={3} label={ui.links.moreProjects} />
+    </div>
     <p>
-      <a href={url('referenzen/')}>{ui.links.allProjects}</a>
+      <a class="proj-more__all" href={url('referenzen/')}>
+        {ui.links.allProjects}
+      </a>
     </p>
   </section>
 
@@ -246,6 +259,17 @@ const crumbs = [
       color: var(--ink-muted);
     }
 
+    /* Caption line, then the Schriftfeld title block, like the corner of a drawing sheet. */
+    .proj-hero__figcaption {
+      display: grid;
+      gap: var(--space-2xs);
+      margin-block-start: var(--space-2xs);
+    }
+
+    .proj-hero__figcaption > .proj-hero__caption {
+      margin: 0;
+    }
+
     .proj-small {
       display: flex;
       flex-wrap: wrap;
@@ -271,6 +295,13 @@ const crumbs = [
 
     .proj-ba--portrait {
       max-inline-size: 32rem;
+    }
+
+    /* A full-size target (WCAG 2.5.8): the link stands alone below the cards. */
+    .proj-more__all {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--target-min);
     }
 
     .proj-nav__list {

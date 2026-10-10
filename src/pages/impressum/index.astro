@@ -63,31 +63,9 @@ const pending = PUBLIC_DEMO && review.status !== 'confirmed';
       list-style: disc;
     }
 
+    /* The review-view highlight itself is global (src/styles/components/review.css). */
     .legal__body :global(.review-mark) {
       overflow-wrap: anywhere;
-    }
-
-    :global(:root[data-pruefen]) .legal__body :global(.review-mark) {
-      background: var(--accent-tint);
-      outline: var(--hairline) dashed var(--error);
-      outline-offset: 1px;
-    }
-
-    :global(:root[data-pruefen]) .legal__body :global(.review-mark[data-review='placeholder']) {
-      outline-style: solid;
-      outline-width: 2px;
-    }
-
-    :global(:root[data-pruefen]) .legal__body :global(.review-mark)::after {
-      content: ' [prüfen]';
-      content: ' [prüfen]' / '';
-      font-size: var(--step--2);
-      color: var(--error);
-    }
-
-    :global(:root[data-pruefen]) .legal__body :global(.review-mark[data-review='placeholder'])::after {
-      content: ' [Platzhalter]';
-      content: ' [Platzhalter]' / '';
     }
   }
 </style>

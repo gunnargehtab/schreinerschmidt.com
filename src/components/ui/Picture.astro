@@ -12,15 +12,31 @@ interface Props {
   fetchpriority?: 'high' | 'low' | 'auto';
   /** Display width in CSS px (constrained layout: srcset goes up to 2x this width). */
   width?: number;
+  /** With `width`: crops every rendition to this aspect ratio (fit cover), e.g. 4:3 card thumbnails. */
+  height?: number;
   widths?: number[];
   class?: string;
 }
 
-const { src, alt, sizes, loading = 'lazy', fetchpriority, width, widths, class: className } = Astro.props;
+const {
+  src,
+  alt,
+  sizes: sizesProp,
+  loading = 'lazy',
+  fetchpriority,
+  width,
+  height,
+  widths,
+  class: className,
+} = Astro.props;
+// Lazy images get `sizes="auto, …"` (docs/design-system.md §7): the browser picks the candidate for
+// the laid-out width instead of the (often wider) media-query estimate. Eager images can't use it.
+const sizes = loading === 'lazy' && !/^\s*auto\b/.test(sizesProp) ? `auto, ${sizesProp}` : sizesProp;
 
 const optional = {
   ...(fetchpriority ? { fetchpriority } : {}),
   ...(width ? { width } : {}),
+  ...(width && height ? { height } : {}),
   ...(widths ? { widths } : {}),
   ...(className ? { class: className } : {}),
 };

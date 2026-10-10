@@ -16,10 +16,13 @@ export const AREAS = [
 ] as const;
 export type Area = (typeof AREAS)[number];
 
-/** Data groups the production guard checks for placeholders (plan §1.2, §3.2). */
-export type GuardCategory = 'legal' | 'contact' | 'hours' | 'salary';
+/**
+ * Data groups the production guard checks for placeholders (plan §1.2, §3.2). `marker`: a
+ * copywriter's `[[Platzhalter: …]]` marker in published copy, which would go live verbatim.
+ */
+export type GuardCategory = 'legal' | 'contact' | 'hours' | 'salary' | 'marker';
 
-export type ReviewKind = 'entry' | 'fact' | 'consent' | 'asset' | 'green-claim';
+export type ReviewKind = 'entry' | 'fact' | 'consent' | 'asset' | 'green-claim' | 'marker';
 
 export interface ReviewItem {
   area: Area;
@@ -69,8 +72,73 @@ export interface SourceFile {
 
 export interface ReviewInput {
   entries: readonly ReviewEntry[];
+  /**
+   * Page copy (`pages`, src/content/pages/*.yaml) and legal templates (`legal`, body already reduced
+   * to the production text). Only scanned for `[[Platzhalter: …]]` markers: their review marks are
+   * plain strings, not the `review` objects of the data collections.
+   */
+  copy?: readonly ReviewEntry[] | undefined;
   assets?: readonly ReviewAsset[] | undefined;
   sources?: readonly SourceFile[] | undefined;
+}
+
+/* --------------------------------------------------------- placeholder markers */
+
+// Same syntax as src/lib/markdown/placeholder-marks.mjs and src/lib/legal-tokens.ts.
+const MARKER_RE = /\[\[Platzhalter:\s*([^\]]*?)\s*\]\]/g;
+
+/** Every `[[Platzhalter: …]]` marker in a text (HTML comments are not published, so skipped). */
+export function findPlaceholderMarkers(text: string): { label: string; index: number }[] {
+  const visible = text.replace(/<!--[\s\S]*?-->/g, (c) => c.replace(/[^\n]/g, ' '));
+  return [...visible.matchAll(MARKER_RE)].map((m) => ({ label: m[1] ?? '', index: m.index ?? 0 }));
+}
+
+/** Route of a page-copy or legal entry (`pages/konfigurator-danke` → `konfigurator/danke/`). */
+export function copyPage(entry: Pick<ReviewEntry, 'collection' | 'id'>): string | undefined {
+  if (entry.collection === 'legal') return `${entry.id}/`;
+  if (entry.collection !== 'pages') return undefined;
+  switch (entry.id) {
+    case 'home':
+      return '';
+    case 'ui': // shared UI strings, shown on many pages
+    case '404':
+      return undefined;
+    case 'konfigurator-danke':
+      return 'konfigurator/danke/';
+    default:
+      return `${entry.id}/`;
+  }
+}
+
+/** Prüfliste area of a marker, by the page (and key) it appears on. */
+function markerArea(collection: string, id: string, path: string): Area {
+  if (collection === 'legal') return 'Rechtliches';
+  if (collection === 'pages' && id === 'kontakt') return 'Kontakt';
+  if (/[.[](salary|baseSalary)\b/i.test(path)) return 'Gehalt';
+  return 'Inhalte';
+}
+
+function markerItems(entry: ReviewEntry, page: string | undefined): ReviewItem[] {
+  const items: ReviewItem[] = [];
+  const { collection, id } = entry;
+  const scan = (text: string, path: string): void => {
+    for (const { label } of findPlaceholderMarkers(text)) {
+      items.push({
+        area: markerArea(collection, id, path),
+        collection,
+        id,
+        path,
+        status: 'placeholder',
+        note: `Platzhaltertext „${label}“: Angabe ergänzen oder den Satz streichen.`,
+        kind: 'marker',
+        page,
+        guard: 'marker',
+      });
+    }
+  };
+  walkStrings(entry.data, `${collection}.${id}`, scan);
+  if (entry.body) scan(entry.body, `${collection}.${id}.body`);
+  return items;
 }
 
 /* --------------------------------------------------------------- green claims */
@@ -339,7 +407,7 @@ const UNPUBLISHED_RIGHTS: Record<string, string> = {
 };
 
 /** Every open review item across the content, the asset manifest and the source files. */
-export function collectReviewItems({ entries, assets = [], sources = [] }: ReviewInput): ReviewItem[] {
+export function collectReviewItems({ entries, copy = [], assets = [], sources = [] }: ReviewInput): ReviewItem[] {
   const items: ReviewItem[] = [];
   const refs = referrers(entries);
 
@@ -478,7 +546,13 @@ export function collectReviewItems({ entries, assets = [], sources = [] }: Revie
     };
     walkStrings(data, prefix, scan);
     if (entry.body) scan(entry.body, `${prefix}.body`);
+
+    // 5b. `[[Platzhalter: …]]` markers in published strings and the body.
+    items.push(...markerItems(entry, page));
   }
+
+  // 5c. Markers in the page copy and the legal templates.
+  for (const entry of copy) items.push(...markerItems(entry, copyPage(entry)));
 
   // 6. The asset manifest.
   for (const asset of assets) {
@@ -546,7 +620,7 @@ export interface GuardOptions {
 export interface GuardDecision {
   /** `skip`: demo build; `pass`: nothing blocks; `allowed`: blockers overridden; `fail`: the build must stop. */
   outcome: 'skip' | 'pass' | 'allowed' | 'fail';
-  /** Placeholders in legal, contact, hours or salary data. */
+  /** Placeholders in legal, contact, hours or salary data, and `[[Platzhalter: …]]` markers in published copy. */
   blocking: ReviewItem[];
   /** Unconfirmed (needs-review) items in the same data; never block. */
   warnings: ReviewItem[];
@@ -557,6 +631,7 @@ const GUARD_LABEL: Record<GuardCategory, string> = {
   contact: 'Kontakt',
   hours: 'Zeiten',
   salary: 'Gehalt',
+  marker: 'Platzhaltertext',
 };
 
 /** Decides whether a non-demo build may proceed (plan §1.2: placeholders in guarded data block it). */
@@ -579,7 +654,7 @@ export function formatGuardReport(decision: GuardDecision): { error?: string; wa
   if (outcome === 'skip') return out;
   if (outcome === 'fail') {
     out.error =
-      `Production guard: ${blocking.length} placeholder(s) in legal, contact, hours or salary data. ` +
+      `Production guard: ${blocking.length} placeholder(s) in legal, contact, hours or salary data or as [[Platzhalter: …]] markers in published copy. ` +
       `Confirm or supply them in src/content/ (see /intern/pruefliste/ in the demo build), ` +
       `or set ALLOW_PLACEHOLDERS=true for a non-public audit build.\n${blocking.map(line).join('\n')}`;
   }

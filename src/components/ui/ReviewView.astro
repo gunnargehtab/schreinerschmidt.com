@@ -1,0 +1,13 @@
+---
+// Owner review view (docs/owner-checklist.md): with `?pruefen` in the URL, sets `data-pruefen` on
+// <html>; src/styles/components/review.css then highlights every review mark and shows the legend.
+// The marks come from ReviewMark, Schriftfeld, the legal templates and the Markdown placeholder
+// plugin, so BaseLayout renders this once per page, at the end of <body>: Astro renders a component's
+// <script> where the component first appears, and inside ReviewMark that could be within a
+// `tel:` link (html-validate tel-non-breaking). A bundled module script (processed and CSP-hashed
+// by Astro), not one of our inline scripts. Without JS (or without `?pruefen`) nothing happens.
+---
+
+<script>
+  if (location.search.includes('pruefen')) document.documentElement.dataset['pruefen'] = '';
+</script>

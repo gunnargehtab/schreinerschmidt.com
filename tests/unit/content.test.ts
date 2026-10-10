@@ -48,6 +48,16 @@ describe('projects', () => {
     expect(filterProjects(list)).toHaveLength(4);
   });
 
+  it('filters by detail page', () => {
+    expect(filterProjects(list, { detailPage: true }).map((p) => p.id)).toEqual(['b-2024', 'a-2022', 'c-undated']);
+    expect(filterProjects(list, { detailPage: false }).map((p) => p.id)).toEqual(['d-2024']);
+    expect(filterProjects(list, { detailPage: true, featured: true }).map((p) => p.id)).toEqual([
+      'b-2024',
+      'c-undated',
+    ]);
+    expect(filterProjects(list, { detailPage: false, featured: true })).toEqual([]);
+  });
+
   it('finds the previous and next project among those with a detail page', () => {
     // Detail pages in order: b-2024, a-2022, c-undated.
     expect(adjacentProjects(list, 'a-2022')).toMatchObject({ prev: { id: 'b-2024' }, next: { id: 'c-undated' } });

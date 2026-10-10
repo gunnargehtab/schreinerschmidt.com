@@ -2,9 +2,11 @@
 // Wraps text that is not confirmed yet. Plain by default; with `?pruefen` in the URL the text is
 // highlighted and a legend explains the marks (owner review view, docs/owner-checklist.md).
 //
-// Why a script: CSS `:has()` can't read the URL. The bundled module script (processed and
-// CSP-hashed by Astro, not an inline script of ours) sets `data-pruefen` on <html> and the styles
-// below key off it. Without JS the text renders plain, which is the right default for visitors.
+// The `?pruefen` switch is ui/ReviewView.astro, rendered once per page by BaseLayout (CSS `:has()`
+// can't read the URL). It isn't a <script> here: Astro renders a component's script where the
+// component first appears, which may be inside a `tel:` link. Without JS the text renders plain,
+// which is the right default for visitors.
+// Styles: src/styles/components/review.css (global: shared, also used by HTML-string marks).
 interface Props {
   status?: 'needs-review' | 'placeholder';
   /** Short note for the owner, shown as the tooltip in review view. */
@@ -12,64 +14,10 @@ interface Props {
 }
 
 const { status = 'needs-review', note } = Astro.props;
+// The slot is pre-rendered and injected so the span carries no template whitespace (Prettier would
+// wrap `<slot />` onto its own line) and no `<!-- prettier-ignore -->` comment: both would end up
+// inside `<a href="tel:">` wrappers and break html-validate's tel-non-breaking rule.
+const content = await Astro.slots.render('default');
 ---
 
-<!-- prettier-ignore -->
-<span class="review-mark" data-review={status} title={note}><slot /></span>
-
-<script>
-  if (location.search.includes('pruefen')) {
-    document.documentElement.dataset['pruefen'] = '';
-    if (!document.querySelector('.review-legend')) {
-      const legend = document.createElement('p');
-      legend.className = 'review-legend';
-      legend.setAttribute('role', 'note');
-      legend.textContent = 'Prüfansicht: Markierte Texte sind noch nicht bestätigt (Prüfen oder Platzhalter).';
-      document.body.append(legend);
-    }
-  }
-</script>
-
-<style>
-  @layer components {
-    :global(:root[data-pruefen]) .review-mark {
-      background: var(--accent-tint);
-      outline: var(--hairline) dashed var(--error);
-      outline-offset: 1px;
-      cursor: help;
-    }
-
-    :global(:root[data-pruefen]) .review-mark[data-review='placeholder'] {
-      outline-style: solid;
-      outline-width: 2px;
-    }
-
-    /* Colour is not the only cue: a text label follows each mark. */
-    :global(:root[data-pruefen]) .review-mark::after {
-      content: ' [prüfen]';
-      content: ' [prüfen]' / '';
-      font-size: var(--step--2);
-      font-weight: var(--weight-ui);
-      color: var(--error);
-    }
-
-    :global(:root[data-pruefen]) .review-mark[data-review='placeholder']::after {
-      content: ' [Platzhalter]';
-      content: ' [Platzhalter]' / '';
-    }
-
-    :global(.review-legend) {
-      position: fixed;
-      inset-block-end: var(--space-s);
-      inset-inline-start: var(--space-s);
-      z-index: 90;
-      max-inline-size: 22rem;
-      margin: 0;
-      padding: var(--space-2xs) var(--space-xs);
-      background: var(--surface);
-      border: var(--rule-strong);
-      box-shadow: var(--shadow-paper);
-      font-size: var(--step--1);
-    }
-  }
-</style>
+<span class="review-mark" data-review={status} title={note} set:html={content} />

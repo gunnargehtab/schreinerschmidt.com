@@ -44,6 +44,13 @@ test.describe('Karriere overview', () => {
     expect(await jsonLdTypes(page)).not.toContain('JobPosting');
   });
 
+  test('the unconfirmed salary range shows only in the demo, in a review mark', async ({ page }) => {
+    await page.goto('karriere/');
+    const range = page.locator('.benefits').getByText(/Als Orientierung/);
+    if (demo) await expect(range.locator('xpath=ancestor-or-self::span[@data-review]')).toHaveCount(1);
+    else await expect(range).toHaveCount(0);
+  });
+
   test('the legacy anchor scrolls to the form', async ({ page }) => {
     await page.goto('karriere/#bewerbung');
     await expect(page.locator('#bewerbung-title')).toBeInViewport();

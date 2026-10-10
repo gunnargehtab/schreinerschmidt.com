@@ -6,12 +6,13 @@ import { Picture } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import { getEntry } from 'astro:content';
 import defaultMap from '../../assets/map/kontakt.avif';
+import { MAP_POINT, mapUrl, routeUrl } from '../../lib/map';
 
 interface Props {
   /** Defaults to "Kartenausschnitt mit Markierung bei {Adresse}" from the settings. */
   alt?: string;
   image?: ImageMetadata;
-  /** Pin position; defaults to MAP_POINT in scripts/make-static-map.mjs (needs-review there). */
+  /** Pin position; defaults to MAP_POINT (src/lib/map.ts, needs-review). */
   lat?: number;
   lon?: number;
   routeLabel?: string;
@@ -28,9 +29,8 @@ const address = `${site.address.street}, ${site.address.postalCode} ${site.addre
 const {
   alt = `Kartenausschnitt mit Markierung bei ${address}`,
   image = defaultMap,
-  // Keep in sync with MAP_POINT in scripts/make-static-map.mjs.
-  lat = 49.4907376,
-  lon = 8.5231086,
+  lat = MAP_POINT.lat,
+  lon = MAP_POINT.lon,
   routeLabel = 'Route planen',
   mapLabel = 'Größere Karte',
   attribution = '© OpenStreetMap-Mitwirkende',
@@ -38,9 +38,8 @@ const {
   class: className,
 } = Astro.props;
 
-const point = `${lat.toFixed(5)},${lon.toFixed(5)}`;
-const routeHref = `https://www.openstreetmap.org/directions?to=${encodeURIComponent(point)}`;
-const mapHref = `https://www.openstreetmap.org/?mlat=${lat.toFixed(5)}&mlon=${lon.toFixed(5)}#map=17/${lat.toFixed(5)}/${lon.toFixed(5)}`;
+const routeHref = routeUrl({ lat, lon });
+const mapHref = mapUrl({ lat, lon });
 ---
 
 <figure class:list={['static-map', className]} data-review="needs-review">

@@ -4,7 +4,9 @@ import {
   AREAS,
   classifySettingsPath,
   collectReviewItems,
+  copyPage,
   findGreenClaims,
+  findPlaceholderMarkers,
   formatGuardReport,
   groupByArea,
   guardDecision,
@@ -499,5 +501,84 @@ describe('production guard', () => {
       expect(d.outcome).toBe('fail');
       expect(d.blocking[0]?.path).toContain('legal.vatId');
     });
+  });
+});
+
+describe('placeholder markers', () => {
+  const page = (id: string, data: Record<string, unknown>): ReviewEntry => ({ collection: 'pages', id, data });
+  const legal = (id: string, body: string): ReviewEntry => ({ collection: 'legal', id, data: { title: 'T' }, body });
+  const service: ReviewEntry = {
+    collection: 'services',
+    id: 'fenster',
+    data: { key: 'fenster', title: 'Fenster', review: { status: 'confirmed' } },
+    body: 'Text. [[Platzhalter: Fertigung klären]]\n\n<!-- [[Platzhalter: nur ein Kommentar]] -->',
+  };
+
+  it('finds markers outside HTML comments', () => {
+    expect(findPlaceholderMarkers('A [[Platzhalter: Eins ]] B [[Platzhalter:Zwei]]').map((m) => m.label)).toEqual([
+      'Eins',
+      'Zwei',
+    ]);
+    expect(findPlaceholderMarkers('<!-- [[Platzhalter: X]] --> [[Kein Marker]]')).toEqual([]);
+  });
+
+  it('maps page copy and legal entries to their routes', () => {
+    expect(copyPage({ collection: 'pages', id: 'home' })).toBe('');
+    expect(copyPage({ collection: 'pages', id: 'konfigurator-danke' })).toBe('konfigurator/danke/');
+    expect(copyPage({ collection: 'pages', id: 'karriere' })).toBe('karriere/');
+    expect(copyPage({ collection: 'pages', id: 'ui' })).toBeUndefined();
+    expect(copyPage({ collection: 'legal', id: 'impressum' })).toBe('impressum/');
+  });
+
+  it('lists every marker in page copy, legal bodies and collection bodies, with area and page', () => {
+    const items = collectReviewItems({
+      entries: [service],
+      copy: [
+        page('karriere', {
+          benefits: [{ title: 'B', text: 'Gut. [[Platzhalter: Details]]', note: '[[Platzhalter: in der Notiz]]' }],
+          faq: [{ question: 'Wo?', answer: '[[Platzhalter: Einzugsgebiet]]', review: 'placeholder' }],
+        }),
+        page('kontakt', { hours: { remark: 'Wir rufen zurück. [[Platzhalter: Rückruf]]' } }),
+        legal('impressum', 'Fotos. [[Platzhalter: Bildnachweis]]'),
+      ],
+    });
+    const markers = items.filter((i) => i.kind === 'marker');
+    expect(markers.map((i) => [i.path, i.area, i.page])).toEqual([
+      ['services.fenster.body', 'Inhalte', 'leistungen/fenster/'],
+      ['pages.karriere.benefits[0].text', 'Inhalte', 'karriere/'],
+      ['pages.karriere.faq[0].answer', 'Inhalte', 'karriere/'],
+      ['pages.kontakt.hours.remark', 'Kontakt', 'kontakt/'],
+      ['legal.impressum.body', 'Rechtliches', 'impressum/'],
+    ]);
+    expect(markers.every((i) => i.status === 'placeholder' && i.guard === 'marker')).toBe(true);
+    expect(markers[1]?.note).toContain('Details');
+  });
+
+  it('files salary markers under Gehalt', () => {
+    const items = collectReviewItems({
+      entries: [],
+      copy: [page('karriere', { salary: { text: '[[Platzhalter: Spanne]]' } })],
+    });
+    expect(items.map((i) => i.area)).toEqual(['Gehalt']);
+  });
+
+  it('blocks a production build on markers, unless ALLOW_PLACEHOLDERS is set', () => {
+    const items = collectReviewItems({
+      entries: [],
+      copy: [legal('datenschutz', 'Dienst ([[Platzhalter: Anbieter]]).')],
+    });
+    const fail = guardDecision(items, { demo: false, allowPlaceholders: false });
+    expect(fail.outcome).toBe('fail');
+    expect(formatGuardReport(fail).error).toContain('[Platzhaltertext] legal.datenschutz.body');
+    expect(guardDecision(items, { demo: false, allowPlaceholders: true }).outcome).toBe('allowed');
+    expect(guardDecision(items, { demo: true, allowPlaceholders: false }).outcome).toBe('skip');
+  });
+
+  it('passes copy without markers', () => {
+    const items = collectReviewItems({
+      entries: [],
+      copy: [page('kontakt', { hours: { remark: 'Wir rufen zurück.' } })],
+    });
+    expect(guardDecision(items, { demo: false, allowPlaceholders: false }).outcome).toBe('pass');
   });
 });
