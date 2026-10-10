@@ -13,6 +13,11 @@
 //   1280 px desktop (DPR 1) and a 390 px phone (DPR 2.625); the larger file counts. The phone run
 //   picks art-directed sources (Home: 4:5 crop below 48rem) via their `media` attribute.
 // - three.js: no JS reachable from a page outside /konfigurator/ (static or dynamic) may contain it.
+// - Möbel preview: the chunk the configurator core import()s when Möbel is chosen (found by its
+//   `data-preview-drawing` selector), plus the chunks it imports statically that the page does not
+//   already load: ≤ 7 KB gz, and page JS + preview ≤ 20 KB gz (docs/configurator.md §3, §7). Its own
+//   import() targets (the table generator) are reported, not counted. Skipped with a log line while
+//   no page imports the chunk.
 //
 // Usage: node scripts/check-budgets.mjs  (reads BASE_PATH, falls back to env/pages.env)
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -43,12 +48,14 @@ const ROUTE_BUDGETS = [
   // Demo-only, noindex internal sheets (style guide, component and sketch catalogues) render many
   // components at once; they are never part of the public site.
   { match: /^intern\//, budget: { html: 45 } },
-  // Configurator: 13 KB gz initial JS (docs/configurator.md §3 "JS budget").
-  // TODO(Phase 3, Möbel preview wave): also check the on-request Möbel preview chunk (<= 7 KB gz) and
-  // the three.js chunk (<= 160 KB gz). Both are import()ed on request, so `js` above excludes them
-  // (docs/configurator.md §3 "JS budget").
+  // Configurator: 13 KB gz initial JS (docs/configurator.md §3 "JS budget"); the Möbel preview chunk
+  // is checked separately below (PREVIEW).
+  // TODO(Phase 3, 3D wave): also check the three.js chunk (<= 160 KB gz), import()ed on request.
   { match: /^konfigurator\//, budget: { js: 13 } },
 ];
+
+/** Möbel preview chunk (docs/configurator.md §3 "JS budget", §7 "Budgets"), KB gz. */
+const PREVIEW = { match: /^konfigurator\//, signature: /data-preview-drawing/, limit: 7, withCore: 20 };
 
 /** Pages that may load three.js. */
 const THREE_ALLOWED = /^konfigurator\//;
@@ -279,6 +286,8 @@ for (const rel of listHtml(DIST)) {
   const budget = { ...DEFAULT_BUDGET, ...ROUTE_BUDGETS.find((r) => r.match.test(route))?.budget };
   /** @type {string[]} */
   const notes = [];
+  /** Failures outside the per-key budgets (Möbel preview). @type {string[]} */
+  const failures_extra = [];
 
   // CSS
   const inlineCss = root.querySelectorAll('style').map((s) => s.rawText);
@@ -320,6 +329,29 @@ for (const rel of listHtml(DIST)) {
     if (hits.length > 0) threeOffenders.push(`${pageUrl}: ${hits.join(', ')}`);
   }
 
+  // Möbel preview chunk: import()ed by the core, so it is outside `js`; measured with its own static
+  // imports that the page does not load anyway (rolldown splits a chunk shared with the table generator).
+  if (PREVIEW.match.test(route)) {
+    const reachable = moduleGraph(jsEntries, true);
+    const entry = reachable.find((f) => !jsFiles.includes(f) && PREVIEW.signature.test(read(f)));
+    if (entry) {
+      const files = moduleGraph([entry], false).filter((f) => !jsFiles.includes(f));
+      const bytes = kb(files.reduce((sum, f) => sum + gz(read(f)), 0));
+      const withCore = kb(jsBytes) + bytes;
+      const onRequest = moduleGraph([entry], true)
+        .filter((f) => !files.includes(f) && !jsFiles.includes(f) && !THREE_SIGNATURE.test(read(f)))
+        .reduce((sum, f) => sum + gz(read(f)), 0);
+      notes.push(
+        `Möbel preview ${bytes.toFixed(1)} / ${PREVIEW.limit} KB (${files.map((f) => f.slice(f.lastIndexOf(sep) + 1)).join(' + ')}; +${kb(onRequest).toFixed(1)} KB on request); core + preview ${withCore.toFixed(1)} / ${PREVIEW.withCore} KB`,
+      );
+      if (bytes > PREVIEW.limit) failures_extra.push(`Möbel preview ${bytes.toFixed(1)} KB > ${PREVIEW.limit} KB`);
+      if (withCore > PREVIEW.withCore)
+        failures_extra.push(`core + Möbel preview ${withCore.toFixed(1)} KB > ${PREVIEW.withCore} KB`);
+    } else if (route === 'konfigurator/') {
+      notes.push('Möbel preview chunk not imported by this page yet (core not wired); check skipped');
+    }
+  }
+
   // Fonts
   const fonts = pageFonts(root, pageUrl, css);
   const fontBytes = fonts.reduce((sum, f) => sum + statSync(f).size, 0);
@@ -342,6 +374,7 @@ for (const rel of listHtml(DIST)) {
     .filter((key) => values[key] > budget[key])
     .map((key) => `${key} ${values[key].toFixed(1)} KB > ${budget[key]} KB`);
   if (lcp?.missing) failures.push('LCP candidate missing');
+  failures.push(...failures_extra);
   rows.push({ page: pageUrl, values, budget, notes, failures });
 }
 

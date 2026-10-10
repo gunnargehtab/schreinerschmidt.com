@@ -1,8 +1,34 @@
 // Table generator: Esstisch with Vierfuß (legs + Zarge) or Kufen in wood or steel, optional Baumkante.
+// The Möbel preview chunk import()s this module only when moebel_art=esstisch, so the table sentence
+// of describe() lives here too (registered on load, see describe.ts).
 import { KNEE_ROOM, kufenOffset, legInset, legSize, seatRange, zargeHeight } from './constraints';
-import { NNBSP, boundsOf, cm, dim, part } from './dims';
+import { count, registerDescriber } from './describe';
+import { NNBSP, boundsOf, cm, cmUnit, dim, part } from './dims';
 import { liveEdgeOutline } from './live-edge';
+import { FINISH_LABEL, SPECIES } from './species';
 import type { Build, Hint, Mm, Part, TableParams } from './types';
+
+const BASE_LABEL: Record<TableParams['base'], string> = {
+  vierfuss: 'Vierfußgestell',
+  'kufen-holz': 'Kufengestell aus Holz',
+  'kufen-stahl': 'Kufengestell aus Stahl',
+};
+
+export function describeTable(b: Build): string[] {
+  const p = b.params as TableParams;
+  const seats = b.derived.seats ?? [0, 0];
+  const liveEdge = b.parts.some((x) => x.role === 'platte' && x.outline);
+  return [
+    `Esstisch aus ${SPECIES[p.species].name}, ${FINISH_LABEL[p.finish]}, ${cmUnit(p.length)} lang, ${cmUnit(p.width)} breit, ${cmUnit(p.height)} hoch`,
+    `Platte ${p.top}${NNBSP}mm${liveEdge ? ' mit Baumkante' : ''}`,
+    BASE_LABEL[p.base],
+    seats[0] === seats[1]
+      ? `Platz für ${count(seats[0], 'Person', 'Personen')}`
+      : `Platz für ${seats[0]} bis ${count(seats[1], 'Person', 'Personen')}`,
+  ];
+}
+
+registerDescriber('esstisch', describeTable);
 
 export function generateTable(p: TableParams): Build {
   const { length: L, width: W, height: H, top } = p;

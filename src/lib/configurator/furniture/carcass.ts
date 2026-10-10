@@ -37,6 +37,14 @@ interface Ctx {
   pitched: boolean;
 }
 
+/** Adds a hint once per code (`box()` runs per module and Aufsatz). */
+function hint(c: Ctx, code: string, level: Hint['level'], text: string, field?: string) {
+  if (c.hints.some((h) => h.code === code)) return;
+  const h: Hint = { code, level, text };
+  if (field) h.field = field;
+  c.hints.push(h);
+}
+
 /** One box: sides, top, bottom, back, Mittelwände, shelves and fronts. `count` adds its bays to Derived. */
 function box(
   c: Ctx,
@@ -146,13 +154,15 @@ function box(
       let k = def;
       if (p.shelvesPerBay !== 'auto') {
         k = Math.min(max, Math.max(min, p.shelvesPerBay + 1));
-        if (k !== p.shelvesPerBay + 1 && !c.hints.some((h) => h.code === 'faecher')) {
-          c.hints.push({
-            code: 'faecher',
-            level: 'info',
-            field: 'moebel_faecher',
-            text: `Fachböden auf ${k - 1} je Feld angepasst: Fächer sind 20${NNBSP}cm bis 40${NNBSP}cm hoch.`,
-          });
+        // Only the main boxes report the adjustment: an Aufsatz is low and always clamps.
+        if (k !== p.shelvesPerBay + 1 && count) {
+          hint(
+            c,
+            'faecher',
+            'info',
+            `Fachböden auf ${k - 1} je Feld angepasst: Fächer sind 20${NNBSP}cm bis 40${NNBSP}cm hoch.`,
+            'moebel_faecher',
+          );
         }
       }
       const pos = shelfPositions(shelfRegion, k, t);
@@ -179,13 +189,14 @@ function box(
   if (hasDrawers) {
     const clear = d - backInset - t - 10;
     c.d.runner = runnerLength(clear);
-    if (clear < 270 && !c.hints.some((h) => h.code === 'tiefe')) {
-      c.hints.push({
-        code: 'tiefe',
-        level: 'warn',
-        field: 'moebel_tiefe',
-        text: `Für Schubkästen empfehlen wir mindestens ${cm(270 + backInset + t + 10)}${NNBSP}cm Tiefe (kürzeste Führung 27${NNBSP}cm).`,
-      });
+    if (clear < 270) {
+      hint(
+        c,
+        'tiefe',
+        'warn',
+        `Für Schubkästen empfehlen wir mindestens ${cm(270 + backInset + t + 10)}${NNBSP}cm Tiefe (kürzeste Führung 27${NNBSP}cm).`,
+        'moebel_tiefe',
+      );
     }
   }
   return n;
@@ -282,32 +293,36 @@ export function generateCarcass(p: CarcassParams): Build {
     c.d.modules = modules;
     c.d.aufsatz = split.aufsatz > 0;
     if (modules > 1) {
-      c.hints.push({
-        code: 'module',
-        level: 'info',
-        text: `In ${modules} Module aufgeteilt: ein Modul ist höchstens ${cm(MAX_MODULE)}${NNBSP}cm breit.`,
-      });
+      hint(
+        c,
+        'module',
+        'info',
+        `In ${modules} Module aufgeteilt: ein Modul ist höchstens ${cm(MAX_MODULE)}${NNBSP}cm breit.`,
+      );
     }
     if (split.aufsatz) {
-      c.hints.push({
-        code: 'aufsatz',
-        level: 'info',
-        text: `Korpus über ${cm(2600)}${NNBSP}cm: Schrank (${cm(ch)}${NNBSP}cm) mit Aufsatz (${cm(split.aufsatz)}${NNBSP}cm).`,
-      });
+      hint(
+        c,
+        'aufsatz',
+        'info',
+        `Korpus über ${cm(2600)}${NNBSP}cm: Schrank (${cm(ch)}${NNBSP}cm) mit Aufsatz (${cm(split.aufsatz)}${NNBSP}cm).`,
+      );
     } else if (split.extraBlende) {
-      c.hints.push({
-        code: 'blende',
-        level: 'info',
-        text: `Blende auf ${cm(ft)}${NNBSP}cm vergrößert, damit kein Aufsatz unter ${cm(300)}${NNBSP}cm entsteht.`,
-      });
+      hint(
+        c,
+        'blende',
+        'info',
+        `Blende auf ${cm(ft)}${NNBSP}cm vergrößert, damit kein Aufsatz unter ${cm(300)}${NNBSP}cm entsteht.`,
+      );
     }
     if (p.niche?.dachschraege) {
-      c.hints.push({
-        code: 'dachschraege',
-        level: 'warn',
-        field: 'moebel_dachschraege',
-        text: 'Dachschräge: bitte Foto oder Skizze beifügen. Die Vorschau zeigt die Nische ohne Schräge.',
-      });
+      hint(
+        c,
+        'dachschraege',
+        'warn',
+        'Dachschräge: bitte Foto oder Skizze beifügen. Die Vorschau zeigt die Nische ohne Schräge.',
+        'moebel_dachschraege',
+      );
     }
   }
   // Mittelwand hint, with the thicker board as an alternative.
