@@ -90,6 +90,15 @@ test.describe('home sections', () => {
     }
   });
 
+  test('the front-door before/after has a text column with a working link on wide screens', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('');
+    const text = page.locator('.home-ba__text');
+    await expect(text.getByRole('heading', { level: 3 })).toBeVisible();
+    await text.getByRole('link').click();
+    await expect(page).toHaveURL(/referenzen\/holzhaustuer-aufgearbeitet\/$/);
+  });
+
   test('testimonials show the rating line and quotes', async ({ page }) => {
     await page.goto('');
     await expect(page.locator('.testimonials__rating')).toBeVisible();

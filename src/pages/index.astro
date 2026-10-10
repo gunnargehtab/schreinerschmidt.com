@@ -126,13 +126,24 @@ const careersMark = marked(copy.careers);
       <ProjectGrid projects={projects} level={3} label="Ausgewählte Referenzen" />
       {door?.data.beforeAfter && (
         <div class="home-ba">
-          <BeforeAfter
-            before={door.data.beforeAfter.before}
-            after={door.data.beforeAfter.after}
-            ratio={`${door.data.beforeAfter.before.src.width} / ${door.data.beforeAfter.before.src.height}`}
-            sizes="(min-width: 48em) 22rem, 100vw"
-            caption={door.data.title}
-          />
+          <div class="home-ba__stage">
+            <BeforeAfter
+              before={door.data.beforeAfter.before}
+              after={door.data.beforeAfter.after}
+              ratio={`${door.data.beforeAfter.before.src.width} / ${door.data.beforeAfter.before.src.height}`}
+              sizes="(min-width: 48em) 24rem, 100vw"
+              caption={door.data.title}
+            />
+          </div>
+          <div class="home-ba__text stack">
+            <h3>{door.data.title}</h3>
+            <p>{door.data.summary}</p>
+            <p>
+              <a class="btn btn--secondary" href={url('referenzen/holzhaustuer-aufgearbeitet/')}>
+                Zur Referenz
+              </a>
+            </p>
+          </div>
         </div>
       )}
       <p>
@@ -170,12 +181,14 @@ const careersMark = marked(copy.careers);
     </div>
   </section>
 
-  <section class="section" aria-labelledby="stimmen-title">
-    <div class="stack stack--m">
-      <h2 id="stimmen-title">{copy.testimonials.h2}</h2>
-      <Testimonials items={testimonials} />
-    </div>
-  </section>
+  {testimonials.length > 0 && (
+    <section class="section" aria-labelledby="stimmen-title">
+      <div class="stack stack--m">
+        <h2 id="stimmen-title">{copy.testimonials.h2}</h2>
+        <Testimonials items={testimonials} />
+      </div>
+    </section>
+  )}
 
   <section class="section section--alt" aria-labelledby="konfigurator-title">
     <div class="split split--reverse">
@@ -275,7 +288,35 @@ const careersMark = marked(copy.careers);
 
     /* The front-door comparison is portrait; keep it narrow so it doesn't dominate the section. */
     .home-ba {
+      display: grid;
+      gap: var(--space-m);
+    }
+
+    .home-ba__stage {
       max-inline-size: 22rem;
+      min-inline-size: 0;
+    }
+
+    .home-ba__text {
+      display: none;
+      min-inline-size: 0;
+      max-inline-size: 36rem;
+    }
+
+    @container section (inline-size >= 64rem) {
+      .home-ba {
+        grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+        gap: var(--space-xl);
+        align-items: center;
+      }
+
+      .home-ba__stage {
+        max-inline-size: none;
+      }
+
+      .home-ba__text {
+        display: grid;
+      }
     }
 
     .claims {
