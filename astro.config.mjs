@@ -14,6 +14,7 @@ import {
   filterPreselectScript,
 } from './src/lib/inline-scripts.mjs';
 import { basePathLinks } from './src/lib/markdown/base-path-links.mjs';
+import { placeholderMarks } from './src/lib/markdown/placeholder-marks.mjs';
 
 /** @param {string} [s] */
 const trim = (s = '') => s.replace(/^\/+|\/+$/g, '');
@@ -162,7 +163,7 @@ export default defineConfig({
     syntaxHighlight: false,
     processor: satteri({
       features: { smartPunctuation: { quotes: false, dashes: false, ellipses: true } },
-      hastPlugins: [basePathLinks(BASE)],
+      hastPlugins: [basePathLinks(BASE), placeholderMarks()],
     }),
   },
   env: {

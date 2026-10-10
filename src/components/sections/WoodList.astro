@@ -1,0 +1,134 @@
+---
+// Woods of a service ("Holz & Oberflächen"): one entry per wood with Latin name, a one-line
+// description and the facts we hold (origin, certification, durability class). Entries that are not
+// confirmed are marked for the review view. Nothing is claimed beyond what woods.yaml says.
+import ReviewMark from '../ui/ReviewMark.astro';
+import { shy } from '../../lib/shy';
+import type { CollectionEntry } from 'astro:content';
+
+type Wood = CollectionEntry<'woods'>;
+
+interface Props {
+  woods: readonly Wood[];
+  /** Heading level of the wood names. */
+  level?: 3 | 4;
+  label?: string;
+}
+
+const ORIGIN = { heimisch: 'heimisch', europaeisch: 'europäisch', uebersee: 'Übersee' } as const;
+
+const { woods, level = 3, label = 'Holzarten' } = Astro.props;
+const Heading = `h${level}` as 'h3' | 'h4';
+
+const facts = (wood: Wood) =>
+  [
+    { label: 'Herkunft', value: ORIGIN[wood.data.origin] },
+    wood.data.certification.length > 0
+      ? { label: 'Zertifizierung', value: wood.data.certification.join(', ') }
+      : undefined,
+    wood.data.durabilityClass ? { label: 'Dauerhaftigkeit', value: wood.data.durabilityClass } : undefined,
+  ].filter((fact) => fact !== undefined);
+---
+
+{woods.length > 0 && (
+  <ul class="wood-list list-plain" aria-label={label}>
+    {woods.map((wood) => {
+      const { status, note } = wood.data.review;
+      const unconfirmed = status !== 'confirmed';
+      return (
+        <li class="wood-list__item">
+          <Heading class="wood-list__name">
+            {shy(wood.data.name)}
+            {wood.data.latin && <i class="wood-list__latin"> {wood.data.latin}</i>}
+          </Heading>
+          <p class="wood-list__text">
+            {unconfirmed ? (
+              <ReviewMark status={status} note={note}>
+                {wood.data.description}
+              </ReviewMark>
+            ) : (
+              wood.data.description
+            )}
+          </p>
+          <dl class="wood-list__facts">
+            {facts(wood).map((fact) => (
+              <div>
+                <dt>{fact.label}</dt>
+                <dd>
+                  {unconfirmed ? (
+                    <ReviewMark status={status} note={note}>
+                      {fact.value}
+                    </ReviewMark>
+                  ) : (
+                    fact.value
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </li>
+      );
+    })}
+  </ul>
+)}
+
+<style>
+  @layer components {
+    .wood-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+      gap: var(--space-m) var(--space-s-m);
+    }
+
+    .wood-list__item {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: var(--space-2xs);
+      padding-block-start: var(--space-xs);
+      border-block-start: var(--rule-strong);
+      min-inline-size: 0;
+    }
+
+    .wood-list__name {
+      font-size: var(--step-1);
+    }
+
+    .wood-list__latin {
+      font-family: var(--font-accent);
+      font-size: var(--step--1);
+      font-weight: 400;
+      color: var(--ink-muted);
+    }
+
+    .wood-list__text {
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+      max-inline-size: var(--measure-card);
+    }
+
+    .wood-list__facts {
+      display: grid;
+      gap: var(--space-3xs);
+      font-size: var(--step--1);
+    }
+
+    .wood-list__facts > div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 var(--space-2xs);
+    }
+
+    .wood-list__facts dt {
+      color: var(--ink-muted);
+    }
+
+    .wood-list__facts dt::after {
+      content: ':';
+    }
+
+    .wood-list__facts dd {
+      margin: 0;
+      font-weight: var(--weight-ui);
+    }
+  }
+</style>

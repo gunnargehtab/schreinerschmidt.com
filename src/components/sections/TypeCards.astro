@@ -1,0 +1,307 @@
+---
+// Type cards for services with variants (Böden: six floor types), docs/design-system.md §8.
+// Grid of 3 / 2 / 1 columns on a subgrid (sketch, title, text and facts line up across a row),
+// the floor-pattern mini per type and a facts `<dl>`. The type that carries a photo (Massivdielen)
+// is shown below the grid with the plank diagram "bis 5 m × 60 cm" (a Maßlinie drawing).
+//
+// The facts are taken from the type texts in src/content/services/boeden.md and nothing else;
+// `review` marks them for the owner view until the owner has confirmed the measurements.
+import Sketch from '../ui/Sketch.astro';
+import Picture from '../ui/Picture.astro';
+import ReviewMark from '../ui/ReviewMark.astro';
+import type { ComponentProps } from 'astro/types';
+import type { SketchName } from '../../lib/sketch';
+import { NNBSP } from '../../lib/format';
+import { shy } from '../../lib/shy';
+import type { Service } from '../../lib/content';
+
+type Type = Service['data']['types'][number];
+
+interface Props {
+  types: readonly Type[];
+  /** Heading level of the type names. */
+  level?: 3 | 4;
+  /** Review status of the facts; `confirmed` renders them plain. */
+  review?: ComponentProps<typeof ReviewMark>['status'] | 'confirmed';
+  note?: string | undefined;
+  label?: string;
+}
+
+const { types, level = 3, review = 'needs-review', note, label = 'Bodenarten' } = Astro.props;
+const Heading = `h${level}` as 'h3' | 'h4';
+
+/** Floor-pattern mini per type name (the registry holds the drawings). */
+const SKETCH_BY_PREFIX: readonly (readonly [string, SketchName])[] = [
+  ['Stabparkett', 'boden-stabparkett'],
+  ['Hochkantlamellen', 'boden-hochkantlamellen'],
+  ['Mosaik', 'boden-mosaik'],
+  ['Fertigparkett', 'boden-fertigparkett'],
+  ['Massivdielen', 'boden-massivdielen'],
+  ['Kork', 'boden-kork-linoleum'],
+];
+const sketchFor = (name: string) => SKETCH_BY_PREFIX.find(([prefix]) => name.startsWith(prefix))?.[1];
+
+const PLANK_LENGTH = `bis 5${NNBSP}m`;
+const PLANK_WIDTH = `bis 60${NNBSP}cm`;
+const PLANK_LABEL = `${PLANK_LENGTH} × 60${NNBSP}cm`;
+const plankText = `Landhausdielen verarbeiten wir in Längen bis 5${NNBSP}m und Breiten bis 60${NNBSP}cm.`;
+
+type Fact = readonly [term: string, value: string];
+/** Facts as the type texts state them; no value is added here. */
+const FACTS: Partial<Record<SketchName, readonly Fact[]>> = {
+  'boden-stabparkett': [
+    ['Material', 'massives Holz'],
+    ['Auswahl', 'Holzart und Härtegrad nach Raumnutzung'],
+  ],
+  'boden-hochkantlamellen': [
+    ['Stäbe', `etwa 8${NNBSP}mm breit, hochkant`],
+    ['Einsatz', 'Industrie, Gastronomie'],
+  ],
+  'boden-mosaik': [['Gestaltung', 'verschiedene Holzarten und Legemuster']],
+  'boden-fertigparkett': [
+    ['Aufbau', '2–3 Schichten mit Deckschicht'],
+    ['Einsatz', 'Büros, Gewerbe, Wohnhäuser'],
+  ],
+  'boden-massivdielen': [
+    ['Länge', PLANK_LENGTH],
+    ['Breite', PLANK_WIDTH],
+    ['Befestigung', 'geklammert oder verschraubt'],
+  ],
+  'boden-kork-linoleum': [
+    ['Rohstoff', 'Korkeichenrinde, Leinöl'],
+    ['Eigenschaft', 'fußwarm, robust'],
+  ],
+};
+
+const cards = types.map((type) => {
+  const sketch = sketchFor(type.name);
+  return { type, sketch, facts: (sketch && FACTS[sketch]) || [] };
+});
+const featured = types.find((type) => type.image && type.alt && /^Massivdielen/.test(type.name));
+const mark = review === 'confirmed' ? undefined : review;
+---
+
+<div class="type-cards">
+  <ul class="type-cards__list list-plain" aria-label={label}>
+    {cards.map(({ type, sketch, facts }) => (
+      <li class="type-cards__card card">
+        <div class="type-cards__media">{sketch && <Sketch name={sketch} draw="scroll" />}</div>
+        <Heading class="type-cards__title">{shy(type.name)}</Heading>
+        <p class="type-cards__text">{type.text}</p>
+        {facts.length > 0 ? (
+          <dl class="type-cards__facts">
+            {facts.map(([term, value]) => (
+              <div>
+                <dt>{term}</dt>
+                <dd>
+                  {mark ? (
+                    <ReviewMark status={mark} note={note}>
+                      {value}
+                    </ReviewMark>
+                  ) : (
+                    value
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <div />
+        )}
+      </li>
+    ))}
+  </ul>
+
+  {featured?.image && featured.alt && (
+    <figure class="type-cards__feature">
+      <Picture src={featured.image} alt={featured.alt} sizes="(min-width: 64em) 36rem, 100vw" width={576} />
+      <div class="plank" aria-hidden="true">
+        <p class="mass plank__length" data-ends="tick" data-tone="ink">
+          <span class="mass__line"></span>
+          <span class="mass__label">{PLANK_LENGTH}</span>
+          <span class="mass__line"></span>
+        </p>
+        <div class="plank__board"></div>
+        <p class="mass plank__width" data-orientation="v" data-ends="tick" data-tone="ink">
+          <span class="mass__line"></span>
+          <span class="mass__label">{PLANK_WIDTH}</span>
+          <span class="mass__line"></span>
+        </p>
+      </div>
+      <figcaption class="type-cards__caption">
+        <strong class="type-cards__size">{PLANK_LABEL}</strong>
+        <span>
+          {mark ? (
+            <ReviewMark status={mark} note={note}>
+              {plankText}
+            </ReviewMark>
+          ) : (
+            plankText
+          )}
+        </span>
+      </figcaption>
+    </figure>
+  )}
+</div>
+
+<style>
+  @layer components {
+    .type-cards {
+      container: types / inline-size;
+      display: grid;
+      gap: var(--space-l);
+    }
+
+    .type-cards__list {
+      --cols: 1;
+      display: grid;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      gap: var(--space-s);
+    }
+
+    /* Rows: drawing, title, text, facts. Subgrid keeps them level across a row of cards. */
+    .type-cards__card {
+      display: grid;
+      grid-row: span 4;
+      grid-template-rows: subgrid;
+      row-gap: var(--space-2xs);
+      padding: var(--space-s);
+      border: var(--rule);
+      background: var(--surface);
+      min-inline-size: 0;
+    }
+
+    .type-cards__media {
+      inline-size: 5rem;
+      aspect-ratio: 1;
+    }
+
+    .type-cards__title {
+      font-size: var(--step-1);
+    }
+
+    .type-cards__text {
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+      line-height: 1.5;
+      hyphens: auto;
+    }
+
+    .type-cards__facts {
+      display: grid;
+      align-content: start;
+      gap: var(--space-3xs);
+      padding-block-start: var(--space-2xs);
+      border-block-start: var(--rule);
+      font-size: var(--step--1);
+    }
+
+    .type-cards__facts > div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 var(--space-2xs);
+    }
+
+    .type-cards__facts dt {
+      color: var(--ink-muted);
+    }
+
+    .type-cards__facts dt::after {
+      content: ':';
+    }
+
+    .type-cards__facts dd {
+      margin: 0;
+      font-weight: var(--weight-ui);
+    }
+
+    @container types (inline-size >= 30rem) {
+      .type-cards__list {
+        --cols: 2;
+      }
+    }
+
+    @container types (inline-size >= 46rem) {
+      .type-cards__list {
+        --cols: 3;
+      }
+    }
+
+    /* Photo and plank diagram. */
+    .type-cards__feature {
+      display: grid;
+      gap: var(--space-s) var(--space-m);
+      margin: 0;
+      align-items: center;
+    }
+
+    .type-cards__feature :global(img) {
+      display: block;
+      inline-size: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      background: var(--surface-panel);
+    }
+
+    .plank {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto 5rem;
+      gap: var(--space-2xs) var(--space-2xs);
+      max-inline-size: 28rem;
+    }
+
+    .plank__length {
+      grid-column: 1;
+    }
+
+    /* Illustrative, not to scale: a plank with annual-ring lines along its length. */
+    .plank__board {
+      grid-column: 1;
+      border: var(--rule-strong);
+      background:
+        repeating-linear-gradient(to bottom, transparent 0 0.6rem, var(--line) 0.6rem calc(0.6rem + var(--hairline))),
+        var(--surface-panel);
+    }
+
+    .plank__width {
+      grid-column: 2;
+      grid-row: 2;
+      block-size: 100%;
+      min-block-size: 0;
+    }
+
+    .type-cards__caption {
+      display: grid;
+      gap: var(--space-3xs);
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+      max-inline-size: var(--measure-card);
+    }
+
+    .type-cards__size {
+      color: var(--ink);
+      font-size: var(--step-1);
+      font-variant-numeric: tabular-nums;
+    }
+
+    @container types (inline-size >= 46rem) {
+      .type-cards__feature {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: 1fr auto;
+      }
+
+      .type-cards__feature > :global(picture) {
+        grid-row: span 2;
+      }
+
+      .plank {
+        align-self: end;
+      }
+
+      .type-cards__caption {
+        align-self: start;
+      }
+    }
+  }
+</style>

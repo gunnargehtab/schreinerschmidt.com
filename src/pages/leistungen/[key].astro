@@ -1,8 +1,36 @@
 ---
+// Service detail page (docs/design-system.md §8): breadcrumbs, split hero with the photo visible at
+// once (`hero-media-<key>` is the morph target of the ServiceCard sketch), InPageNav, the body's
+// `## ` sections (the Markdown from src/content/services/<key>.md) with type cards, woods and
+// Ablauf slotted in, related projects, FAQ, CtaBand.
+//
+// The body is rendered section by section with Sätteri's markdownToHtml (same plugins and features
+// as astro.config.mjs) instead of one render() call, because the components have to sit between
+// the sections. Heading ids come from the heading text via vtKey (umlauts transliterated).
 import type { GetStaticPaths } from 'astro';
-import { getCollection } from 'astro:content';
-import PageLayout from '../../layouts/PageLayout.astro';
-import { url } from '../../lib/url';
+import { getCollection, getEntry } from 'astro:content';
+import { markdownToHtml } from 'satteri';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/layout/Breadcrumbs.astro';
+import JsonLd from '../../components/seo/JsonLd.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Faq from '../../components/sections/Faq.astro';
+import InPageNav from '../../components/sections/InPageNav.astro';
+import ProcessSteps from '../../components/sections/ProcessSteps.astro';
+import ProjectGrid from '../../components/sections/ProjectGrid.astro';
+import TypeCards from '../../components/sections/TypeCards.astro';
+import WoodList from '../../components/sections/WoodList.astro';
+import Picture from '../../components/ui/Picture.astro';
+import { dominantColor } from '../../lib/dominant-color';
+import { getFaqsByRefs, getProjects, getProjectsByRefs, getSite } from '../../lib/content';
+import { breadcrumbJsonLd, serviceJsonLd } from '../../lib/jsonld';
+import { basePathLinks } from '../../lib/markdown/base-path-links.mjs';
+import { placeholderMarks } from '../../lib/markdown/placeholder-marks.mjs';
+import { getProcessCopy } from '../../lib/page-copy/leistungen';
+import { getUiLeistungen } from '../../lib/page-copy/ui-leistungen';
+import { shy } from '../../lib/shy';
+import { absolute, url } from '../../lib/url';
+import { vt, vtKey, vtStyle } from '../../lib/vt';
 
 export const getStaticPaths = (async () => {
   const services = await getCollection('services');
@@ -10,24 +38,242 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { service } = Astro.props;
-const { title, teaser, seo } = service.data;
+const { key, title, teaser, seo, hero, types, schemaServiceType } = service.data;
+
+const [site, process, ui] = await Promise.all([getSite(), getProcessCopy(), getUiLeistungen()]);
+const woods = (await Promise.all(service.data.woods.map((ref) => getEntry(ref)))).filter((wood) => wood !== undefined);
+const faqs = await getFaqsByRefs(service.data.faqs);
+
+// Up to three projects: the ones the service names, topped up from the same category.
+const named = await getProjectsByRefs(service.data.projects);
+const sameCategory = (await getProjects({ category: key })).filter((p) => !named.some((n) => n.id === p.id));
+const projects = [...named, ...sameCategory].slice(0, 3);
+
+// --- Body sections -------------------------------------------------------------------------
+const BASE = import.meta.env.BASE_URL;
+const render = async (markdown: string) =>
+  (
+    await markdownToHtml(markdown, {
+      features: { smartPunctuation: { quotes: false, dashes: false, ellipses: true } },
+      hastPlugins: [basePathLinks(BASE), placeholderMarks()],
+    })
+  ).html;
+
+const [, ...pieces] = (service.body ?? '').split(/^## +(.+?)\s*$/m);
+const sections: { id: string; title: string; html: string }[] = [];
+for (let i = 0; i < pieces.length; i += 2) {
+  const heading = pieces[i] ?? '';
+  sections.push({ id: vtKey(heading), title: heading, html: await render(pieces[i + 1] ?? '') });
+}
+
+// Service pages show the Ablauf without the five drawings (they sit on /leistungen/ and Home):
+// five more inline SVGs would push the Böden page over the 30 KB HTML budget.
+const plainSteps = process.steps.map((step) => ({ ...step, key: '' }));
+
+const unconfirmed = service.data.review.status !== 'confirmed';
+const reviewStatus = service.data.review.status === 'confirmed' ? 'needs-review' : service.data.review.status;
+
+const navItems = [
+  ...sections.map(({ id, title: label }) => ({ id, label })),
+  ...(projects.length > 0 ? [{ id: 'referenzen', label: 'Referenzen' }] : []),
+  ...(faqs.length > 0 ? [{ id: 'faq', label: 'Häufige Fragen' }] : []),
+];
+
+// --- Hero, SEO ------------------------------------------------------------------------------
+vt(Astro.locals, 'page-title');
+const dominant = await dominantColor(hero.src);
+const mediaStyle = [vtStyle(Astro.locals, 'hero-media', key), dominant ? `--dominant: ${dominant}` : '']
+  .filter(Boolean)
+  .join('; ');
+
+const siteUrl = Astro.site;
+if (!siteUrl) throw new Error('[key].astro: `site` must be set in astro.config.mjs');
+const home = absolute(url(''), siteUrl);
+const pageUrl = absolute(url(`leistungen/${key}/`), siteUrl);
+const jsonLd = [
+  serviceJsonLd(
+    {
+      name: title,
+      serviceType: schemaServiceType,
+      description: seo.description,
+      url: pageUrl,
+      areaServed: site.areaServed,
+    },
+    home,
+  ),
+  breadcrumbJsonLd([
+    { name: 'Startseite', url: home },
+    { name: 'Leistungen', url: absolute(url('leistungen/'), siteUrl) },
+    { name: title, url: pageUrl },
+  ]),
+];
 ---
 
-<PageLayout
-  title={seo.title}
-  heading={title}
-  description={seo.description}
-  crumbs={[{ label: 'Leistungen', href: 'leistungen/' }, { label: title }]}
->
-  <p class="lead" slot="lead">
-    {teaser}
-  </p>
-  <section class="section">
-    <div class="prose">
-      <p>Diese Seite entsteht gerade.</p>
-      <p>
-        <a href={url('leistungen/')}>Alle Leistungen</a> · <a href={url('kontakt/')}>Kontakt</a>
-      </p>
+<BaseLayout title={seo.title} description={seo.description} image={{ src: hero.src, alt: hero.alt }}>
+  <JsonLd slot="head" data={jsonLd} />
+
+  <section class="section service-hero">
+    <div class="service-hero__grid">
+      <div class="service-hero__text stack stack--m">
+        <Breadcrumbs trail={[{ label: 'Leistungen', href: 'leistungen/' }, { label: title }]} />
+        <h1 class="page-title">{shy(title)}</h1>
+        <p class="lead">{teaser}</p>
+        <p>
+          <a class="btn" href={url('konfigurator/')}>
+            Angebot konfigurieren
+          </a>
+        </p>
+      </div>
+      <div class="service-hero__media vt-media" style={mediaStyle}>
+        <Picture
+          src={hero.src}
+          alt={hero.alt}
+          sizes="(min-width: 64em) 36rem, 100vw"
+          width={576}
+          loading="eager"
+          fetchpriority="high"
+        />
+      </div>
     </div>
   </section>
-</PageLayout>
+
+  <section class="section service-body" aria-label={`${title}: Details`}>
+    <div class="service-body__grid">
+      <InPageNav items={navItems} label="Auf dieser Seite" />
+      <div class="service-body__main stack stack--xl">
+        {sections.map((section) => (
+          <section class="service-section" id={section.id} aria-labelledby={`${section.id}-title`}>
+            <h2 id={`${section.id}-title`} class="service-section__title">
+              {shy(section.title)}
+            </h2>
+            <div class="prose" set:html={section.html} />
+            {section.id === 'unsere-bodenarten' && types.length > 0 && (
+              <TypeCards
+                types={types}
+                level={3}
+                review={unconfirmed ? reviewStatus : 'confirmed'}
+                note={service.data.review.note}
+              />
+            )}
+            {section.id === 'holz-oberflaechen' && woods.length > 0 && <WoodList woods={woods} level={3} />}
+            {section.id === 'ablauf' && (
+              <ProcessSteps
+                steps={plainSteps}
+                level={3}
+                review={process.review !== undefined && process.review !== 'confirmed'}
+              />
+            )}
+          </section>
+        ))}
+        {projects.length > 0 && (
+          <section class="service-section" id="referenzen" aria-labelledby="referenzen-title">
+            <h2 id="referenzen-title" class="service-section__title">
+              {ui.links.moreProjects}
+            </h2>
+            <ProjectGrid projects={projects} level={3} label={ui.links.moreProjects} />
+          </section>
+        )}
+        {faqs.length > 0 && (
+          <section class="service-section" id="faq" aria-labelledby="faq-title">
+            <h2 id="faq-title" class="service-section__title">
+              Häufige Fragen
+            </h2>
+            <Faq faqs={faqs} label="Häufige Fragen" />
+          </section>
+        )}
+      </div>
+    </div>
+  </section>
+
+  {/* Phase 3: link to konfigurator/<typ>/ per service type once the deep links exist. */}
+  <CtaBand heading={ui.ctaBand.h2} lead={ui.ctaBand.text} buttonLabel={ui.ctaBand.ctaConfigurator} />
+</BaseLayout>
+
+<style>
+  @layer components {
+    .service-hero {
+      padding-block: var(--space-l-2xl) var(--space-m-xl);
+    }
+
+    .service-hero__grid {
+      display: grid;
+      gap: var(--space-m-xl);
+      align-items: center;
+    }
+
+    .service-hero__media {
+      aspect-ratio: 4 / 3;
+      overflow: clip;
+      background-color: var(--dominant, var(--surface-panel));
+    }
+
+    .service-hero__media :global(picture),
+    .service-hero__media :global(img) {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+    }
+
+    .service-hero__media :global(img) {
+      object-fit: cover;
+    }
+
+    @container section (inline-size >= 48rem) {
+      .service-hero__grid {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      }
+
+      .service-hero__media {
+        aspect-ratio: 5 / 4;
+      }
+    }
+
+    .service-body {
+      padding-block-start: var(--space-m);
+    }
+
+    .service-body__grid {
+      display: grid;
+      gap: var(--space-l);
+      align-items: start;
+    }
+
+    @container section (inline-size >= 64rem) {
+      .service-body__grid {
+        grid-template-columns: 14rem minmax(0, 1fr);
+        gap: var(--space-xl);
+      }
+    }
+
+    .service-body__main {
+      min-inline-size: 0;
+    }
+
+    .service-section {
+      display: grid;
+      gap: var(--space-m);
+      scroll-margin-block-start: calc(var(--header-sticky-h) + var(--space-s));
+    }
+
+    .service-section__title {
+      font-size: var(--step-3);
+    }
+
+    /* Placeholder marks: the owner's instruction, shown only in the review view (?pruefen). */
+    .service-section :global(.review-mark[data-review='placeholder']) {
+      display: none;
+    }
+
+    :global(:root[data-pruefen]) .service-section :global(.review-mark[data-review='placeholder']) {
+      display: inline;
+    }
+
+    .service-section :global(p:has(> .review-mark[data-review='placeholder']:only-child)) {
+      display: none;
+    }
+
+    :global(:root[data-pruefen]) .service-section :global(p:has(> .review-mark[data-review='placeholder']:only-child)) {
+      display: block;
+    }
+  }
+</style>
