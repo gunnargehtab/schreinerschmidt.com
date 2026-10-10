@@ -1,0 +1,170 @@
+---
+// Single job page (/karriere/<slug>/), active jobs only. The only page type with JobPosting JSON-LD
+// (docs/architecture.md §7), plus a BreadcrumbList.
+// Salary: shown when confirmed. While unconfirmed it appears only in the demo, inside a review mark
+// (like the JobCard on the overview); production builds omit it and jobPostingJsonLd() leaves
+// baseSalary out. jobLocation needs a confirmed address: the settings address is unconfirmed, so
+// the demo treats it as confirmed (it is printed on the site anyway) to keep the markup testable,
+// while production emits no JobPosting until the owner confirms the address.
+import { render } from 'astro:content';
+import { PUBLIC_DEMO } from 'astro:env/client';
+import PageLayout from '../../layouts/PageLayout.astro';
+import JsonLd from '../../components/seo/JsonLd.astro';
+import ReviewMark from '../../components/ui/ReviewMark.astro';
+import { getJobs, getSite, type Job } from '../../lib/content';
+import { formatCurrencyRange } from '../../lib/format';
+import { breadcrumbJsonLd, jobPostingJsonLd } from '../../lib/jsonld';
+import { escapeHtml } from '../../lib/legal-tokens';
+import { absolute, url } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const jobs = await getJobs({ active: true });
+  return jobs.map((job) => ({ params: { slug: job.id }, props: { job } }));
+}
+
+interface Props {
+  job: Job;
+}
+
+const { job } = Astro.props;
+const { title, employmentType, workHours, baseSalary, responsibilities, qualifications, benefits, seo } = job.data;
+const { Content } = await render(job);
+const site = await getSite();
+const origin = Astro.site;
+if (!origin) throw new Error('Job page: `site` must be set in astro.config.mjs');
+
+const TYPES: Record<string, string> = {
+  FULL_TIME: 'Vollzeit',
+  PART_TIME: 'Teilzeit',
+  CONTRACTOR: 'Freie Mitarbeit',
+  TEMPORARY: 'befristet',
+  INTERN: 'Praktikum',
+};
+const UNITS: Record<string, string> = { HOUR: 'pro Stunde', MONTH: 'pro Monat', YEAR: 'pro Jahr' };
+const meta = [...employmentType.map((t) => TYPES[t] ?? t), workHours].filter(Boolean).join(' · ');
+const lists = [
+  { heading: 'Aufgaben', items: responsibilities },
+  { heading: 'Voraussetzungen', items: qualifications },
+  { heading: 'Das bieten wir', items: benefits },
+].filter((l) => l.items.length > 0);
+
+const salaryConfirmed = baseSalary?.status === 'confirmed';
+const salaryText = baseSalary
+  ? `${formatCurrencyRange(baseSalary.value.min, baseSalary.value.max)} ${UNITS[baseSalary.value.unit]}`
+  : undefined;
+const showSalary = Boolean(salaryText) && (salaryConfirmed || PUBLIC_DEMO);
+
+// JobPosting description: the intro plus the lists, as simple HTML (Google requires a description).
+const intro = (job.body ?? '').trim();
+const description = [
+  intro && `<p>${escapeHtml(intro)}</p>`,
+  ...lists.map((l) => `<h4>${l.heading}</h4><ul>${l.items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`),
+].join('');
+
+const home = absolute(url(''), origin);
+const pageUrl = absolute(url(`karriere/${job.id}/`), origin);
+const addressStatus = PUBLIC_DEMO ? 'confirmed' : site.review.status;
+const posting =
+  addressStatus !== 'confirmed'
+    ? null
+    : jobPostingJsonLd(
+        {
+          title,
+          identifier: job.data.identifier,
+          active: job.data.active,
+          datePosted: job.data.datePosted,
+          validThrough: job.data.validThrough,
+          employmentType,
+          workHours,
+          baseSalary,
+          responsibilities,
+          qualifications,
+          benefits,
+          occupationalCategory: job.data.occupationalCategory,
+          directApply: job.data.directApply,
+          description,
+        },
+        {
+          url: pageUrl,
+          home,
+          business: { name: site.name, address: { value: site.address, status: addressStatus } },
+        },
+      );
+const crumbs = breadcrumbJsonLd([
+  { name: 'Startseite', url: home },
+  { name: 'Karriere', url: absolute(url('karriere/'), origin) },
+  { name: title, url: pageUrl },
+]);
+---
+
+<PageLayout
+  title={seo.title}
+  heading={title}
+  description={seo.description}
+  crumbs={[{ label: 'Karriere', href: 'karriere/' }, { label: title }]}
+>
+  <Fragment slot="head">
+    <JsonLd data={[crumbs, posting]} />
+  </Fragment>
+  <p class="lead" slot="lead">
+    {meta}
+  </p>
+
+  <section class="section">
+    <div class="job stack stack--m">
+      <div class="prose">
+        <Content />
+        {lists.map((list) => (
+          <>
+            <h2>{list.heading}</h2>
+            <ul>
+              {list.items.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </>
+        ))}
+        {showSalary && baseSalary && (
+          <p>
+            <strong>Gehalt:</strong>{' '}
+            {salaryConfirmed ? (
+              salaryText
+            ) : (
+              <ReviewMark
+                status={baseSalary.status === 'placeholder' ? 'placeholder' : 'needs-review'}
+                note={baseSalary.note}
+              >
+                {salaryText}
+              </ReviewMark>
+            )}
+          </p>
+        )}
+      </div>
+      <ul class="cluster list-plain">
+        <li>
+          <a class="btn btn--primary" href={url('karriere/#bewerbung')}>
+            Jetzt bewerben
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--secondary" href={url('karriere/')}>
+            Alle offenen Stellen
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</PageLayout>
+
+<style>
+  @layer components {
+    .job .prose ul {
+      padding-inline-start: 1.25em;
+      list-style: disc;
+    }
+
+    .job .prose h2 {
+      font-size: var(--step-1);
+    }
+  }
+</style>

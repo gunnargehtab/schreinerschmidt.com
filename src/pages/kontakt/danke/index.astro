@@ -1,0 +1,42 @@
+---
+// Thank-you page of the contact form (noindex; excluded from prerendering by the speculation rules).
+// Copy: src/content/pages/kontakt.yaml (danke).
+import PageLayout from '../../../layouts/PageLayout.astro';
+import { getPageCopy } from '../../../lib/page-copy';
+import { kontaktSchema } from '../../../lib/page-copy/kontakt';
+import { uiFormsSchema } from '../../../lib/page-copy/ui-forms';
+import { url } from '../../../lib/url';
+
+const copy = await getPageCopy('kontakt', kontaktSchema);
+const ui = await getPageCopy('ui', uiFormsSchema);
+---
+
+<PageLayout
+  title={copy.danke.title}
+  description="Danke für Ihre Anfrage bei der Schreinerei Schmidt in Mannheim. Wir haben Ihre Nachricht erhalten und melden uns schnellstmöglich bei Ihnen."
+  crumbs={[{ label: copy.hero.h1, href: 'kontakt/' }, { label: copy.danke.title }]}
+  noindex
+>
+  <section class="section">
+    <div class="stack stack--m">
+      <p class="lead">{copy.danke.text}</p>
+      <ul class="cluster list-plain">
+        <li>
+          <a class="btn btn--primary" href={url('')}>
+            {ui.links.home}
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--secondary" href={url('konfigurator/')}>
+            {ui.links.configurator}
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--secondary" href={url('referenzen/')}>
+            Referenzen ansehen
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</PageLayout>

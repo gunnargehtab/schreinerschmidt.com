@@ -1,0 +1,55 @@
+---
+// Thank-you page of the configurator request (noindex; excluded from prerendering by the
+// speculation rules). Copy: src/content/pages/konfigurator-danke.yaml.
+// Unconfirmed steps use the plain review-mark span instead of <ReviewMark>: on this page the component's
+// CSS is bundled ahead of global.css, which flips the layer order and gives buttons the link colour.
+import PageLayout from '../../../layouts/PageLayout.astro';
+import { escapeHtml, reviewSpan } from '../../../lib/legal-tokens';
+import { getPageCopy } from '../../../lib/page-copy';
+import { konfiguratorDankeSchema } from '../../../lib/page-copy/konfigurator-danke';
+import { uiFormsSchema } from '../../../lib/page-copy/ui-forms';
+import { url } from '../../../lib/url';
+
+const copy = await getPageCopy('konfigurator-danke', konfiguratorDankeSchema);
+const ui = await getPageCopy('ui', uiFormsSchema);
+const { next } = copy;
+const status = next.review && next.review !== 'confirmed' ? next.review : undefined;
+---
+
+<PageLayout
+  title={copy.danke.title}
+  description="Danke für Ihre Konfiguration bei der Schreinerei Schmidt in Mannheim. Wir sehen sie uns an und melden uns mit Rückfragen oder einem Angebot."
+  crumbs={[{ label: 'Konfigurator', href: 'konfigurator/' }, { label: copy.danke.title }]}
+  noindex
+>
+  <section class="section">
+    <div class="stack stack--m">
+      <p class="lead">{copy.danke.text}</p>
+      <ul class="cluster list-plain">
+        <li>
+          <a class="btn btn--primary" href={url('')}>
+            {ui.links.home}
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--secondary" href={url('referenzen/')}>
+            Referenzen ansehen
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--secondary" href={url('kontakt/')}>
+            Kontakt
+          </a>
+        </li>
+      </ul>
+      <div class="stack stack--xs prose">
+        <h2>{next.h2}</h2>
+        <ol>
+          {next.steps.map((step) => (
+            <li>{status ? <Fragment set:html={reviewSpan(escapeHtml(step), status, next.note)} /> : step}</li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+</PageLayout>
