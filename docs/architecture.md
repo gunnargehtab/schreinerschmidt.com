@@ -454,6 +454,8 @@ jobs:
 - Every img has alt, width and height.
 - No three.js code outside the configurator.
 - **Budgets per page (gz):** HTML ≤ 30 KB, CSS ≤ 25 KB, JS ≤ 15 KB, fonts ≤ 80 KB, LCP image ≤ 120 KB.
+  - HTML is measured **without** the inline `<style>` blocks. All CSS is inlined (`inlineStylesheets: 'always'`), and it counts against the CSS budget. Since Phase 2, Home is about 23.5 + 13.9 KB.
+  - Demo-only `/intern/` sheets have their own HTML budget (45 KB).
 - Typography lint: straight quotes, " - ".
 - A green-claim word list feeds the owner checklist.
 

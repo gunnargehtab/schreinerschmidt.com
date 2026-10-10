@@ -2,7 +2,7 @@
 // Sizes are gzip (level 9) for HTML, CSS and JS; fonts and images count raw bytes, because
 // woff2/AVIF/WebP are already compressed and GitHub Pages serves them as is.
 //
-// - HTML: the page file.
+// - HTML: the page file without its inline <style> blocks (those count as CSS).
 // - CSS: inline <style> blocks + linked stylesheets.
 // - JS: inline executable scripts + <script src> + modulepreloads + their static import graph.
 //   Dynamic import() targets are excluded (loaded on request), except for the three.js check.
@@ -291,7 +291,9 @@ for (const rel of listHtml(DIST)) {
   else if (lcp) notes.push(`LCP ${lcp.url.slice(lcp.url.lastIndexOf('/') + 1)}`);
 
   const values = {
-    html: kb(gz(html)),
+    // Inline <style> blocks are counted in the CSS budget; the site inlines all CSS on purpose
+    // (build.inlineStylesheets: 'always'), so counting them here too would double-count them.
+    html: kb(gz(html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ''))),
     css: kb(cssBytes),
     js: kb(jsBytes),
     fonts: kb(fontBytes),
