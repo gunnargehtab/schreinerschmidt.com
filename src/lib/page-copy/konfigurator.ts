@@ -129,6 +129,9 @@ export const konfiguratorSchema = z.object({
     zoomIn: z.string(),
     zoomOut: z.string(),
     reset: z.string(),
+    /** Toggle labels (§4.6 Phase C): „Türen öffnen“ by what the build has, and „Aufbau zeigen“. */
+    open: z.object({ tueren: z.string(), schubkaesten: z.string(), beide: z.string() }),
+    explode: z.string(),
   }),
   announce: z.object({
     typePreselected: z.string(),

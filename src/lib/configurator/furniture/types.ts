@@ -81,7 +81,11 @@ export interface Part {
   uvAnchor: 'world' | 'local';
   /** Plan outline in the part's local x/z plane (live-edge table tops). */
   outline?: [Mm, Mm][];
+  /** Opening motion (§4.6 Phase C): a door swings about `pivot` (its outer front edge; `dir` 1 =
+   *  hinged left, −1 = hinged right), a drawer slides out by `dist`. Handles carry their front's. */
   motion?: { kind: 'hinge'; pivot: Vec3; dir: 1 | -1 } | { kind: 'slide'; dist: Mm };
+  /** Explode direction (§4.6 Phase C), scaled by 15 % of the largest outer dimension; parts without
+   *  it stay where they are (the anchor of the exploded view). */
   explode?: [number, number, number];
 }
 

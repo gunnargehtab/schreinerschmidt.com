@@ -676,6 +676,12 @@
     gap: var(--space-2xs);
   }
 
+  /* The „Türen öffnen“ / „Aufbau zeigen“ toggles show their pressed state like the before/after buttons. */
+  .view-controls .btn[aria-pressed='true'] {
+    --_bg: var(--accent-tint);
+    --_border: var(--accent);
+  }
+
   .preview__note {
     flex-basis: 100%;
     margin: 0;

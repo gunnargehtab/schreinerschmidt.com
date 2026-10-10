@@ -777,6 +777,8 @@ No framework; custom elements and event delegation.
   - Reduced motion is respected everywhere.
   - The demo walkthrough is ready.
 
+**Phase 5 status (3D)** (2026-10-10): Esstisch in 3D with the Baumkante (`viewer3d/live-edge-geometry.ts`: `ExtrudeGeometry` from `liveEdgeOutline()` with a custom `UVGenerator`, group 1 on a darker „Waldkante“ material derived from the species set), doors (100°) and drawers (0.7 × depth) that open, the exploded view (15 % of the largest size) and the two `aria-pressed` toggles „Türen öffnen“ (label by fronts: Türen / Schubkästen / both; hidden without fronts) and „Aufbau zeigen“ in the view-button group, 600 ms (a jump under reduced motion), dimensions hidden while a toggle is on, both off on a kind switch, the snapshot always closed and assembled. The explode directions and the handles' motion are derived in the pure `furniture/assembly.ts`, which only the viewer chunk imports: the preview chunk (carcass generator) had no room for them, so the generators are unchanged. Finish tuning (`SPECIES_ADJUST`), chamfers, sketch mode, PCF shadows and wall hatching are still open. Test hook: `data-viewer-pose` on `[data-viewer]`.
+
 **Phase 6: production**
 - **Scope:**
   - Choose the host and domain. GitHub's terms discourage hosting a business site, so recommend an EU static host.

@@ -8,6 +8,9 @@ export type ViewerState = 'unsupported' | 'loading' | 'ready' | 'failed' | 'lost
 /** Camera presets of the view buttons (`data-view`). */
 export type ViewPreset = 'vorne' | 'seite' | 'dreiviertel' | 'oben';
 
+/** The `aria-pressed` toggles (`data-toggle`, §4.6 Phase C): fronts open, exploded view. */
+export type ToggleKind = 'open' | 'explode';
+
 export type Tier = 'low' | 'high';
 
 /** Quality tier (§4.4 "Quality tiers", §4.13): pixel ratio and texture sizes. */
@@ -47,7 +50,9 @@ export interface Viewer {
   /** Distance × factor, within the OrbitControls limits. */
   zoom(factor: number): void;
   reset(): void;
-  /** §4.12: the 3/4 preset on paper as WebP (PNG fallback); null when the canvas cannot be read. */
+  /** Sets a toggle (doors and drawers open / exploded view), animated unless reduced motion is on. */
+  toggle(which: ToggleKind, on: boolean): void;
+  /** §4.12: the 3/4 preset, closed and assembled, on paper as WebP (PNG fallback); null when the canvas cannot be read. */
   snapshot(): Promise<Blob | null>;
   dispose(): void;
 }

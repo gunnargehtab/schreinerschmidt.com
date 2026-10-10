@@ -210,6 +210,12 @@ viewer:
   zoomIn: 'Vergrößern'
   zoomOut: 'Verkleinern'
   reset: 'Zurücksetzen'
+  # Toggles (§4.6 Phase C). `open` is labelled by what the furniture has: doors, drawers or both.
+  open:
+    tueren: 'Türen öffnen'
+    schubkaesten: 'Schubkästen öffnen'
+    beide: 'Türen und Schubkästen öffnen'
+  explode: 'Aufbau zeigen'
 
 # Polite live region (debounced). {typ} is the project-type label, e.g. "Boden".
 announce:

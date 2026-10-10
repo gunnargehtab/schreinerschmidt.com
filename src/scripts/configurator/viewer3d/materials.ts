@@ -1,5 +1,6 @@
 // Materials (docs/configurator.md §4.4 "Finishes", "Other materials"). One set per species × finish:
-// `side` (long grain) and `end` (end grain, colour × 0.8). The first frame uses the flat species
+// `side` (long grain), `end` (end grain, colour × 0.8) and `edge` (the „Waldkante“ of a live-edge
+// top: colour × 0.55, rougher; it shares the species textures, so nothing extra downloads). The first frame uses the flat species
 // colour (the manifest's measured avgColor, else SPECIES[].avgColor handed in by the loader) with the
 // finish approximated on the colour; textures swap in later
 // (textures.ts) without a shader recompile, because every wood material carries 1×1 placeholder
@@ -20,6 +21,7 @@ import type { Quality } from './types';
 export interface WoodSet {
   side: MeshStandardMaterial;
   end: MeshStandardMaterial;
+  edge: MeshStandardMaterial;
 }
 
 export interface TextureSet {
@@ -89,6 +91,9 @@ export function createMaterials(quality: Quality, colourOf: (s: Species) => stri
   const white = pixel([255, 255, 255], true);
   const flatNormal = quality.normal ? pixel([128, 128, 255], false) : null;
   const END = 0.8;
+  /** Waldkante: darker bark-side colour, matt. */
+  const EDGE = 0.55;
+  const EDGE_ROUGHNESS = 0.85;
 
   const make = (finish: Finish): MeshStandardMaterial => {
     const f = FINISH[finish];
@@ -109,9 +114,11 @@ export function createMaterials(quality: Quality, colourOf: (s: Species) => stri
     let set = sets.get(key);
     if (!set) {
       const c = flatColour(colourOf(species), finish);
-      set = { side: make(finish), end: make(finish) };
+      set = { side: make(finish), end: make(finish), edge: make(finish) };
       set.side.color.copy(c);
       set.end.color.copy(c).multiplyScalar(END);
+      set.edge.color.copy(c).multiplyScalar(EDGE);
+      set.edge.roughness = EDGE_ROUGHNESS;
       sets.set(key, set);
     }
     return set;
@@ -131,6 +138,7 @@ export function createMaterials(quality: Quality, colourOf: (s: Species) => stri
       for (const [m, k] of [
         [set.side, 1],
         [set.end, END],
+        [set.edge, EDGE],
       ] as const) {
         m.map = tex ? tex.albedo : white;
         if (flatNormal) m.normalMap = tex?.normal ?? flatNormal;
@@ -142,6 +150,7 @@ export function createMaterials(quality: Quality, colourOf: (s: Species) => stri
       for (const s of sets.values()) {
         s.side.dispose();
         s.end.dispose();
+        s.edge.dispose();
       }
       sets.clear();
       metal.dispose();
