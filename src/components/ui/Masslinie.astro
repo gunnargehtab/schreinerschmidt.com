@@ -1,0 +1,40 @@
+---
+// Maßlinie (docs/design-system.md §3): a CSS-only dimension line with 45° architect's ticks.
+// Markup and styles live in src/styles/components/mass.css (global, so JS and other components
+// can render it too); draw-on in motion.css. The label is real text; the lines are aria-hidden.
+// `decorative` hides the whole line from assistive tech (annotations over a photo whose figcaption
+// already says what matters).
+interface Props {
+  label: string;
+  orientation?: 'h' | 'v';
+  ends?: 'tick' | 'arrow';
+  tone?: 'accent' | 'ink';
+  /** `scroll` draws on a view timeline, `load` once after load (motion.css). */
+  draw?: 'scroll' | 'load';
+  decorative?: boolean;
+  class?: string;
+}
+
+const {
+  label,
+  orientation = 'h',
+  ends = 'tick',
+  tone = 'accent',
+  draw,
+  decorative = false,
+  class: className,
+} = Astro.props;
+---
+
+<p
+  class:list={['mass', className]}
+  data-orientation={orientation}
+  data-ends={ends}
+  data-tone={tone}
+  data-draw={draw}
+  aria-hidden={decorative ? 'true' : undefined}
+>
+  <span class="mass__line" aria-hidden="true"></span>
+  <span class="mass__label">{label}</span>
+  <span class="mass__line" aria-hidden="true"></span>
+</p>

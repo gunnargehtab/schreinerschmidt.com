@@ -1,16 +1,22 @@
 ---
+// Home (docs/design-system.md §8): hero and stats from wave A; wave B assembles sections 4–12
+// below. The placeholder block stays until then so the page keeps its links. Exactly one h1,
+// rendered by HomeHero.
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Picture from '../components/ui/Picture.astro';
+import HomeHero from '../components/sections/HomeHero.astro';
+import StatCounter from '../components/sections/StatCounter.astro';
 import { url } from '../lib/url';
-import parkett from '../assets/projects/fischgraetparkett-eiche/01-parkett.jpg';
 ---
 
 <BaseLayout description="Schreinerei Schmidt in Mannheim: Möbel nach Maß, Böden, Fenster und Türen vom Schreinermeister. Beratung, Aufmaß und Montage aus einer Hand.">
-  <section class="section">
+  <HomeHero />
+  <StatCounter />
+  <section class="section section--alt">
     <div class="stack stack--m">
-      <h1>Schreinerei Schmidt</h1>
+      <h2>Weitere Inhalte folgen</h2>
       <p class="lead">
-        Diese Startseite ist ein technischer Platzhalter. Die richtigen Inhalte folgen in den nächsten Schritten.
+        Diese Startseite ist noch ein technischer Platzhalter. Leistungen, Ablauf, Referenzen und Konfigurator folgen in
+        den nächsten Schritten.
       </p>
       <ul class="cluster list-plain">
         <li>
@@ -25,23 +31,5 @@ import parkett from '../assets/projects/fischgraetparkett-eiche/01-parkett.jpg';
         </li>
       </ul>
     </div>
-    <figure class="frame home-figure">
-      <Picture
-        src={parkett}
-        alt="Fischgrätparkett aus Eiche in einem Altbauzimmer mit roter Wand, weißen Sockelleisten und Fenster"
-        sizes="(min-width: 40rem) 36rem, 100vw"
-        width={960}
-        loading="eager"
-        fetchpriority="high"
-      />
-    </figure>
   </section>
 </BaseLayout>
-
-<style>
-  @layer components {
-    .home-figure {
-      max-inline-size: 36rem;
-    }
-  }
-</style>

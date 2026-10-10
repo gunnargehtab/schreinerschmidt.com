@@ -1,0 +1,183 @@
+---
+// Jahresringe (docs/design-system.md §8 Über uns, plan §4.4): seeded growth rings generated at
+// build (src/lib/rings.ts), sticky on the left, with an <ol> of <time> milestones on the right.
+// On narrow containers the rings sit small above the list. Milestone rings are accent-coloured in
+// base CSS; where scroll-driven animations exist, each ring lights up when its milestone scrolls
+// into view (motion.css binds `data-milestone="n"` to the timeline `--m<n>`, n ≤ MAX_TIMELINES).
+// Milestones are props; the page passes them from src/content/pages/ueber-uns.yaml. The defaults
+// below are SAMPLES for the demo, every one flagged `placeholder` until the owner confirms them.
+import { getEntry } from 'astro:content';
+import { renderRings } from '../../lib/rings';
+
+export interface Milestone {
+  year: number;
+  title: string;
+  text?: string;
+  status?: 'confirmed' | 'needs-review' | 'placeholder';
+}
+
+interface Props {
+  milestones?: Milestone[];
+  /** First ring; defaults to the Meisterbrief year from settings. */
+  from?: number;
+  /** Last ring; defaults to the build year. */
+  to?: number;
+  /** Accessible name of the rings figure. */
+  caption?: string;
+  class?: string;
+}
+
+/** motion.css declares this many per-milestone timelines (`--m1` … `--m8`). */
+const MAX_TIMELINES = 8;
+
+const settings = await getEntry('settings', 'site');
+if (!settings) throw new Error('settings entry "site" is missing');
+const masterSince = settings.data.owner.masterSince;
+const buildYear = Number(
+  new Intl.DateTimeFormat('en-CA', { year: 'numeric', timeZone: 'Europe/Berlin' }).format(new Date()),
+);
+
+// Sample milestones (docs/content-inventory.md: Meister seit 2010; project photo dates 2018 and
+// 2023 from src/assets/asset-manifest.json; the relaunch itself). Replace from ueber-uns.yaml.
+const SAMPLES: Milestone[] = [
+  { year: masterSince, title: 'Meisterbrief', text: 'Ulf Schmidt wird Schreinermeister.', status: 'placeholder' },
+  {
+    year: 2018,
+    title: 'Kleiderschrank mit Shoji-Schiebetüren',
+    text: 'Ein raumbreiter Schrank mit Schiebetüren im Shoji-Stil.',
+    status: 'placeholder',
+  },
+  {
+    year: 2023,
+    title: 'Raumhohe Einbauschrankwand',
+    text: 'Weiße Front, dahinter Regale, Schubladen und Platz für den Fernseher.',
+    status: 'placeholder',
+  },
+  { year: buildYear, title: 'Neue Website und Konfigurator', status: 'placeholder' },
+];
+
+const { milestones = SAMPLES, from = masterSince, to = buildYear, caption, class: className } = Astro.props;
+
+const sorted = [...milestones].sort((a, b) => a.year - b.year);
+if (sorted.length > MAX_TIMELINES) {
+  throw new Error(`Jahresringe: at most ${MAX_TIMELINES} milestones (motion.css timelines), got ${sorted.length}`);
+}
+const rings = renderRings({ from, to, milestones: sorted.map((m) => m.year), seed: from });
+const years = to - from + 1;
+const figureCaption =
+  caption ??
+  `Jahresringe: ein Ring pro Jahr seit ${from}, ${years} Ringe bis ${to}. Markierte Ringe sind die Meilensteine.`;
+---
+
+<div class:list={['jahresringe', className]}>
+  <figure class="jahresringe__rings">
+    <Fragment set:html={rings} />
+    <figcaption class="visually-hidden">{figureCaption}</figcaption>
+  </figure>
+  <ol class="jahresringe__list list-plain">
+    {sorted.map((m) => (
+      <li class="jahresringe__item" data-review={m.status}>
+        <time class="jahresringe__year" datetime={String(m.year)}>
+          {m.year}
+        </time>
+        <div class="jahresringe__body">
+          <h3 class="jahresringe__title">{m.title}</h3>
+          {m.text && <p>{m.text}</p>}
+        </div>
+      </li>
+    ))}
+  </ol>
+</div>
+
+<style>
+  @layer components {
+    .jahresringe {
+      display: grid;
+      gap: var(--space-l) var(--space-xl);
+      align-items: start;
+    }
+
+    .jahresringe__rings {
+      position: sticky;
+      inset-block-start: calc(var(--header-sticky-h) + var(--space-m));
+      inline-size: min(100%, 14rem);
+      margin: 0 auto;
+      color: var(--sketch);
+    }
+
+    .jahresringe__rings :global(.rings) {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+    }
+
+    .jahresringe__rings :global(.rings__pith) {
+      fill: currentColor;
+    }
+
+    /* Milestones are the finished, accent state; motion.css only adds the scroll-bound reveal. */
+    .jahresringe__rings :global(.rings__ring--mark) {
+      stroke: var(--accent);
+      stroke-width: 2.5;
+    }
+
+    .jahresringe__list {
+      display: grid;
+      gap: var(--space-m);
+      border-inline-start: var(--rule-strong);
+    }
+
+    .jahresringe__item {
+      display: grid;
+      grid-template-columns: 4.5rem minmax(0, 1fr);
+      gap: var(--space-s);
+      padding-inline-start: var(--space-m);
+      position: relative;
+    }
+
+    /* Tick on the spine, aligned with the year. */
+    .jahresringe__item::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 0;
+      inset-block-start: 0.7em;
+      inline-size: var(--space-s);
+      block-size: var(--hairline);
+      background: var(--accent);
+    }
+
+    .jahresringe__year {
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      line-height: 1.6;
+    }
+
+    .jahresringe__title {
+      font-size: var(--step-1);
+      line-height: 1.25;
+      max-inline-size: var(--measure-card);
+    }
+
+    .jahresringe__body > p {
+      margin-block-start: var(--space-2xs);
+      max-inline-size: var(--measure-card);
+      color: var(--ink-muted);
+    }
+
+    @container section (inline-size >= 48rem) {
+      .jahresringe {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      }
+
+      .jahresringe__rings {
+        inline-size: min(100%, 26rem);
+      }
+
+      .jahresringe__list {
+        padding-block: var(--space-l);
+      }
+    }
+  }
+</style>

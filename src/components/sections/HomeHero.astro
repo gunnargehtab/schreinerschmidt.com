@@ -1,0 +1,316 @@
+---
+// Home hero (docs/design-system.md §5 Heroes, §6 "Hero inset → full-bleed", §8 Home 2).
+// Eyebrow, h1 with the Fraunces accent, lead, two CTAs, the RatingBadge, then the panorama: a
+// full-bleed <picture> clipped to the content column (base CSS = framed, the finished state for
+// Firefox and reduced motion) that opens to the viewport edges on `scroll(root)` where
+// scroll-driven animations exist (motion.css `hero-open`, clip-path only; the image itself is never
+// hidden or faded). Maßlinie annotations draw once over the photo; a Schriftfeld captions it.
+// Art direction: 4:5 crop below 48rem with stacked CTAs, 21:9 from 48rem up. The LCP image is
+// eager with fetchpriority="high". Copy comes in as props (defaults = the spec text) so the
+// copywriter can feed src/content/pages/home.yaml without touching this file.
+import { getImage } from 'astro:assets';
+import { getEntry } from 'astro:content';
+import Masslinie from '../ui/Masslinie.astro';
+import RatingBadge from '../ui/RatingBadge.astro';
+import Schriftfeld, { type Field } from '../ui/Schriftfeld.astro';
+import { shy } from '../../lib/shy';
+import { url } from '../../lib/url';
+// asset-manifest: einbauschrankwand-02, rights "own", 2400×1800. The strongest own landscape photo:
+// oak shelves, drawers and the TV niche show the craft; it crops to 21:9 without losing the piece.
+import photo from '../../assets/projects/einbauschrankwand/02-offen.jpg';
+
+interface Cta {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  eyebrow?: string;
+  /** h1 = `${titleBefore} <em>${titleAccent}</em> ${titleAfter}`. */
+  titleBefore?: string;
+  titleAccent?: string;
+  titleAfter?: string;
+  /** Review flag on the accent word (green claim, docs/owner-checklist.md). */
+  accentStatus?: 'confirmed' | 'needs-review' | 'placeholder';
+  lead?: string;
+  primary?: Cta;
+  secondary?: Cta;
+  alt?: string;
+  schriftfeld?: {
+    projekt?: string | Field;
+    ort?: string | Field;
+    jahr?: string | number | Field;
+    holz?: string | Field;
+  };
+  /** Decorative dimension labels drawn over the photo (aria-hidden). */
+  annotations?: { horizontal?: string; vertical?: string };
+}
+
+const settings = await getEntry('settings', 'site');
+if (!settings) throw new Error('settings entry "site" is missing');
+const { owner, address, areaServed } = settings.data;
+
+const {
+  eyebrow = `Meisterbetrieb in ${address.city} · seit ${owner.masterSince}`,
+  titleBefore = 'Ihr Experte für',
+  titleAccent = 'umweltbewusstes',
+  titleAfter = 'Holzhandwerk',
+  accentStatus = 'needs-review',
+  lead = `Möbel nach Maß, Böden, Treppen, Fenster und Türen: geplant, gefertigt und montiert von der Schreinerei Schmidt in ${address.city}.`,
+  primary = { label: 'In 3 Minuten zum Angebot', href: url('konfigurator/') },
+  secondary = { label: 'Referenzen ansehen', href: url('referenzen/') },
+  alt = 'Geöffnete raumhohe Schrankwand mit Eichenregalen, Schubladen und eingebautem Fernseher',
+  schriftfeld = {
+    projekt: 'Raumhohe Einbauschrankwand',
+    ort: { value: areaServed.value[0] ?? address.city, status: areaServed.status },
+    jahr: { value: '2023', status: 'needs-review' },
+    holz: { value: 'Eiche', status: 'needs-review' },
+  },
+  annotations = { horizontal: 'nach Maß', vertical: 'raumhoch' },
+} = Astro.props;
+
+// Art direction: two crops of the same photo. Sources with `media` come first; the desktop AVIF/WebP
+// sources have no media (the default), and the <img> carries a WebP fallback. sizes = 100vw, the
+// picture is full-bleed. Crops: 4:5 centred (the source is 4:3, so `cover` keeps the full height:
+// TV niche, drawers, floor line and the ceiling lamp); 21:9 with sharp's `attention` strategy,
+// which keeps the drawers and the floor line instead of the ceiling.
+// Dense steps for phones: 412 px at DPR 1.75 needs 721 px and picks 736w, DPR 2.6 picks 1080w,
+// instead of jumping to 960w/1280w. The phone AVIFs are the LCP resource under mobile Lighthouse
+// and get a slightly lower quality than the global 55: at DPR ≥ 1.75 the difference is invisible.
+const MOBILE_WIDTHS = [400, 560, 736, 880, 1080, 1280];
+const DESKTOP_WIDTHS = [960, 1280, 1600, 1920, 2400];
+const MOBILE_MEDIA = '(max-width: 47.9375em)';
+const MOBILE_AVIF_QUALITY = 50;
+const crop = (
+  format: 'avif' | 'webp',
+  width: number,
+  height: number,
+  position: string,
+  widths?: number[],
+  quality?: number,
+) => getImage({ src: photo, format, width, height, fit: 'cover', position, widths, quality, layout: 'none' });
+const [mobileAvif, mobileWebp, desktopAvif, desktopWebp, fallback] = await Promise.all([
+  crop('avif', 1440, 1800, 'centre', MOBILE_WIDTHS, MOBILE_AVIF_QUALITY),
+  crop('webp', 1440, 1800, 'centre', MOBILE_WIDTHS),
+  crop('avif', 2400, 1029, 'attention', DESKTOP_WIDTHS),
+  crop('webp', 2400, 1029, 'attention', DESKTOP_WIDTHS),
+  crop('webp', 1600, 686, 'attention'),
+]);
+---
+
+<section class="section hero">
+  <div class="hero__text">
+    <div class="hero__heading">
+      <p class="eyebrow">{eyebrow}</p>
+      <h1 class="hero__title">
+        {shy(titleBefore)} <em data-review={accentStatus}>{shy(titleAccent)}</em> {shy(titleAfter)}
+      </h1>
+    </div>
+    <div class="hero__aside">
+      <p class="lead">{lead}</p>
+      <ul class="hero__ctas list-plain">
+        <li>
+          <a class="btn btn--primary" href={primary.href}>
+            {primary.label}
+          </a>
+        </li>
+        <li>
+          <a class="btn btn--secondary" href={secondary.href}>
+            {secondary.label}
+          </a>
+        </li>
+      </ul>
+      <RatingBadge class="hero__rating" />
+    </div>
+  </div>
+
+  <figure class="hero__figure full-bleed">
+    <div class="hero__media">
+      <picture>
+        <source type="image/avif" media={MOBILE_MEDIA} srcset={mobileAvif.srcSet.attribute} sizes="100vw" />
+        <source type="image/webp" media={MOBILE_MEDIA} srcset={mobileWebp.srcSet.attribute} sizes="100vw" />
+        <source type="image/avif" srcset={desktopAvif.srcSet.attribute} sizes="100vw" />
+        <source type="image/webp" srcset={desktopWebp.srcSet.attribute} sizes="100vw" />
+        <img
+          src={fallback.src}
+          width={fallback.attributes.width}
+          height={fallback.attributes.height}
+          alt={alt}
+          loading="eager"
+          fetchpriority="high"
+          decoding="sync"
+        />
+      </picture>
+    </div>
+    <div class="hero__annotations" aria-hidden="true">
+      {annotations.horizontal && (
+        <Masslinie class="hero__mass hero__mass--h" label={annotations.horizontal} draw="load" />
+      )}
+      {annotations.vertical && (
+        <Masslinie class="hero__mass hero__mass--v" label={annotations.vertical} orientation="v" draw="load" />
+      )}
+    </div>
+    <figcaption class="hero__caption">
+      <Schriftfeld {...schriftfeld} blatt="Blatt 01" />
+    </figcaption>
+  </figure>
+</section>
+
+<style>
+  @layer components {
+    /* Tighter than the section default so the photo already shows on a 900 px tall desktop. */
+    .hero {
+      padding-block: var(--space-xl) var(--space-xl);
+      row-gap: var(--space-xl);
+    }
+
+    .hero__text {
+      display: grid;
+      gap: var(--space-l) var(--space-xl);
+      align-items: end;
+    }
+
+    .hero__heading > .eyebrow + h1 {
+      margin-block-start: var(--space-s);
+    }
+
+    .hero__title {
+      font-size: var(--step-5);
+      max-inline-size: var(--measure-hero);
+    }
+
+    .hero__aside > * + * {
+      margin-block-start: var(--space-m);
+    }
+
+    /* Stacked CTAs on mobile, a cluster from 30rem up (container query on the section). */
+    .hero__ctas {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .hero__ctas .btn {
+      display: block;
+      inline-size: 100%;
+    }
+
+    .hero__rating {
+      max-inline-size: var(--measure-lead);
+    }
+
+    /* The figure repeats the page columns: the media spans full, annotations and caption content. */
+    .hero__figure {
+      display: grid;
+      grid-template-columns: var(--page-columns);
+      row-gap: var(--space-s);
+      margin: 0;
+    }
+
+    /*
+     * Viewport query on purpose: it has to match the <source media> of the art-directed picture,
+     * so the box has the crop's ratio before the image arrives (no layout shift).
+     */
+    .hero__media {
+      grid-column: full;
+      grid-row: 1;
+      aspect-ratio: 4 / 5;
+      overflow: clip;
+      background: var(--surface-panel);
+    }
+
+    @media (min-width: 48em) {
+      .hero__media {
+        aspect-ratio: 21 / 9;
+      }
+    }
+
+    .hero__media picture,
+    .hero__media img {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+    }
+
+    .hero__media img {
+      object-fit: cover;
+    }
+
+    /* Annotations: Maßlinien in the content column, over the photo; pointer-events stay off. */
+    .hero__annotations {
+      grid-column: content;
+      grid-row: 1;
+      position: relative;
+      pointer-events: none;
+    }
+
+    .hero__mass {
+      position: absolute;
+    }
+
+    .hero__mass--h {
+      inset-inline: var(--space-m);
+      inset-block-end: var(--space-m);
+    }
+
+    /*
+     * Vertical line down the left edge, ending above the horizontal one. mass.css sets
+     * block-size: 100% at (0,2,0) for the vertical orientation; outrank it so the insets rule.
+     */
+    .hero__annotations .hero__mass--v[data-orientation='v'] {
+      display: none;
+      inset-inline-start: var(--space-m);
+      inset-block: var(--space-m) calc(var(--space-m) * 2 + 1.25rem);
+      block-size: auto;
+    }
+
+    /* Label on a paper chip so it reads on any part of the photo. */
+    .hero__mass :global(.mass__label) {
+      background: var(--surface);
+      padding-inline: var(--space-2xs);
+      padding-block: var(--space-3xs);
+    }
+
+    .hero__caption {
+      grid-column: content;
+      grid-row: 2;
+      max-inline-size: none;
+    }
+
+    @container section (inline-size >= 30rem) {
+      .hero__ctas {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-s);
+      }
+
+      .hero__ctas .btn {
+        display: inline-block;
+        inline-size: auto;
+      }
+    }
+
+    @container section (inline-size >= 48rem) {
+      .hero__annotations .hero__mass--v[data-orientation='v'] {
+        display: flex;
+      }
+    }
+
+    @container section (inline-size >= 64rem) {
+      .hero__text {
+        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      }
+
+      .hero__aside {
+        padding-block-end: var(--space-2xs);
+      }
+    }
+
+    @media (forced-colors: active) {
+      .hero__mass :global(.mass__label) {
+        background: Canvas;
+      }
+    }
+  }
+</style>

@@ -1,0 +1,97 @@
+---
+// RatingBadge (docs/design-system.md §5 Testimonials "Rating line", §8 Home hero): „5,0“ + stars +
+// visually hidden „von 5 Sternen“ + „aus 115 Google-Bewertungen (Stand 30.09.2026)“, all from
+// settings. The Google profile link renders only once `rating.profileUrl` is `confirmed`
+// (plan "Phase 2 follow-ups"); until then the line is plain text. No Review/AggregateRating markup:
+// the rating is a third-party figure, not something the site may assert as structured data.
+import { getEntry } from 'astro:content';
+import { formatDate, formatNumber } from '../../lib/format';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+
+const settings = await getEntry('settings', 'site');
+if (!settings) throw new Error('settings entry "site" is missing');
+const { rating } = settings.data;
+
+const value = formatNumber(rating.value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const count = formatNumber(rating.count);
+const stand = formatDate(rating.snapshotDate, 'short');
+const full = Math.round(rating.value);
+const href = rating.profileUrl?.status === 'confirmed' ? rating.profileUrl.value : undefined;
+const meta = `aus ${count} Google-Bewertungen (Stand ${stand})`;
+// Five-point star on a 24 px box; filled stars use the accent, empty ones the hairline colour.
+const STAR = 'M12 2.6l2.8 6 6.5.8-4.8 4.5 1.3 6.5L12 17.2l-5.8 3.2 1.3-6.5L2.7 9.4l6.5-.8z';
+---
+
+<p class:list={['rating-badge', className]}>
+  <span class="rating-badge__value">{value}</span>
+  <svg class="rating-badge__stars" viewBox="0 0 120 24" width="120" height="24" aria-hidden="true" focusable="false">
+    {[0, 1, 2, 3, 4].map((i) => (
+      <path d={STAR} transform={`translate(${i * 24} 0)`} data-empty={i >= full ? '' : undefined} />
+    ))}
+  </svg>
+  <span class="visually-hidden">von 5 Sternen</span>
+  {href ? (
+    <a class="rating-badge__meta" href={href}>
+      {meta}
+    </a>
+  ) : (
+    <span class="rating-badge__meta">{meta}</span>
+  )}
+</p>
+
+<style>
+  @layer components {
+    .rating-badge {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: var(--space-xs);
+      row-gap: var(--space-3xs);
+      margin: 0;
+      font-size: var(--step--1);
+      line-height: 1.3;
+      color: var(--ink-muted);
+      text-wrap: pretty;
+    }
+
+    .rating-badge__value {
+      font-size: var(--step-1);
+      font-weight: var(--weight-heading);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: var(--tracking-heading);
+      color: var(--ink);
+    }
+
+    .rating-badge__stars {
+      inline-size: 6.25rem;
+      block-size: 1.25rem;
+      flex: none;
+      fill: var(--accent);
+      stroke: var(--accent);
+      stroke-width: 1;
+      stroke-linejoin: round;
+    }
+
+    .rating-badge__stars [data-empty] {
+      fill: none;
+      stroke: var(--line-strong);
+    }
+
+    .rating-badge__meta {
+      flex: 1 1 14rem;
+      min-inline-size: 0;
+    }
+
+    @media (forced-colors: active) {
+      .rating-badge__stars {
+        fill: CanvasText;
+        stroke: CanvasText;
+      }
+    }
+  }
+</style>
