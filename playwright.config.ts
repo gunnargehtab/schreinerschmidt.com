@@ -46,7 +46,15 @@ export default defineConfig({
     // Smoke specs run everywhere; firefox and webkit only run the tagged engine checks.
     { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: dedicated },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] }, grep: crossEngine, testIgnore: dedicated },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] }, grep: crossEngine, testIgnore: dedicated },
+    // Headless WebKit on Windows occasionally crashes the page ("Target … closed") with no assertion
+    // failing; one local retry keeps such crashes visible as flaky instead of failing verify. CI: 2.
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+      grep: crossEngine,
+      testIgnore: dedicated,
+      retries: CI ? 2 : 1,
+    },
     { name: 'mobile', use: { ...devices['Pixel 7'] }, testIgnore: dedicated },
     {
       name: 'no-js',
