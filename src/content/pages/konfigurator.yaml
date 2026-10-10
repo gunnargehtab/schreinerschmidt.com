@@ -91,6 +91,21 @@ photos:
   remove: 'Foto entfernen'
   dachschraegeHint: 'Bitte Foto/Skizze beifügen'
 
+# Türen branch (spec §1 "Tür"), rendered by branches/Tuer.astro.
+# `din`: the explainer popover next to the Anschlag field. Definition after DIN 107: looked at from the side
+# the door opens towards (the side where the hinges are visible), hinges on the left = DIN links.
+# `vorherNachher`: link under tuer_zustand to the before/after reference (project holzhaustuer-aufgearbeitet).
+tuer:
+  din:
+    trigger: 'Was bedeutet DIN links oder DIN rechts?'
+    heading: 'So erkennen Sie den Anschlag'
+    text: 'Stellen Sie sich auf die Seite, zu der sich die Tür öffnet – von dort sehen Sie die Bänder (Scharniere). Sitzen die Bänder links, ist die Tür DIN links; sitzen sie rechts, ist sie DIN rechts. Wenn Sie unsicher sind, wählen Sie „Weiß ich nicht“; wir prüfen es beim Aufmaß.'
+    close: 'Schließen'
+  vorherNachher:
+    label: 'Beispiel ansehen: eine Haustür vorher und nachher'
+    review: needs-review
+    note: 'Verlinkt die Referenz „Holzhaustür: aufgearbeitet statt ersetzt“. Deren Zuordnung (Altfoto 2010–2012) und ob die Tür aufgearbeitet oder neu gebaut wurde, sind unbestätigt (src/content/projects/holzhaustuer-aufgearbeitet.md).'
+
 privacy:
   text: 'Ihre Angaben nutzen wir, um Ihre Anfrage zu beantworten und ein Angebot zu erstellen (Art. 6 Abs. 1 Buchst. b DSGVO). Eine gesonderte Einwilligung ist dafür nicht nötig. Mehr dazu steht in der Datenschutzerklärung.'
   linkLabel: 'Datenschutzerklärung'

@@ -1,9 +1,17 @@
 ---
 // Türen: branch of the quote wizard (docs/configurator.md §1 "Tür"). A list of field names; see
 // Boden.astro. tuer_anschlag gets the explainer popover for DIN links/rechts (`popovertarget`, works
-// without JS).
+// without JS); tuer_zustand gets the link to the before/after example (the Haustür project with a
+// `beforeAfter` pair and a detail page; the link is omitted if that project loses either).
+// The branch copy (`tuer` block) is read here the way Wizard.astro reads the shell copy, so the step
+// components keep passing the shared branch props only.
 import { PROJECT_TYPE_LABELS } from '../../../lib/configurator/labels';
+import { getProject } from '../../../lib/content';
+import { getPageCopy } from '../../../lib/page-copy';
+import { konfiguratorSchema } from '../../../lib/page-copy/konfigurator';
 import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
+import { marked } from '../../../lib/review-mark';
+import { url } from '../../../lib/url';
 import ReviewMark from '../../ui/ReviewMark.astro';
 import FieldControl from '../fields/FieldControl.astro';
 import Fotos from './Fotos.astro';
@@ -18,6 +26,16 @@ interface Props {
 }
 
 const { step, intro, photos, email, live } = Astro.props;
+
+/** The reference with the before/after pair of a Haustür (same project Home shows). */
+const EXAMPLE_SLUG = 'holzhaustuer-aufgearbeitet';
+const [{ tuer }, example] = await Promise.all([
+  getPageCopy('konfigurator', konfiguratorSchema),
+  getProject(EXAMPLE_SLUG),
+]);
+const exampleHref =
+  example?.data.beforeAfter && example.data.detailPage ? url(`referenzen/${EXAMPLE_SLUG}/`) : undefined;
+const exampleStatus = marked(tuer.vorherNachher);
 ---
 
 <fieldset class="branch" data-branch="tuer">
@@ -32,24 +50,20 @@ const { step, intro, photos, email, live } = Astro.props;
       <FieldControl name="tuer_anschlag" />
       <div class="explainer">
         <button type="button" class="btn btn--ghost btn--small" popovertarget="din-erklaerung">
-          <ReviewMark note="Erklärtext zum Türanschlag: Wortlaut vom Copywriter prüfen lassen.">
-            Was bedeutet DIN links oder rechts?
-          </ReviewMark>
+          {tuer.din.trigger}
         </button>
-        <div id="din-erklaerung" class="explainer__popover" popover>
-          <p>
-            <ReviewMark note="Erklärtext zum Türanschlag: Wortlaut vom Copywriter prüfen lassen.">
-              Stellen Sie sich auf die Seite, zu der die Tür aufgeht. Sitzen die Bänder (Scharniere) links, ist die Tür
-              DIN links, sitzen sie rechts, ist sie DIN rechts.
-            </ReviewMark>
-          </p>
+        <div id="din-erklaerung" class="explainer__popover" popover aria-labelledby="din-erklaerung-titel">
+          <h3 id="din-erklaerung-titel" class="explainer__title">
+            {tuer.din.heading}
+          </h3>
+          <p>{tuer.din.text}</p>
           <button
             type="button"
             class="btn btn--secondary btn--small"
             popovertarget="din-erklaerung"
             popovertargetaction="hide"
           >
-            Schließen
+            {tuer.din.close}
           </button>
         </div>
       </div>
@@ -61,6 +75,17 @@ const { step, intro, photos, email, live } = Astro.props;
       <FieldControl name="tuer_glas" />
       <FieldControl name="tuer_stil" />
       <FieldControl name="tuer_zustand" />
+      {exampleHref && (
+        <p class="field__hint">
+          {exampleStatus ? (
+            <ReviewMark status={exampleStatus} note={tuer.vorherNachher.note}>
+              <a href={exampleHref}>{tuer.vorherNachher.label}</a>
+            </ReviewMark>
+          ) : (
+            <a href={exampleHref}>{tuer.vorherNachher.label}</a>
+          )}
+        </p>
+      )}
     </>
   )}
 </fieldset>

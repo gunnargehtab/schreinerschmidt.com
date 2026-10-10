@@ -56,6 +56,11 @@ export const konfiguratorSchema = z.object({
     remove: z.string(),
     dachschraegeHint: z.string(),
   }),
+  /** Türen branch (docs/configurator.md §1 "Tür"): DIN explainer popover and the before/after link. */
+  tuer: z.object({
+    din: z.object({ trigger: z.string(), heading: z.string(), text: z.string(), close: z.string() }),
+    vorherNachher: reviewable({ label: z.string() }),
+  }),
   privacy: reviewable({ text: z.string(), linkLabel: z.string() }),
   summary: z.object({
     h2: z.string(),
