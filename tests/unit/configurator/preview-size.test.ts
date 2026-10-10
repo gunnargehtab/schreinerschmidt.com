@@ -1,4 +1,4 @@
-// Size of the Möbel preview chunk (docs/configurator.md §3 "JS budget": ≤ 7 KB gz; §7 "core + Möbel
+// Size of the Möbel preview chunk (docs/configurator.md §3 "JS budget": ≤ 8.75 KB gz; §7 "core + Möbel
 // ≤ 20 KB"). Bundles src/scripts/configurator/preview/index.ts with rolldown (Vite 8's bundler, so
 // the result matches the Astro build closely): minified ESM, gzip level 9, like scripts/check-budgets.mjs.
 //
@@ -15,13 +15,7 @@ const ENTRY = new URL('../../../src/scripts/configurator/preview/index.ts', impo
   '$1',
 );
 const KB = 1024;
-/** Spec budget for what loads when Möbel is chosen. */
-const SPEC_BUDGET = 7 * KB;
-/**
- * Enforced ceiling until the budget decision is taken: the chunk measures about 8.5 KB gz with every
- * feature of §4.2/§4.8 (see the Phase 3 C0 report, "open issues"). This ratchet only stops regressions;
- * tighten it to SPEC_BUDGET once the chunk fits.
- */
+/** Budget for what loads when Möbel is chosen (re-split from 7 KB on 2026-10-10; core + preview ≤ 20 KB). */
 const CEILING = 8.75 * KB;
 const gz = (s: string) => gzipSync(s, { level: 9 }).length;
 
@@ -46,7 +40,7 @@ describe('Möbel preview chunk', () => {
     const line = (c: (typeof chunks)[number]) => `${c.fileName}: ${c.code.length} B min / ${gz(c.code)} B gz`;
     console.log(
       [
-        `Möbel preview: ${(initial / KB).toFixed(2)} KB gz initial (spec ≤ ${SPEC_BUDGET / KB} KB), table chunk +${(table / KB).toFixed(2)} KB gz on request`,
+        `Möbel preview: ${(initial / KB).toFixed(2)} KB gz initial (budget ≤ ${CEILING / KB} KB), table chunk +${(table / KB).toFixed(2)} KB gz on request`,
         ...[entry, ...statics, ...dynamics].map((c) => `  ${line(c)}`),
       ].join('\n'),
     );

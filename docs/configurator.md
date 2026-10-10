@@ -281,10 +281,10 @@ Step 3:
 - `conditions.ts`, `fields.ts`, `service-area.ts`, `pricing/{index,rules}.ts`
 
 **Browser** (`src/scripts/configurator/`):
-- `main.ts`: entry point, core ≤ 13 KB gz.
+- `main.ts`: entry point, core ≤ 11.25 KB gz.
 - `controller.ts`, `steps.ts`, `state.ts`, `validate.ts`, `messages.de.ts`, `serialize.ts`, `history.ts`, `draft.ts`, `summary.ts`, `announce.ts`, `transitions.ts`, `submit.ts`, `payload.ts`, `mailto.ts`.
 - `photos.ts`: lazy, on file selection.
-- `preview/index.ts`, `preview/load3d.ts`: the Möbel chunk, ≤ 7 KB gz.
+- `preview/index.ts`, `preview/load3d.ts`: the Möbel chunk, ≤ 8.75 KB gz.
 - `viewer3d/{index,types,renderer,scene,rig,panel-geometry,materials,textures,contact-shadow,camera,overlay,tween,snapshot,quality}.ts`: dynamic import only.
 
 **Components** (`src/components/configurator/`):
@@ -395,8 +395,8 @@ export function swapStep(update: () => void, dir: 'fwd'|'back'): Promise<void> {
   - After a successful send, going Back shows "Anfrage bereits gesendet – neue Anfrage starten?".
 
 ### JS budget (gz)
-- Core ≤ 13 KB.
-- Möbel preview ≤ 7 KB (loaded when Möbel is chosen).
+- Core ≤ 11.25 KB.
+- Möbel preview ≤ 8.75 KB (loaded when Möbel is chosen). Re-split from 13 + 7 KB with the user on 2026-10-10: the full carcass rules + screen elevation measure 8.5 KB gz; the 20 KB total is unchanged.
 - Photos ≈ 1.5 KB (on file select).
 - three.js chunk: on request only.
 - `scripts/check-budgets.mjs` enforces these.
@@ -799,7 +799,7 @@ Focus moves to the heading; the session and draft are cleared.
 | `a11y` | axe with `wcag22aa` on every step, in the error state, no-JS, both schemes, and the success view |
 | `motion-print` | Reduced motion: no `startViewTransition`; print shows summary + drawing + title block |
 
-**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 13 KB, core + Möbel ≤ 20 KB; three.js chunk ≤ 160 KB.
+**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, core + Möbel ≤ 20 KB; three.js chunk ≤ 160 KB.
 
 **Manual:** NVDA + Firefox, VoiceOver + Safari, TalkBack, keyboard-only, 400% zoom, forced colours.
 

@@ -15,7 +15,7 @@
 // - three.js: no JS reachable from a page outside /konfigurator/ (static or dynamic) may contain it.
 // - Möbel preview: the chunk the configurator core import()s when Möbel is chosen (found by its
 //   `data-preview-drawing` selector), plus the chunks it imports statically that the page does not
-//   already load: ≤ 7 KB gz, and page JS + preview ≤ 20 KB gz (docs/configurator.md §3, §7). Its own
+//   already load: ≤ 8.75 KB gz, and page JS + preview ≤ 20 KB gz (docs/configurator.md §3, §7). Its own
 //   import() targets (the table generator) are reported, not counted. Skipped with a log line while
 //   no page imports the chunk.
 //
@@ -48,14 +48,14 @@ const ROUTE_BUDGETS = [
   // Demo-only, noindex internal sheets (style guide, component and sketch catalogues) render many
   // components at once; they are never part of the public site.
   { match: /^intern\//, budget: { html: 45 } },
-  // Configurator: 13 KB gz initial JS (docs/configurator.md §3 "JS budget"); the Möbel preview chunk
+  // Configurator: 11.25 KB gz initial JS (docs/configurator.md §3 "JS budget"); the Möbel preview chunk
   // is checked separately below (PREVIEW).
   // TODO(Phase 3, 3D wave): also check the three.js chunk (<= 160 KB gz), import()ed on request.
-  { match: /^konfigurator\//, budget: { js: 13 } },
+  { match: /^konfigurator\//, budget: { js: 11.25 } },
 ];
 
 /** Möbel preview chunk (docs/configurator.md §3 "JS budget", §7 "Budgets"), KB gz. */
-const PREVIEW = { match: /^konfigurator\//, signature: /data-preview-drawing/, limit: 7, withCore: 20 };
+const PREVIEW = { match: /^konfigurator\//, signature: /data-preview-drawing/, limit: 8.75, withCore: 20 };
 
 /** Pages that may load three.js. */
 const THREE_ALLOWED = /^konfigurator\//;

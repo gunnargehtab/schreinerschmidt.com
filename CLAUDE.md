@@ -28,7 +28,7 @@ This repository holds an Astro 7 static site for a carpentry business in Mannhei
 - **Accessibility:** WCAG 2.2 AA. One h1 per page, visible labels, focus visible, targets ≥ 24 px (44 px preferred), and every feature works without JS.
 - **Budgets (gz):**
   - JS ≤ 15 KB per content page.
-  - Configurator ≤ 13 KB initial + ≤ 7 KB for the Möbel preview.
+  - Configurator ≤ 11.25 KB initial + ≤ 8.75 KB for the Möbel preview (≤ 20 KB together; re-split 2026-10-10).
   - three.js chunk ≤ 160 KB, loaded only on request.
 - **Toolchain:** Node 24, npm, TypeScript pinned to 6.0.3 (`@astrojs/check` does not support TS 7).
 

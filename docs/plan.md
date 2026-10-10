@@ -490,7 +490,7 @@ No framework; custom elements and event delegation.
   - HTML `required` sits only on always-visible fields: Projektart, PLZ, Name, E-Mail.
   - Branch must-haves carry `data-required`. JS promotes them to `required` and also `disables` inactive branches, which removes them from validation and FormData.
   - `/konfigurator/[typ]/` preselects a project type without JS.
-- **JS enhancement** (core ≤ 13 KB gz):
+- **JS enhancement** (core ≤ 11.25 KB gz):
   - Pure reducer + effects state machine, with the DOM as the store.
   - Per-step validation with an error summary (GOV.UK pattern).
   - On step change, focus moves to the step heading.
@@ -561,7 +561,7 @@ No framework; custom elements and event delegation.
 - **Snapshot:** render the 3/4 preset and call `toBlob` in the same task; `preserveDrawingBuffer` stays off.
 - **Pricing:** an `estimate()` stub with `enabled: false` and every rate `null`. It returns `null` and is never shown in the demo.
 - **Budgets:**
-  - Wizard ≤ 13 KB gz; Möbel preview ≤ 7 KB gz.
+  - Wizard ≤ 11.25 KB gz; Möbel preview ≤ 8.75 KB gz (re-split from 13 + 7 KB on 2026-10-10; 20 KB total).
   - three.js chunk ≤ 160 KB gz.
   - First textures ≤ 260 KB.
   - Click → first frame ≤ 0.8 s on desktop, ≤ 2.5 s on a mid-range Android.
