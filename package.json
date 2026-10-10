@@ -13,6 +13,7 @@
     "build:audit": "node --env-file=env/audit.env node_modules/astro/bin/astro.mjs build",
     "serve": "node --env-file-if-exists=env/pages.env scripts/serve-dist.mjs",
     "check": "astro check",
+    "textures": "node scripts/textures/prepare.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:unit": "vitest run --project unit",

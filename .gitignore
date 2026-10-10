@@ -16,3 +16,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# Raw texture downloads (provenance in textures-src/SOURCES.md)
+textures-src/*
+!textures-src/SOURCES.md
