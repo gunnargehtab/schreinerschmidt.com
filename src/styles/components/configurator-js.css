@@ -1,0 +1,138 @@
+/*
+ * JS mode of the quote wizard (docs/configurator.md §3). main.ts marks the root `data-enhanced`
+ * and removes `hidden` from the step nav, the progress line, the sidebar and the range sliders;
+ * this file holds what the base sheet (configurator.css, the no-JS long form) cannot know: one step
+ * at a time, the step view transition, the review and prompt bits the script renders, and the
+ * print sheet of the success view. Finished state only; motion sits inside the reduced-motion gate.
+ */
+@layer components {
+  /* Steps are no longer stacked sections of one long form. */
+  [data-enhanced] .step + .step {
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+
+  /* Review step: the „Ändern“ button follows its value. */
+  .review__edit {
+    margin-inline-start: var(--space-2xs);
+    vertical-align: baseline;
+  }
+
+  /* „Anfrage bereits gesendet“ prompt (Back after a successful send). */
+  .already-sent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-s);
+    background: var(--accent-tint);
+    border: var(--hairline) dashed var(--line-strong);
+  }
+
+  .already-sent > p {
+    margin: 0;
+    font-weight: var(--weight-ui);
+  }
+
+  .already-sent:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Photo thumbnails (live mode). */
+  .photos__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    max-inline-size: 100%;
+    font-size: var(--step--1);
+  }
+
+  .photos__item img {
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    object-fit: cover;
+    border: var(--hairline) solid var(--line-strong);
+  }
+
+  .photos__item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The DIN print sheet exists for paper only. */
+  .success__print {
+    display: none;
+  }
+}
+
+@layer motion {
+  /* Names from src/lib/vt.ts ('wizard-step', 'wizard-progress'). Only the visible step and the
+     progress line are captured; the root opts out, so the page stays live during the swap. */
+  [data-enhanced] .step:not([hidden]) {
+    view-transition-name: wizard-step;
+  }
+
+  [data-enhanced] .progress {
+    view-transition-name: wizard-progress;
+  }
+
+  html[data-nav-dir] {
+    view-transition-name: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html[data-nav-dir]::view-transition {
+      pointer-events: none;
+    }
+
+    /* 220 ms slide-and-fade (keyframes from motion.css), mirrored for data-nav-dir="back". */
+    html[data-nav-dir]::view-transition-group(wizard-step),
+    html[data-nav-dir]::view-transition-group(wizard-progress) {
+      animation-duration: var(--dur-2);
+      animation-timing-function: var(--ease-out);
+    }
+
+    html[data-nav-dir]::view-transition-old(wizard-step) {
+      animation: var(--dur-2) var(--ease-out) both vt-out-start;
+    }
+
+    html[data-nav-dir]::view-transition-new(wizard-step) {
+      animation: var(--dur-2) var(--ease-out) both vt-in-end;
+    }
+
+    html[data-nav-dir='back']::view-transition-old(wizard-step) {
+      animation-name: vt-out-end;
+    }
+
+    html[data-nav-dir='back']::view-transition-new(wizard-step) {
+      animation-name: vt-in-start;
+    }
+  }
+}
+
+/* Print: the success view only (title, Vorgangsnummer, summary, the DIN drawing sheet with its
+   title block). Unlayered like print.css, so it wins. */
+@media print {
+  body:has(.success:not([hidden])) :is(.site-header, .page-hero, .site-footer),
+  .configurator:has(.success:not([hidden])) :is(.configurator__layout, .success__actions, .timeline, .already-sent) {
+    display: none !important;
+  }
+
+  .success__body {
+    grid-template-columns: none;
+  }
+
+  .success__drawing:has(.success__print) > svg {
+    display: none;
+  }
+
+  .success__print {
+    display: block;
+  }
+
+  .success__print svg {
+    inline-size: 100%;
+    block-size: auto;
+  }
+}

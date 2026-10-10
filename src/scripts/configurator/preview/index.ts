@@ -15,6 +15,13 @@
 //     dispose() cancels pending work, stops observing and releases the listeners.
 //   faecherRange(values) → [min, max] for moebel_faecher, or null (for the core's range narrowing).
 //   paramsFromValues(values) → generator params (pure, params.ts).
+//   buildFor(values) → Promise<Build | null>: the Build of the values (table generator on request);
+//               the live payload (payload.ts) reads derived values, hints and the cut list from it.
+//   printSheet(values, date) → Promise<string>: the DIN print sheet of the values (full renderer,
+//               loaded on request) for the success view's print action, '' when there is no drawing.
+//   The payload and the print sheet go through this module on purpose: everything they need is
+//   already in this chunk, so the bundler keeps the generators and the SVG core in it instead of
+//   splitting them into shared chunks (each extra file costs gzip overhead against the budget).
 //
 // Behaviour
 // - Values come from FormData (disabled fieldsets are left out), empty fields use fieldDefault().
@@ -23,16 +30,38 @@
 //   whatever it shows (sketch or last drawing) and gets data-preview-state="inactive"; the markup or
 //   CSS may hide it. The attribute is "live" after a render.
 // - Only the screen front view is in this chunk. The print sheet and the Seite/Oben views come from
-//   src/lib/configurator/drawing/elevation (full renderer), which the core imports on `beforeprint`.
+//   src/lib/configurator/drawing/elevation (full renderer), import()ed by printSheet().
 // - The drawing is re-rendered when the panel width changes (ResizeObserver), coalesced per frame.
 import { renderScreen } from '../../../lib/configurator/drawing/svg';
 import { generateCarcass } from '../../../lib/configurator/furniture/carcass';
 import { describe } from '../../../lib/configurator/furniture/describe';
-import type { Build, FurnitureParams, Hint } from '../../../lib/configurator/furniture/types';
+import type { Build, Hint } from '../../../lib/configurator/furniture/types';
 import type { Values } from '../../../lib/configurator/fields';
 import { paramsFromValues } from './params';
 
 export { faecherRange, paramsFromValues } from './params';
+
+/** The Build of the values, or null for bett/andere and other project types. */
+export async function buildFor(v: Values): Promise<Build | null> {
+  const p = paramsFromValues(v);
+  if (!p) return null;
+  if (p.kind !== 'esstisch') return generateCarcass(p);
+  return (await (tablePromise ??= import('../../../lib/configurator/furniture/table'))).generateTable(p);
+}
+
+/**
+ * The DIN print sheet (A4 landscape, 1:10–1:50) of the values; '' when there is nothing to draw.
+ * The default id prefix differs from the screen drawing's ('vorschau'), so both can share a page.
+ */
+export async function printSheet(v: Values, date: string): Promise<string> {
+  const b = await buildFor(v);
+  if (!b) return '';
+  return (await import('../../../lib/configurator/drawing/elevation')).renderPrint(b, {
+    view: 'vorne',
+    widthPx: 640,
+    date,
+  });
+}
 
 export interface Preview {
   update(): void;
@@ -59,13 +88,11 @@ export function mountPreview(form: HTMLFormElement, panel: HTMLElement, announce
   let raf = 0;
   let timer = 0;
   let width = 0;
-  let generateTable: TableModule['generateTable'] | undefined;
   /** Hints of the last render, keyed by code, so only new or changed texts are announced. */
   let shown: Record<string, string> = {};
   const widthOf = () => Math.round(drawing?.getBoundingClientRect().width || 0);
 
-  const render = (p: FurnitureParams) => {
-    const b: Build = p.kind === 'esstisch' ? generateTable!(p) : generateCarcass(p);
+  const render = (b: Build) => {
     width = widthOf();
     if (drawing) drawing.innerHTML = renderScreen(b, { view: 'vorne', widthPx: width || 640, idPrefix: 'vorschau' });
     // The first clause of the sentence („Regal aus Eiche, natur geölt, 120 cm breit, …“); the SVG <desc> has it all.
@@ -93,15 +120,12 @@ export function mountPreview(form: HTMLFormElement, panel: HTMLElement, announce
 
   const frame = () => {
     raf = 0;
-    const p = paramsFromValues(valuesOf(form));
-    if (!p) panel.dataset['previewState'] = 'inactive';
-    else if (p.kind === 'esstisch' && !generateTable) {
-      // The table generator (and its describe sentence) is a chunk of its own, loaded on request.
-      (tablePromise ??= import('../../../lib/configurator/furniture/table')).then((m) => {
-        generateTable = m.generateTable;
-        if (!ac.signal.aborted) update();
-      });
-    } else render(p);
+    // Carcasses resolve at once (same frame); the table generator is a chunk of its own, on request.
+    void buildFor(valuesOf(form)).then((b) => {
+      if (ac.signal.aborted) return;
+      if (b) render(b);
+      else panel.dataset['previewState'] = 'inactive';
+    });
   };
 
   const update = () => {

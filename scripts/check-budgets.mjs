@@ -102,7 +102,8 @@ function toDistFile(ref, fromUrlPath) {
 const urlPathOf = (file) => BASE + file.slice(DIST.length + 1).replaceAll(sep, '/');
 
 const STATIC_IMPORT = /(?:^|[;\s}])(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+)["']/g;
-const DYNAMIC_IMPORT = /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g;
+// Rolldown emits import() specifiers as template literals (backticks).
+const DYNAMIC_IMPORT = /\bimport\s*\(\s*["'`]([^"'`]+)["'`]\s*\)/g;
 
 /** @type {Map<string, string>} */
 const textCache = new Map();

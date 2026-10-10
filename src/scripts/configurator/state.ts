@@ -2,9 +2,20 @@
 // tracks the step, the furthest step reached, the submit phase and the current errors, and returns
 // the effects the controller carries out. Pure: no DOM, no timers.
 import { STEPS, type ProjectType, type StepId } from '../../lib/configurator/fields';
-import { MSG } from './messages.de';
 
 export type { ProjectType, StepId };
+
+/**
+ * The texts the reducer announces. They live here (not in messages.de.ts, which re-exports them in
+ * MSG) so the wizard core does not carry the validation messages: that module loads with the
+ * validation chunk on the first "Weiter".
+ */
+export const STATE_MSG = {
+  typeChanged: 'Projektart geändert. Ihre Angaben zu anderen Projektarten bleiben erhalten.',
+  sendFailed: 'Ihre Anfrage konnte nicht gesendet werden. Ihre Eingaben bleiben erhalten.',
+  sent: 'Ihre Anfrage wurde gesendet.',
+} as const;
+const MSG = STATE_MSG;
 
 export interface FieldError {
   /** Control name; the controller resolves it to the element and its id. */

@@ -90,21 +90,43 @@ export function visible(name: string, v: Values): boolean {
   return !c || (holds(c, v) && visible(c.field, v));
 }
 
-/** Ids of the conditions that currently hold; the controller disables the others. */
+/** Ids of the conditions that currently hold (value only; the CSS rules mirror this). */
 export const activeConditions = (v: Values): string[] => CONDITIONS.filter((c) => holds(c, v)).map((c) => c.id);
 
 /**
+ * activeConditions narrowed to the conditions whose controlling field is itself visible (branch and
+ * chain), so a stale `boden_art=dielen` never activates `boden-dielen` while the floor is not new.
+ * The controller disables every `[data-when]` outside this list.
+ */
+export const effectiveConditions = (v: Values): string[] =>
+  CONDITIONS.filter((c) => holds(c, v) && visible(c.field, v)).map((c) => c.id);
+
+/**
+ * The conditions a condition depends on: the `when` chain of its controlling field, nearest first
+ * (`boden-dielen` → [`boden-neu`]). Empty for conditions on always-visible fields of the branch.
+ */
+export function parentConditions(c: Condition): Condition[] {
+  const out: Condition[] = [];
+  for (let p = FIELDS[c.field]?.when; p && byId[p] && !out.includes(byId[p]!); p = FIELDS[byId[p]!.field]?.when) {
+    out.push(byId[p]!);
+  }
+  return out;
+}
+
+/**
  * The `:has()` stylesheet of §2 point 3: hides every `[data-branch]` of an unselected project type
- * and every `[data-when]` whose condition does not hold. Delivered as a build-time stylesheet
- * (src/pages/konfigurator/bedingungen.css.ts), never inline.
+ * and every `[data-when]` whose condition does not hold. A condition whose controlling field has a
+ * condition of its own is also hidden while that parent fails (the stale-value gap of the no-JS
+ * form); those extra rules come last, one per (condition, ancestor) pair. Delivered as a build-time
+ * stylesheet (src/pages/konfigurator/bedingungen.css.ts), never inline.
  */
 export function conditionsCss(formId: string = FORM_ID): string {
   const sel = (field: string, value: string) => `[name="${field}"][value="${value}"]:checked`;
+  const hide = (c: Condition, target: string) =>
+    `#${formId}:not(:has(${c.values.map((v) => sel(c.field, v)).join(',')})) [data-when="${target}"]{display:none}`;
   return [
     ...PROJECT_TYPES.map((t) => `#${formId}:not(:has(${sel('typ', t)})) [data-branch="${t}"]{display:none}`),
-    ...CONDITIONS.map(
-      (c) =>
-        `#${formId}:not(:has(${c.values.map((v) => sel(c.field, v)).join(',')})) [data-when="${c.id}"]{display:none}`,
-    ),
+    ...CONDITIONS.map((c) => hide(c, c.id)),
+    ...CONDITIONS.flatMap((c) => parentConditions(c).map((p) => hide(p, c.id))),
   ].join('\n');
 }

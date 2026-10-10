@@ -8,7 +8,9 @@ import {
   PROJECT_TYPES,
   activeConditions,
   conditionsCss,
+  effectiveConditions,
   holds,
+  parentConditions,
   visible,
 } from '../../../src/lib/configurator/conditions';
 import { FIELDS, type Values } from '../../../src/lib/configurator/fields';
@@ -127,17 +129,57 @@ describe('holds / visible / activeConditions', () => {
     ]);
     expect(activeConditions({})).toEqual([]);
   });
+
+  it('effectiveConditions also needs the controlling field to be visible (branch and chain)', () => {
+    // Without a branch nothing is effective; with it, the chain decides.
+    expect(effectiveConditions({ moebel_art: 'sideboard' })).toEqual([]);
+    expect(effectiveConditions({ typ: 'moebel', moebel_art: 'sideboard' })).toEqual(
+      activeConditions({ moebel_art: 'sideboard' }),
+    );
+    const stale: Values = { typ: 'boden', boden_leistung: 'reparatur', boden_art: 'dielen' };
+    expect(activeConditions(stale)).toContain('boden-dielen');
+    expect(effectiveConditions(stale)).toEqual(['boden-bestand']);
+    expect(effectiveConditions({ ...stale, boden_leistung: 'neu' })).toEqual(['boden-neu', 'boden-dielen']);
+  });
+
+  it('parentConditions walks the `when` chain of the controlling field', () => {
+    const byId = Object.fromEntries(CONDITIONS.map((c) => [c.id, c]));
+    expect(parentConditions(byId['boden-dielen']!).map((c) => c.id)).toEqual(['boden-neu']);
+    expect(parentConditions(byId['boden-neu']!)).toEqual([]);
+    expect(parentConditions(byId['moebel-korpus']!)).toEqual([]);
+    // Every chained condition has an acyclic, finite chain inside CONDITIONS.
+    for (const c of CONDITIONS) {
+      const chain = parentConditions(c);
+      expect(new Set(chain).size).toBe(chain.length);
+      expect(chain).not.toContain(c);
+    }
+  });
 });
 
 describe('conditionsCss', () => {
   const css = conditionsCss();
   const lines = css.split('\n');
+  const chained = CONDITIONS.flatMap((c) => parentConditions(c).map((p) => [c, p] as const));
 
-  it('emits one rule per project type and per condition, scoped to #anfrage', () => {
+  it('emits one rule per project type and per condition, then one per chained parent, scoped to #anfrage', () => {
     expect(FORM_ID).toBe('anfrage');
-    expect(lines).toHaveLength(PROJECT_TYPES.length + CONDITIONS.length);
+    expect(chained.length).toBeGreaterThan(0);
+    expect(lines).toHaveLength(PROJECT_TYPES.length + CONDITIONS.length + chained.length);
     for (const line of lines)
       expect(line).toMatch(/^#anfrage:not\(:has\([^)]+\)\) \[data-(branch|when)="[a-z-]+"\]\{display:none\}$/);
+  });
+
+  it('hides a chained condition while its parent fails (boden_zugang with a stale boden_art=dielen)', () => {
+    // The last rules: `[data-when="boden-dielen"]` is hidden unless boden_leistung=neu is checked.
+    expect(lines.slice(PROJECT_TYPES.length + CONDITIONS.length)).toContain(
+      '#anfrage:not(:has([name="boden_leistung"][value="neu"]:checked)) [data-when="boden-dielen"]{display:none}',
+    );
+    for (const [c, p] of chained) {
+      const rule = lines.find(
+        (l) => l.includes(`[name="${p.field}"]`) && l.endsWith(`[data-when="${c.id}"]{display:none}`),
+      );
+      expect(rule, `${c.id} hidden while ${p.id} fails`).toBeDefined();
+    }
   });
 
   it('matches the spec rule shape', () => {
@@ -180,6 +222,31 @@ describe('conditionsCss', () => {
             return Array.isArray(x) ? x.includes(val) : x === val;
           });
           expect(checked).toBe(active.has(r.id));
+        }
+      }),
+    );
+  });
+
+  it('with the chained rules, a [data-when] is shown exactly when the field chain is visible', () => {
+    // Simulate the whole stylesheet for one branch: an element with data-when=c is visible when no
+    // rule targeting it matches, i.e. when c and all of its parents hold. That must equal
+    // effectiveConditions() for values of that branch.
+    const rulesFor = (id: string) =>
+      lines
+        .filter((l) => l.endsWith(`[data-when="${id}"]{display:none}`))
+        .map((l) => [...l.matchAll(/\[name="([^"]+)"\]\[value="([^"]+)"\]/g)].map((m) => [m[1]!, m[2]!] as const));
+    const boden = CONDITIONS.filter((c) => FIELDS[c.field]?.branch === 'boden');
+    const leistung = fc.constantFrom(undefined, 'neu', 'aufarbeiten', 'reparatur', 'x');
+    const art = fc.constantFrom(undefined, 'dielen', 'kork', 'x');
+    fc.assert(
+      fc.property(leistung, art, (boden_leistung, boden_art) => {
+        const v: Values = { typ: 'boden' };
+        if (boden_leistung) v['boden_leistung'] = boden_leistung;
+        if (boden_art) v['boden_art'] = boden_art;
+        const effective = new Set(effectiveConditions(v));
+        for (const c of boden) {
+          const hidden = rulesFor(c.id).some((selectors) => !selectors.some(([n, val]) => v[n] === val));
+          expect(!hidden, c.id).toBe(effective.has(c.id));
         }
       }),
     );

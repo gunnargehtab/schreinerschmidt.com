@@ -1,10 +1,15 @@
-// Pure validation of the wizard (docs/configurator.md §3 "Validation"). The controller reads each
-// control's ValidityState and data attributes from the DOM and passes them in; this module only
-// chooses the German message and checks the cross-field rules.
+// Validation of the wizard (docs/configurator.md §3 "Validation"). The pure part (controlMessage,
+// crossErrors, parseDecimal) chooses the German message for a ValidityState and checks the
+// cross-field rules; tests/unit/configurator/validate.test.ts covers it without a DOM. The DOM part
+// at the end (validateStep, showErrors, clearErrors) reads the controls of a step and drives the
+// GOV.UK error summary and the inline errors. The controller loads this module on request
+// (prefetched at the first interaction, awaited at the first "Weiter"), so the validation code and
+// messages.de.ts stay out of the initial core bundle.
 import { FIELDS, fieldRange, type StepId, type Values } from '../../lib/configurator/fields';
 import { visible } from '../../lib/configurator/conditions';
 import { MSG } from './messages.de';
 import type { FieldError } from './state';
+import { fieldEl } from './summary';
 
 /** The subset of ValidityState the messages depend on. */
 export interface ValidityLike {
@@ -116,4 +121,117 @@ export function crossErrors(values: Values, step: StepId, ctx: CrossContext): Fi
     if (t && t < ctx.today) errors.push({ name: 'termin', message: MSG.datePast });
   }
   return errors;
+}
+
+// ---- DOM part: a step's controls, the error summary and the inline errors ------------------------
+
+type Control = HTMLInputElement;
+
+/** The flags of a ValidityState are prototype getters; controlMessage() wants a plain object. */
+const FLAGS = [
+  'valid',
+  'valueMissing',
+  'typeMismatch',
+  'patternMismatch',
+  'tooShort',
+  'tooLong',
+  'rangeUnderflow',
+  'rangeOverflow',
+  'stepMismatch',
+  'badInput',
+  'customError',
+] as const;
+const validityOf = (el: Control): ValidityLike => Object.fromEntries(FLAGS.map((k) => [k, el.validity[k]]));
+
+/** The error summary (GOV.UK pattern): a focusable box with one link per invalid field. */
+export interface ErrorUi {
+  form: HTMLFormElement;
+  summary: HTMLElement | null;
+  list: HTMLElement | null;
+}
+
+/** The visible label of a field (`data-label`), or its name. */
+export const labelOf = (form: HTMLFormElement, name: string): string => fieldEl(form, name)?.dataset['label'] ?? name;
+
+/**
+ * Errors of one step: the native validity of its enabled controls (one per name, so a radio group
+ * reports once), then the cross-field rules for the fields without a native error.
+ */
+export function validateStep(form: HTMLFormElement, section: HTMLElement, step: StepId, values: Values): FieldError[] {
+  const errors: FieldError[] = [];
+  const seen = new Set<string>();
+  for (const el of section.querySelectorAll<Control>('input,select,textarea')) {
+    const { name } = el;
+    if (!name || !FIELDS[name] || seen.has(name) || el.matches(':disabled') || !el.willValidate) continue;
+    seen.add(name);
+    const field = el.closest<HTMLElement>('.field');
+    const message = controlMessage({
+      name,
+      type: el.type,
+      label: field?.dataset['label'] ?? name,
+      unit: field?.dataset['unit'],
+      min: el.min,
+      max: el.max,
+      minLength: el.minLength > 0 ? el.minLength : undefined,
+      maxLength: el.maxLength > 0 ? el.maxLength : undefined,
+      autocomplete: el.autocomplete,
+      inputMode: el.inputMode,
+      validity: validityOf(el),
+      validationMessage: el.validationMessage,
+    });
+    if (message) errors.push({ name, message });
+  }
+  // The Swedish locale writes the local date as YYYY-MM-DD, the format of the date input.
+  const today = new Date().toLocaleDateString('sv');
+  for (const e of crossErrors(values, step, { today, label: (n) => labelOf(form, n) })) {
+    if (!errors.some((x) => x.name === e.name)) errors.push(e);
+  }
+  return errors;
+}
+
+/**
+ * Shows or clears the inline error of a field and wires aria-describedby / aria-invalid. Radio and
+ * checkbox groups carry the state on their fieldset (aria-invalid is not allowed on radios).
+ * Returns the first control, the target of the summary link.
+ */
+function wire(field: HTMLElement, message: string): Control | null {
+  const el = field.querySelector<Control>('input,select,textarea');
+  const err = field.querySelector<HTMLElement>('.field__error');
+  if (!el || !err) return null;
+  const group = el.type === 'radio' || (el.type === 'checkbox' && FIELDS[el.name]?.multi);
+  const target = group ? field : el;
+  err.textContent = message;
+  err.hidden = !message;
+  field.classList.toggle('is-invalid', !!message);
+  if (!group) el.ariaInvalid = message ? 'true' : null;
+  const ids = [field.querySelector('.field__hint')?.id, message && err.id].filter(Boolean).join(' ');
+  if (ids) target.setAttribute('aria-describedby', ids);
+  else target.removeAttribute('aria-describedby');
+  return el;
+}
+
+export function clearErrors(ui: ErrorUi): void {
+  for (const f of ui.form.querySelectorAll<HTMLElement>('.field.is-invalid')) wire(f, '');
+  if (ui.summary) ui.summary.hidden = true;
+  ui.list?.replaceChildren();
+}
+
+/** Replaces the shown errors; the summary stays hidden when the list is empty. */
+export function showErrors(ui: ErrorUi, errors: FieldError[]): void {
+  clearErrors(ui);
+  const { form, summary, list } = ui;
+  if (!summary || !list) return;
+  for (const { name, message } of errors) {
+    const field = fieldEl(form, name);
+    const el = field && wire(field, message);
+    if (!el) continue;
+    const a = list.appendChild(document.createElement('li')).appendChild(document.createElement('a'));
+    a.href = `#${el.id}`;
+    a.textContent = `${labelOf(form, name)}: ${message}`;
+    a.onclick = (e) => {
+      e.preventDefault();
+      el.focus();
+    };
+  }
+  summary.hidden = !errors.length;
 }

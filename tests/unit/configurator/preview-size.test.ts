@@ -3,9 +3,12 @@
 // the result matches the Astro build closely): minified ESM, gzip level 9, like scripts/check-budgets.mjs.
 //
 // fields.ts and conditions.ts are external: the wizard core imports them statically, so the real
-// build serves them from the core chunk. What the browser downloads when Möbel is chosen is the entry
-// chunk plus the shared chunk rolldown splits off for the lazily imported table generator; the table
-// chunk itself only loads for moebel_art=esstisch. scripts/check-budgets.mjs checks the same on dist/.
+// build serves them from the core chunk. drawing/elevation.ts (the print fitting printSheet()
+// import()s on request) is external too: in the real build its chunk imports the SVG core from the
+// preview chunk, whereas a standalone bundle would split the SVG core into a chunk of its own.
+// What the browser downloads when Möbel is chosen is the entry chunk plus the shared chunk rolldown
+// splits off for the lazily imported table generator; the table chunk itself only loads for
+// moebel_art=esstisch. scripts/check-budgets.mjs checks the same on dist/.
 import { gzipSync } from 'node:zlib';
 import { rolldown } from 'rolldown';
 import { describe, expect, it } from 'vitest';
@@ -25,7 +28,7 @@ describe('Möbel preview chunk', () => {
       input: ENTRY,
       platform: 'browser',
       logLevel: 'silent',
-      external: (id) => /lib\/configurator\/(fields|conditions)$/.test(id),
+      external: (id) => /lib\/configurator\/(fields|conditions|drawing\/elevation)$/.test(id),
     });
     const { output } = await bundle.generate({ format: 'esm', minify: true, codeSplitting: true });
     await bundle.close();

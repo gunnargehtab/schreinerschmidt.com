@@ -5,10 +5,17 @@
 // Usage in components:  <img class="vt-media" style={vtStyle(Astro.locals, 'proj', slug)} … />
 // `Astro.locals` is a fresh object per page render, so it scopes the registry to that page.
 
-/** Fixed names. `site-header` and `page-title` are applied by class in the motion layer. */
+/**
+ * Fixed names. `site-header` and `page-title` are applied by class in the motion layer;
+ * `wizard-step` and `wizard-progress` by the configurator's JS-mode stylesheet
+ * (docs/configurator.md §3 "View transitions between steps": only the visible step and the
+ * progress line are named, the root stays live).
+ */
 export const VT_FIXED = {
   'site-header': 'site-header',
   'page-title': 'page-title',
+  'wizard-step': 'wizard-step',
+  'wizard-progress': 'wizard-progress',
 } as const;
 
 /** Prefixes of keyed names: `hero-media-<service|slug>` and `proj-<slug>`. */

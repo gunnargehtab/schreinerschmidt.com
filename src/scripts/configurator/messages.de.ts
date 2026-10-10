@@ -1,14 +1,17 @@
-// German messages of the wizard core (docs/configurator.md §3 "Validation", §5). The only copy that
-// ships in the client bundle; every other label is read from the DOM. Style follows
+// German messages of the wizard (docs/configurator.md §3 "Validation", §5). The only copy that
+// ships in the client bundles; every other label is read from the DOM. Style follows
 // src/scripts/forms/messages.de.ts: full sentences, „…“ quotes, U+202F before units.
+// Loaded with the validation chunk (validate.ts) on the first "Weiter"; the reducer's own three
+// texts sit in state.ts (STATE_MSG) and are re-exported here.
+import { STATE_MSG } from './state';
 
 const NNBSP = ' ';
 
 /** "12.5" → "12,5"; integers unchanged. */
 export const num = (n: number): string => String(n).replace('.', ',');
 
-/** A label as it reads inside a sentence: trailing question mark or colon dropped. */
-const bare = (label: string): string => label.replace(/\s*[?:]\s*$/, '');
+/** A label as it reads inside a sentence or a summary line: trailing question mark or colon dropped. */
+export const bare = (label: string): string => label.replace(/\s*[?:]\s*$/, '');
 
 const withUnit = (n: number, unit?: string): string => num(n) + (unit ? NNBSP + unit : '');
 
@@ -32,9 +35,13 @@ export const MSG = {
   date: 'Bitte geben Sie ein gültiges Datum ein.',
   datePast: 'Der Termin darf nicht in der Vergangenheit liegen.',
   baumkante: `Eine Baumkante braucht eine Plattenstärke von mindestens 40${NNBSP}mm.`,
-  typeChanged: 'Projektart geändert. Ihre Angaben zu anderen Projektarten bleiben erhalten.',
-  sendFailed: 'Ihre Anfrage konnte nicht gesendet werden. Ihre Eingaben bleiben erhalten.',
-  sent: 'Ihre Anfrage wurde gesendet.',
+  ...STATE_MSG,
+} as const;
+
+/** Photo policy (§1): shown as the file input's custom validity (photos.ts, lazy). */
+export const PHOTO = {
+  tooMany: 'Bitte wählen Sie höchstens 6 Fotos aus.',
+  tooBig: `Ein Foto ist größer als 10${NNBSP}MB und wurde nicht übernommen.`,
 } as const;
 
 /** mailto texts (§5): the always-included footer and the truncation marker. */
