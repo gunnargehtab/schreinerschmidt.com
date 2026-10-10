@@ -725,6 +725,33 @@ No framework; custom elements and event delegation.
 - Datenschutz already describes the configurator's PLZ check and storage. Keep it in sync when Phase 3 lands.
 - Tests: replace the short `waitForTimeout`s in `home-hero.spec.ts` with `expect.poll`. Optionally unit-test `jobPostingJsonLd()` and drop the demo address override.
 
+**Phase 3 status** (done 2026-10-10, last commit `91d7a73`): wizard, no-JS form, 8 deep-link variants, generators, SVG elevation, review fixes. `npm run verify` green: 977 unit, 1095 dist and 824 e2e tests in 7 Playwright projects (incl. iPhone 15).
+
+**Phase 4 entry: notes from Phase 3**
+- **Budget headroom:**
+  - The Möbel preview chunk measures 8.52 of 8.75 KB gz. `preview/load3d.ts` (poster button, WebGL2 probe, auto-load conditions; docs/configurator.md §4.9) must fit into the remaining 0.23 KB. Everything else goes into the `import()`ed viewer chunk.
+  - If the loader doesn't fit, ask the user before changing a budget. The budgets were already re-split twice: 11.25 / 8.75 / 20 KB initial, and the full flow ≤ 18.75 KB (≤ 27.25 KB with the preview).
+- **Already settled:**
+  - Vite's preload helper (about 1 KB) can't be switched off from `astro.config` in Astro 7.3.
+  - `check-budgets.mjs` reads rolldown's backtick `import()` specifiers. The three.js chunk check (≤ 160 KB) is still a TODO there.
+- **DOM:**
+  - `[data-viewer]` sits in the same grid cell as `[data-preview-drawing]` (`grid-area: 1/1` in `.preview__stage`).
+  - The stage no longer clips, so add `overflow: clip` on `[data-viewer]` if needed.
+  - The `data-msg-viewer-*` strings (loading / ready / unavailable) exist in the markup, and `announce.viewer.*` is in `konfigurator.yaml`.
+- **Code:**
+  - `describe()` returns the sentence without the "3D-Vorschau: " prefix; the viewer adds it.
+  - The viewer gets its `Build` through `preview/index.ts` `buildFor()`.
+  - The species `avgColor`s in `furniture/species.ts` are placeholders until `scripts/textures/prepare.mjs` measures them.
+- **Textures need the user.** Poly Haven forbids scraping, so the 2K Diffuse + `nor_gl` maps must be downloaded by hand (docs/configurator.md §4.4): `oak_veneer_01`, `european_walnut_veneer_04`, `ash_veneer`, `cherry_veneer` and `white_maple_veneer`. Ask for them at the start of Phase 4. Until they arrive, build with flat species colours, which is the first-frame path anyway.
+- **Owner open items** (flagged; don't invent):
+  - the E-moduli;
+  - the PLZ tiers;
+  - the list of form.taxi `error_msg` texts for German mapping;
+  - "3 Minuten" / "2 Werktage" / Aufmaß;
+  - the privacy note (legal);
+  - the before/after door reference;
+  - the map pin.
+
 **Phase 5: configurator C + polish**
 - **Scope:**
   - Esstisch 3D with Baumkante, door and drawer animation, explode view, finish tuning.
