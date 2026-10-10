@@ -6,7 +6,13 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
 import { satteri } from '@astrojs/markdown-satteri';
-import { cspHash, themeInitScript, vtTypesScript, speculationRulesScript } from './src/lib/inline-scripts.mjs';
+import {
+  cspHash,
+  themeInitScript,
+  vtTypesScript,
+  speculationRulesScript,
+  filterPreselectScript,
+} from './src/lib/inline-scripts.mjs';
 import { basePathLinks } from './src/lib/markdown/base-path-links.mjs';
 
 /** @param {string} [s] */
@@ -190,7 +196,12 @@ export default defineConfig({
       // attribute-scoped resource instead. Element hashes stay on `style-src`.
       styleDirective: { resources: [{ resource: "'unsafe-inline'", kind: 'attribute' }] },
       scriptDirective: {
-        hashes: [cspHash(themeInitScript), cspHash(vtTypesScript(BASE)), cspHash(speculationRulesScript(BASE))],
+        hashes: [
+          cspHash(themeInitScript),
+          cspHash(vtTypesScript(BASE)),
+          cspHash(speculationRulesScript(BASE)),
+          cspHash(filterPreselectScript),
+        ],
       },
     },
   },

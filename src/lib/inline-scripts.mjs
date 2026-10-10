@@ -51,6 +51,14 @@ export const vtTypesScript = (base) => {
 };
 
 /**
+ * Referenzen filter preselect (docs/design-system.md §6): `?kategorie=<chip>` checks the matching
+ * radio. Runs right after the FilterBar fieldset, so the first paint is already filtered.
+ * Unknown values leave the default ("alle") checked.
+ */
+export const filterPreselectScript =
+  "(()=>{try{const v=new URLSearchParams(location.search).get('kategorie'),r=v&&document.querySelector('input[name=\"kategorie\"][value=\"'+CSS.escape(v)+'\"]');r&&(r.checked=true)}catch{}})()";
+
+/**
  * Speculation rules (docs/design-system.md §7): prerender same-site pages, prefetch the configurator.
  * @param {string} base The site base path, e.g. "/schreinerschmidt.com/".
  * @returns {string}

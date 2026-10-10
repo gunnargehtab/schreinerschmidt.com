@@ -1,0 +1,121 @@
+---
+// Bildergalerie (docs/design-system.md §5 "Gallery and Lightbox", §8 Referenzen).
+// Thumbnails are plain links to a large rendition, so the gallery works without JS; `lightbox.ts`
+// upgrades them to the dialog. Safari 26.4+ lays the grid out as lanes, other engines as a uniform 4:3 grid.
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Picture from '../ui/Picture.astro';
+import Lightbox from './Lightbox.astro';
+
+interface Item {
+  src: ImageMetadata;
+  alt: string;
+  caption?: string | undefined;
+}
+
+interface Props {
+  images: Item[];
+  /** Thumbnail `sizes`. */
+  sizes?: string;
+  /** Width of the large rendition behind the link (capped at the original). */
+  fullWidth?: number;
+  /** Scroll-driven reveal stagger (motion.css `.reveal`). Off by default: see report, basics.nojs.spec flags it. */
+  reveal?: boolean;
+  class?: string;
+}
+
+const {
+  images,
+  sizes = '(min-width: 64em) 22rem, (min-width: 40em) 50vw, 100vw',
+  fullWidth = 2000,
+  reveal = false,
+  class: className,
+} = Astro.props;
+
+// `getImage` URLs are base-prefixed by Astro, so the links need no url() helper.
+const items = await Promise.all(
+  images.map(async (image) => {
+    const full = await getImage({ src: image.src, format: 'webp', width: Math.min(fullWidth, image.src.width) });
+    return { ...image, href: full.src };
+  }),
+);
+---
+
+<ul class:list={['gallery', 'list-plain', { reveal }, className]} data-gallery>
+  {items.map((item) => (
+    <li class="gallery__item" style={`--ar:${item.src.width} / ${item.src.height}`}>
+      <a class="gallery__link" href={item.href} data-lightbox data-caption={item.caption}>
+        <Picture src={item.src} alt={item.alt} sizes={sizes} width={640} />
+      </a>
+      {item.caption && <p class="gallery__caption">{item.caption}</p>}
+    </li>
+  ))}
+</ul>
+<Lightbox />
+
+<style>
+  @layer components {
+    .gallery {
+      --cols: 1;
+      display: grid;
+      display: grid-lanes;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      gap: var(--space-xs);
+      margin: 0;
+      padding: 0;
+    }
+
+    @container section (inline-size >= 40rem) {
+      .gallery {
+        --cols: 2;
+      }
+    }
+
+    @container section (inline-size >= 64rem) {
+      .gallery {
+        --cols: 3;
+      }
+    }
+
+    .gallery__item {
+      min-inline-size: 0;
+    }
+
+    .gallery__link {
+      display: block;
+      background: var(--surface-panel);
+      cursor: zoom-in;
+    }
+
+    .gallery__link:focus-visible {
+      outline: var(--focus-width) solid var(--focus);
+      outline-offset: var(--focus-offset);
+    }
+
+    .gallery__link :global(picture),
+    .gallery__link :global(img) {
+      display: block;
+      inline-size: 100%;
+      max-inline-size: none;
+    }
+
+    .gallery__link :global(img) {
+      aspect-ratio: 4 / 3;
+      block-size: auto;
+      object-fit: cover;
+    }
+
+    @supports (display: grid-lanes) {
+      .gallery__link :global(img) {
+        aspect-ratio: var(--ar, 4 / 3);
+        object-fit: contain;
+      }
+    }
+
+    .gallery__caption {
+      margin-block-start: var(--space-3xs);
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+  }
+</style>

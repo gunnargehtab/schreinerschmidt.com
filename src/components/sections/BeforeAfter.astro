@@ -1,0 +1,262 @@
+---
+// Vorher-Nachher-Vergleich (docs/design-system.md §5 "BeforeAfter").
+// Without JS the two photos sit side by side, each labelled. With JS (`before-after.ts` adds
+// `data-enhanced`) they stack, the before photo is clipped by `--pos`, a range input covers the stage
+// and a "Vorher / Beide / Nachher" button group appears. Before/after images get no view-transition names.
+import type { ImageMetadata } from 'astro';
+import Picture from '../ui/Picture.astro';
+
+interface Photo {
+  src: ImageMetadata;
+  alt: string;
+}
+
+interface Props {
+  before: Photo;
+  after: Photo;
+  /** Visible labels and ARIA texts. German defaults. */
+  labels?: {
+    before?: string;
+    after?: string;
+    both?: string;
+    /** Accessible name of the button group. */
+    group?: string;
+    /** Accessible name of the slider. */
+    range?: string;
+  };
+  /** Aspect ratio of each photo, written as an `--ar` custom property. */
+  ratio?: string;
+  sizes?: string;
+  /** Optional caption below the comparison. */
+  caption?: string;
+  /** Unique per page when several comparisons are shown. */
+  id?: string;
+}
+
+const {
+  before,
+  after,
+  labels: l = {},
+  ratio = '4 / 3',
+  sizes = '(min-width: 48em) 36rem, 100vw',
+  caption,
+  id = 'ba',
+} = Astro.props;
+
+const labels = {
+  before: 'Vorher',
+  after: 'Nachher',
+  both: 'Beide',
+  group: 'Ansicht wählen',
+  range: 'Vorher-Nachher-Vergleich, Anteil Vorher-Bild',
+  ...l,
+};
+const rangeId = `${id}-range`;
+---
+
+<figure class="ba" data-ba data-before={labels.before} data-after={labels.after}>
+  <div class="ba__stage" style={`--pos:50%;--ar:${ratio}`}>
+    <div class="ba__side ba__before">
+      <Picture src={before.src} alt={before.alt} sizes={sizes} />
+      <span class="ba__label">{labels.before}</span>
+    </div>
+    <div class="ba__side ba__after">
+      <Picture src={after.src} alt={after.alt} sizes={sizes} />
+      <span class="ba__label">{labels.after}</span>
+    </div>
+    <span class="ba__divider" aria-hidden="true"></span>
+    <label class="visually-hidden" for={rangeId}>
+      {labels.range}
+    </label>
+    <input class="ba__range" id={rangeId} type="range" min="0" max="100" value="50" hidden />
+  </div>
+  <div class="ba__buttons" role="group" aria-label={labels.group} hidden>
+    <button type="button" class="btn btn--secondary btn--small" data-pos="100" aria-pressed="false">
+      {labels.before}
+    </button>
+    <button type="button" class="btn btn--secondary btn--small" data-pos="50" aria-pressed="true">
+      {labels.both}
+    </button>
+    <button type="button" class="btn btn--secondary btn--small" data-pos="0" aria-pressed="false">
+      {labels.after}
+    </button>
+  </div>
+  {caption && <figcaption class="ba__caption">{caption}</figcaption>}
+</figure>
+
+<script>
+  import '../../scripts/before-after.ts';
+</script>
+
+<style>
+  @layer components {
+    .ba {
+      --_knob: var(--target-min);
+      max-inline-size: 50rem;
+      display: grid;
+      gap: var(--space-xs);
+      margin: 0;
+    }
+
+    /* No JS: two labelled photos side by side (stacked on narrow containers). */
+    .ba__stage {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+      gap: var(--space-xs);
+    }
+
+    .ba__side {
+      position: relative;
+      aspect-ratio: var(--ar, 4 / 3);
+      overflow: clip;
+      background: var(--surface-panel);
+    }
+
+    .ba__side :global(picture),
+    .ba__side :global(img) {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+      max-inline-size: none;
+      aspect-ratio: auto;
+      object-fit: cover;
+    }
+
+    .ba__label {
+      position: absolute;
+      inset-block-end: var(--space-2xs);
+      inset-inline-start: var(--space-2xs);
+      padding: var(--space-3xs) var(--space-2xs);
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+      color: var(--ink);
+      background: var(--surface);
+      border: var(--rule-strong);
+    }
+
+    .ba__divider,
+    .ba__range {
+      display: none;
+    }
+
+    /* With JS: one stage, the before photo clipped from the right edge by --pos. */
+    .ba[data-enhanced] .ba__stage {
+      display: block;
+      aspect-ratio: var(--ar, 4 / 3);
+      overflow: clip;
+      touch-action: pan-y;
+    }
+
+    .ba[data-enhanced] .ba__side {
+      position: absolute;
+      inset: 0;
+      aspect-ratio: auto;
+    }
+
+    .ba[data-enhanced] .ba__before {
+      z-index: 1;
+      clip-path: inset(0 calc(100% - var(--pos)) 0 0);
+    }
+
+    .ba[data-enhanced] .ba__after .ba__label {
+      inset-inline-start: auto;
+      inset-inline-end: var(--space-2xs);
+    }
+
+    .ba[data-enhanced] .ba__divider {
+      display: block;
+      position: absolute;
+      z-index: 2;
+      inset-block: 0;
+      inset-inline-start: var(--pos);
+      inline-size: 2px;
+      translate: -50% 0;
+      background: var(--surface);
+      box-shadow: 0 0 0 1px var(--ink);
+      pointer-events: none;
+    }
+
+    .ba[data-enhanced] .ba__divider::after {
+      content: '';
+      position: absolute;
+      inset-block-start: 50%;
+      inset-inline-start: 50%;
+      inline-size: var(--_knob);
+      block-size: var(--_knob);
+      translate: -50% -50%;
+      border-radius: 50%;
+      background:
+        linear-gradient(var(--ink), var(--ink)) center / 2px 40% no-repeat,
+        var(--surface);
+      border: 2px solid var(--ink);
+    }
+
+    /*
+     * The range spans the stage plus half a knob on each side, so the 44 px thumb centre travels
+     * exactly from the left to the right edge and matches --pos. Invisible: the divider is the handle.
+     */
+    .ba[data-enhanced] .ba__range {
+      display: block;
+      position: absolute;
+      z-index: 3;
+      inset-block: 0;
+      inset-inline: calc(var(--_knob) / -2);
+      inline-size: calc(100% + var(--_knob));
+      block-size: 100%;
+      margin: 0;
+      padding: 0;
+      opacity: 0;
+      appearance: none;
+      background: transparent;
+      cursor: ew-resize;
+      touch-action: pan-y;
+    }
+
+    .ba__range::-webkit-slider-thumb {
+      appearance: none;
+      inline-size: var(--_knob);
+      block-size: var(--_knob);
+    }
+
+    .ba__range::-moz-range-thumb {
+      inline-size: var(--_knob);
+      block-size: var(--_knob);
+      border: 0;
+    }
+
+    .ba__range::-webkit-slider-runnable-track {
+      block-size: 100%;
+    }
+
+    .ba__range::-moz-range-track {
+      block-size: 100%;
+    }
+
+    /* The range is invisible, so the knob carries the focus ring. */
+    .ba[data-enhanced] .ba__stage:has(.ba__range:focus-visible) .ba__divider::after {
+      outline: var(--focus-width) solid var(--focus);
+      outline-offset: var(--focus-offset);
+    }
+
+    .ba__buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2xs);
+    }
+
+    .ba__buttons .btn {
+      min-block-size: var(--target-min);
+    }
+
+    .ba__buttons .btn[aria-pressed='true'] {
+      --_bg: var(--accent-tint);
+      --_border: var(--accent);
+    }
+
+    .ba__caption {
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+  }
+</style>

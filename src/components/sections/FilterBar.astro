@@ -1,0 +1,161 @@
+---
+// Referenzen filter (docs/design-system.md §6 "Referenzen filter"): radio chips with counts, a status
+// line and the project list. The filtering itself is CSS (`:has()`), so it works without JS;
+// `referenzen-filter.ts` only adds the view-transition choreography and the status text.
+//
+// Usage: the page passes its projects' categories and renders the list items as the slot:
+//   <FilterBar items={projects.map((p) => p.data)}>
+//     {projects.map((p) => <li class="gallery__item" data-cat={dataCat(p.data.categories)}>…</li>)}
+//   </FilterBar>
+// Category mapping: ServiceKeys `fenster` and `tueren` share the chip `fenster-tueren`
+// (src/lib/referenzen-filter.ts). Chips without projects are not rendered.
+import { filterPreselectScript } from '../../lib/inline-scripts.mjs';
+import { FILTER_CHIPS, chipCounts, projectCountLabel } from '../../lib/referenzen-filter';
+
+interface Props {
+  items: readonly { categories: readonly string[] }[];
+  /** Legend of the radio group. */
+  legend?: string;
+  /** Scroll-driven reveal stagger (motion.css `.reveal`). Off by default: basics.nojs.spec flags below-fold items. */
+  reveal?: boolean;
+}
+
+const { items, legend = 'Nach Kategorie filtern', reveal = false } = Astro.props;
+const counts = chipCounts(items);
+const chips = [{ value: 'alle', label: 'Alle' }, ...FILTER_CHIPS.filter((c) => counts[c.value])];
+---
+
+<div class="refs" data-refs>
+  <fieldset class="refs__chips">
+    <legend>{legend}</legend>
+    {chips.map((chip) => (
+      <label class="chip">
+        <input
+          class="visually-hidden"
+          type="radio"
+          name="kategorie"
+          value={chip.value}
+          data-n={counts[chip.value]}
+          checked={chip.value === 'alle'}
+        />
+        <span class="chip__label">{chip.label}</span>
+        <span class="chip__n">({counts[chip.value]})</span>
+      </label>
+    ))}
+  </fieldset>
+  <script is:inline set:html={filterPreselectScript} />
+  <p class="refs__status text-muted js-only" role="status" data-status>
+    {projectCountLabel(counts['alle'] ?? 0)}
+  </p>
+  <ul class:list={['gallery', 'list-plain', { reveal }]} data-filter-list>
+    <slot />
+  </ul>
+</div>
+
+<script>
+  import '../../scripts/referenzen-filter.ts';
+</script>
+
+<style>
+  @layer components {
+    .refs {
+      display: grid;
+      gap: var(--space-s);
+    }
+
+    .refs__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2xs);
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .refs__chips legend {
+      float: inline-start;
+      inline-size: 100%;
+      margin-block-end: var(--space-2xs);
+      padding: 0;
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3xs);
+      min-block-size: var(--target-min);
+      padding-inline: var(--space-xs);
+      border: var(--rule-strong);
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        background-color var(--dur-1),
+        border-color var(--dur-1);
+    }
+
+    .chip:hover {
+      background: var(--accent-tint);
+    }
+
+    .chip:has(input:checked) {
+      border-color: var(--accent);
+      background: var(--accent-tint);
+      box-shadow: inset 0 -0.1875rem 0 var(--accent);
+      font-weight: var(--weight-ui);
+    }
+
+    .chip:has(input:focus-visible) {
+      outline: var(--focus-width) solid var(--focus);
+      outline-offset: var(--focus-offset);
+    }
+
+    .chip__n {
+      font-variant-numeric: tabular-nums;
+      color: var(--ink-muted);
+    }
+
+    .refs__status {
+      margin: 0;
+      font-size: var(--step--1);
+    }
+
+    /* Filtering without JS: hide items outside the checked category. fenster/tueren share one chip. */
+    .refs:has(input[value='moebel']:checked) :global(.gallery__item:not([data-cat~='moebel'])),
+    .refs:has(input[value='boeden']:checked) :global(.gallery__item:not([data-cat~='boeden'])),
+    .refs:has(input[value='treppen']:checked) :global(.gallery__item:not([data-cat~='treppen'])),
+    .refs:has(input[value='fenster-tueren']:checked) :global(.gallery__item:not([data-cat~='fenster-tueren'])),
+    .refs:has(input[value='altbau']:checked) :global(.gallery__item:not([data-cat~='altbau'])),
+    .refs:has(input[value='terrassen']:checked) :global(.gallery__item:not([data-cat~='terrassen'])) {
+      display: none;
+    }
+
+    .gallery {
+      --cols: 1;
+      display: grid;
+      display: grid-lanes;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      gap: var(--space-s);
+      margin: 0;
+      padding: 0;
+    }
+
+    @container section (inline-size >= 40rem) {
+      .gallery {
+        --cols: 2;
+      }
+    }
+
+    @container section (inline-size >= 64rem) {
+      .gallery {
+        --cols: 3;
+      }
+    }
+
+    .gallery :global(.gallery__item) {
+      min-inline-size: 0;
+    }
+  }
+</style>
