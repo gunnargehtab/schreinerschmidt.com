@@ -70,25 +70,37 @@ describe('NEXT', () => {
 });
 
 describe('BACK', () => {
-  it('asks for history.back() when the previous entry is ours', () => {
-    const [s, fx] = reduce(ui('details'), { t: 'BACK' }, ctx({}, { ownHistory: true }));
+  it('asks for history.back() when the previous entry is the previous step', () => {
+    const [s, fx] = reduce(ui('details'), { t: 'BACK' }, ctx({}, { prevStep: 'projekt' }));
     expect(s.step).toBe('details');
     expect(fx).toEqual([{ e: 'history', mode: 'back' }]);
   });
 
-  it('otherwise steps back and replaces the entry', () => {
-    const [s, fx] = reduce(ui('ausfuehrung', { errors: [err('x')] }), { t: 'BACK' }, ctx());
+  it('otherwise shows the previous step and pushes an entry (no entry of ours before)', () => {
+    const [s, fx] = reduce(ui('ausfuehrung', { errors: [err('x')] }), { t: 'BACK' }, ctx({}, { prevStep: null }));
     expect(s).toMatchObject({ step: 'details', errors: [] });
     expect(fx).toEqual([
       { e: 'show', step: 'details', dir: 'back' },
-      { e: 'history', mode: 'replace' },
+      { e: 'history', mode: 'push' },
       { e: 'focus', target: 'heading' },
       { e: 'persist' },
     ]);
   });
 
+  it('never goes forward after an „Ändern“ or progress jump backwards', () => {
+    // pruefen → Ändern → rahmen: the previous entry is pruefen, so history.back() would go forward.
+    const [s, fx] = reduce(ui('rahmen', { furthest: 5 }), { t: 'BACK' }, ctx({}, { prevStep: 'pruefen' }));
+    expect(s).toMatchObject({ step: 'ausfuehrung', furthest: 5 });
+    expect(fx[0]).toEqual({ e: 'show', step: 'ausfuehrung', dir: 'back' });
+    expect(fx[1]).toEqual({ e: 'history', mode: 'push' });
+    // A forward jump from projekt to rahmen: Zurück means kontakt's predecessor, not projekt.
+    const [s2, fx2] = reduce(ui('rahmen'), { t: 'BACK' }, ctx({}, { prevStep: 'projekt' }));
+    expect(s2.step).toBe('ausfuehrung');
+    expect(kinds(fx2)).toEqual(['show', 'history', 'focus', 'persist']);
+  });
+
   it('is a no-op on the first step', () => {
-    expect(reduce(ui('projekt'), { t: 'BACK' }, ctx({}, { ownHistory: true }))).toEqual([ui('projekt'), []]);
+    expect(reduce(ui('projekt'), { t: 'BACK' }, ctx({}, { prevStep: null }))).toEqual([ui('projekt'), []]);
   });
 });
 
@@ -239,23 +251,32 @@ describe('invariants', () => {
 
   it('keeps the step valid, furthest monotonic and never submits with errors', () => {
     fc.assert(
-      fc.property(fc.array(action, { maxLength: 40 }), invalidSteps, fc.boolean(), (actions, invalid, own) => {
-        const c = ctx(Object.fromEntries(invalid.map((s) => [s, [err(s)]])), { ownHistory: own, typ: 'moebel' });
-        let s = initialUi();
-        for (const a of actions) {
-          const [next, fx] = reduce(s, a, c);
-          expect(STEPS).toContain(next.step);
-          expect(next.furthest).toBeGreaterThanOrEqual(s.furthest);
-          expect(next.furthest).toBeGreaterThanOrEqual(STEPS.indexOf(next.step));
-          if (fx.some((e) => e.e === 'send')) {
-            expect(next.phase).toBe('submitting');
-            expect(invalid).toEqual([]);
+      fc.property(
+        fc.array(action, { maxLength: 40 }),
+        invalidSteps,
+        fc.option(fc.constantFrom(...STEPS), { nil: null }),
+        (actions, invalid, prevStep) => {
+          const c = ctx(Object.fromEntries(invalid.map((s) => [s, [err(s)]])), { prevStep, typ: 'moebel' });
+          let s = initialUi();
+          for (const a of actions) {
+            const [next, fx] = reduce(s, a, c);
+            expect(STEPS).toContain(next.step);
+            expect(next.furthest).toBeGreaterThanOrEqual(s.furthest);
+            expect(next.furthest).toBeGreaterThanOrEqual(STEPS.indexOf(next.step));
+            if (fx.some((e) => e.e === 'send')) {
+              expect(next.phase).toBe('submitting');
+              expect(invalid).toEqual([]);
+            }
+            for (const e of fx) if (e.e === 'show') expect(e.step).toBe(next.step);
+            if (next.step !== s.step) expect(fx.some((e) => e.e === 'show')).toBe(true);
+            // BACK only delegates to history.back() when that lands on the previous step.
+            if (a.t === 'BACK' && fx.some((e) => e.e === 'history' && e.mode === 'back')) {
+              expect(prevStep).toBe(STEPS[STEPS.indexOf(s.step) - 1]);
+            }
+            s = next;
           }
-          for (const e of fx) if (e.e === 'show') expect(e.step).toBe(next.step);
-          if (next.step !== s.step) expect(fx.some((e) => e.e === 'show')).toBe(true);
-          s = next;
-        }
-      }),
+        },
+      ),
     );
   });
 });

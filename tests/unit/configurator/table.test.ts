@@ -1,7 +1,7 @@
 // Table generator properties (docs/configurator.md §4.2 "Table", §7).
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { KNEE_ROOM } from '../../../src/lib/configurator/furniture/constraints';
+import { KNEE_ROOM } from '../../../src/lib/configurator/furniture/table-rules';
 import { generate } from '../../../src/lib/configurator/furniture';
 import type { Part, TableParams } from '../../../src/lib/configurator/furniture/types';
 

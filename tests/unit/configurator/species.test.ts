@@ -3,8 +3,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { FINISH_LABEL, SPECIES, SPECIES_KEYS } from '../../../src/lib/configurator/furniture/species';
-import { SPECIES_TEXTURES } from '../../../src/lib/configurator/furniture/textures';
+import { FINISH_LABEL, SPECIES } from '../../../src/lib/configurator/furniture/species';
+import { SPECIES_KEYS, SPECIES_TEXTURES } from '../../../src/lib/configurator/furniture/textures';
 
 const SPEC_E = { eiche: 10.0, nussbaum: 10.8, esche: 12.3, kernbuche: 14.3, kirsche: 10.3 };
 const SPEC_TEX = {

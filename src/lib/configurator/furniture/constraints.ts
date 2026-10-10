@@ -1,4 +1,5 @@
-// Carpentry constraints (docs/configurator.md §4.2 "Derived rules"). Pure functions in mm.
+// Carpentry constraints of the carcasses (docs/configurator.md §4.2 "Derived rules"). Pure functions
+// in mm. The table rules are in table-rules.ts (they load with the table generator, on request).
 import { SPECIES } from './species';
 import type { Board, Mm, Species } from './types';
 
@@ -20,8 +21,6 @@ export const MAX_MODULE: Mm = 1200;
 export const SPLIT_ABOVE: Mm = 2600;
 export const MAIN_CABINET: Mm = 2250;
 export const MIN_AUFSATZ: Mm = 300;
-/** Table: the Zarge underside stays at least this high above the floor. */
-export const KNEE_ROOM: Mm = 620;
 
 const DRAWER_FRONT = [120, 300] as const;
 const DOOR_MAX_HEIGHT: Mm = 2400;
@@ -104,22 +103,4 @@ export function splitAufsatz(
   if (carcassHeight <= splitAbove) return { main: carcassHeight, aufsatz: 0, extraBlende: 0 };
   const aufsatz = carcassHeight - main;
   return aufsatz < minAufsatz ? { main, aufsatz: 0, extraBlende: aufsatz } : { main, aufsatz, extraBlende: 0 };
-}
-
-/** Table legs: thickness by length, inset 60–150 mm from the edges. */
-export const legSize = (length: Mm): Mm => (length >= 2400 ? 90 : length >= 1800 ? 80 : 70);
-export const legInset = (length: Mm): Mm => Math.min(150, Math.max(60, Math.round(length * 0.05)));
-
-/** Zarge height 80–100 mm, reduced so its underside keeps 620 mm knee room. Never below 40 mm. */
-export function zargeHeight(height: Mm, top: Mm): Mm {
-  return Math.max(40, Math.min(100, height - top - KNEE_ROOM));
-}
-
-/** Kufen centres sit at `±(L/2 − max(300, 0.18 L))` from the table centre. */
-export const kufenOffset = (length: Mm): Mm => length / 2 - Math.max(300, 0.18 * length);
-
-/** Seats: `floor((L − 200) / 600)` per long side, plus the two ends when the top is ≥ 900 mm wide. */
-export function seatRange(length: Mm, width: Mm): [number, number] {
-  const side = Math.max(1, Math.floor((length - 200) / 600));
-  return [2 * side, 2 * side + (width >= 900 ? 2 : 0)];
 }

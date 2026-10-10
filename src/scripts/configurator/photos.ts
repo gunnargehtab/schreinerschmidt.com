@@ -2,7 +2,12 @@
 // files of ≤ 10 MB, each downscaled to 2560 px on the long edge and re-encoded as JPEG 0.82 (which
 // strips EXIF/GPS), thumbnails with a remove button. The files live only in the input (never in the
 // URL, sessionStorage or the draft); the selection accumulates across pickers.
-import { PHOTO } from './messages.de';
+
+/** Photo policy texts (§1), the file input's custom validity. German copy, same style as messages.de.ts. */
+export const PHOTO = {
+  tooMany: 'Bitte wählen Sie höchstens 6 Fotos aus.',
+  tooBig: 'Ein Foto ist größer als 10 MB und wurde nicht übernommen.',
+} as const;
 
 export const MAX_FILES = 6;
 export const MAX_BYTES = 10 * 1024 * 1024;

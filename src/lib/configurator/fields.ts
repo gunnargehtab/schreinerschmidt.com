@@ -298,3 +298,20 @@ export function fieldDefault(name: string, v: Values): string {
 /** Enum values that exist for the current moebel_art; the full list for every other field. */
 export const fieldValues = (name: string, v: Values): readonly string[] =>
   ART_OPTIONS[art(v)]?.[name] ?? FIELDS[name]?.values ?? [];
+
+/**
+ * The values as the active configuration uses them: an enum value that does not exist for the chosen
+ * moebel_art (a stale option of another furniture type, hidden by its `label[data-when]`) is dropped,
+ * so the summary, the payload, the URL and the generator agree. The controller fills the default.
+ */
+export function effectiveValues(v: Values): Values {
+  const out = { ...v };
+  for (const name in v) {
+    const x = v[name];
+    if (!x || FIELDS[name]?.kind !== 'enum') continue;
+    const ok = fieldValues(name, v);
+    if (Array.isArray(x)) out[name] = x.filter((s) => ok.includes(s));
+    else if (!ok.includes(x)) delete out[name];
+  }
+  return out;
+}

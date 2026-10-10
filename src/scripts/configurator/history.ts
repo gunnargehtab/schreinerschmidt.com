@@ -1,30 +1,34 @@
 // History of the wizard (docs/configurator.md §3 "Serialisation and history"): one pushState per
-// step, popstate drives GOTO. Every entry of ours carries `{ ss: 1, step, i }`, where `i` counts our
-// pushes before it; `own()` tells the reducer whether BACK may use history.back(). No Navigation
-// API. Every call sits in try/catch: Safari throws after ~100 history calls per 30 s.
+// step, popstate drives GOTO. Every entry of ours carries `{ ss: 1, step, prev }`, where `prev` is
+// the step of the entry before it (null when that one is not ours); `prev()` tells the reducer
+// where history.back() would land, so BACK only uses it when that is the previous wizard step. The
+// entries survive a reload. No Navigation API. Every call sits in try/catch: Safari throws after
+// ~100 history calls per 30 s.
 import type { StepId } from '../../lib/configurator/fields';
 
 interface Entry {
   ss: 1;
   step: StepId;
-  i: number;
+  prev: StepId | null;
 }
 
 export interface WizardHistory {
   push(step: StepId, url: string): void;
   replace(step: StepId, url: string): void;
   back(): void;
-  /** True when the previous history entry is one of ours. */
-  own(): boolean;
+  /** Step of the previous history entry when it is one of ours, else null. */
+  prev(): StepId | null;
 }
 
 const entry = (s: unknown): Entry | null => ((s as Entry | null)?.ss === 1 ? (s as Entry) : null);
 
 export function createHistory(onPop: (step: StepId) => void): WizardHistory {
-  let i = entry(history.state)?.i ?? 0;
-  const set = (mode: 'pushState' | 'replaceState', step: StepId, url: string) => {
+  let cur = entry(history.state);
+  const set = (mode: 'pushState' | 'replaceState', step: StepId, prev: StepId | null, url: string) => {
+    const e: Entry = { ss: 1, step, prev };
     try {
-      history[mode]({ ss: 1, step, i } satisfies Entry, '', url);
+      history[mode](e, '', url);
+      cur = e;
     } catch {
       // Throttled by the browser; the next change tries again.
     }
@@ -32,16 +36,13 @@ export function createHistory(onPop: (step: StepId) => void): WizardHistory {
   addEventListener('popstate', (e) => {
     const s = entry(e.state);
     if (!s) return;
-    i = s.i;
+    cur = s;
     onPop(s.step);
   });
   return {
-    push(step, url) {
-      i++;
-      set('pushState', step, url);
-    },
-    replace: (step, url) => set('replaceState', step, url),
+    push: (step, url) => set('pushState', step, cur?.step ?? null, url),
+    replace: (step, url) => set('replaceState', step, cur?.prev ?? null, url),
     back: () => history.back(),
-    own: () => i > 0,
+    prev: () => cur?.prev ?? null,
   };
 }

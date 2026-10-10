@@ -79,19 +79,26 @@ describe('toSections / toText', () => {
 });
 
 describe('subjectLine', () => {
-  it('reads "Anfrage <typ>: <art> <b×h×t> – <plz> <ort> – #<id>"', () => {
+  it('reads "Anfrage <short type>: <art> <b×h×t> – <plz> <ort> – #<id>" (spec §5)', () => {
+    expect(subjectLine(regal, '7F3K', 'moebel')).toBe('Anfrage Möbel: Regal 120×200×35 – 68161 Mannheim – #7F3K');
+  });
+
+  it('falls back to the card label without a known type', () => {
     expect(subjectLine(regal, '7F3K')).toBe('Anfrage Möbel nach Maß: Regal 120×200×35 – 68161 Mannheim – #7F3K');
+    expect(subjectLine(regal, '7F3K', 'nope')).toContain('Anfrage Möbel nach Maß:');
   });
 
   it('leaves out what is missing', () => {
-    expect(subjectLine([regal[0]!], 'A1B2')).toBe('Anfrage Möbel nach Maß – #A1B2');
-    expect(subjectLine([regal[0]!, regal[7]!], 'A1B2')).toBe('Anfrage Möbel nach Maß – 68161 – #A1B2');
+    expect(subjectLine([regal[0]!], 'A1B2', 'moebel')).toBe('Anfrage Möbel – #A1B2');
+    expect(subjectLine([regal[0]!, regal[7]!], 'A1B2', 'moebel')).toBe('Anfrage Möbel – 68161 – #A1B2');
     const boden: Item[] = [
       { name: 'typ', label: 'Projektart', value: 'Boden', step: 'projekt' },
       { name: 'boden_leistung', label: 'Was ist geplant', value: 'Neuer Boden', step: 'details' },
       { name: 'boden_flaeche', label: 'Fläche ca. in m²', value: `42,5${NNBSP}m²`, step: 'details' },
     ];
-    expect(subjectLine(boden, 'ZZ99')).toBe('Anfrage Boden: Neuer Boden – #ZZ99');
+    expect(subjectLine(boden, 'ZZ99', 'boden')).toBe('Anfrage Boden: Neuer Boden – #ZZ99');
+    const tuer: Item[] = [{ name: 'typ', label: 'Projektart', value: 'Türen', step: 'projekt' }];
+    expect(subjectLine(tuer, 'ZZ99', 'tuer')).toBe('Anfrage Tür – #ZZ99');
   });
 
   it('never contains a line break and uses at most three dimensions', () => {

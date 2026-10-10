@@ -31,7 +31,7 @@ const next = (page: Page) => page.locator('[data-action="next"]');
 const back = (page: Page) => page.locator('[data-action="back"]');
 const current = (page: Page) => page.locator('#anfrage .step:not([hidden])');
 
-test('reduced motion: steps swap without startViewTransition', async ({ page }) => {
+test('reduced motion: steps swap without startViewTransition @cross-engine', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const dirs = await trackTransitions(page);
   await page.goto(PATH);

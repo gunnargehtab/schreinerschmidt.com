@@ -11,6 +11,7 @@ import {
   SCHEMA,
   anfrageJson,
   appendPayload,
+  photoNames,
   type MoebelInfo,
   type PayloadInput,
 } from '../../../src/scripts/configurator/payload';
@@ -141,6 +142,51 @@ describe('anfrageJson', () => {
     expect(JSON.parse(JSON.stringify(json))).toEqual(JSON.parse(JSON.stringify(json)));
     expect(JSON.stringify(json)).not.toContain('boden_flaeche');
     expect(JSON.stringify(json)).not.toContain('tisch_laenge');
+  });
+
+  it('ignores a stale option of another moebel_art (Sideboard „hängend“ after a switch to Regal)', () => {
+    const stale = anfrageJson({
+      ...input,
+      values: { ...values, moebel_unterbau: 'haengend', moebel_front: 'gemischt' },
+    });
+    const felder = (stale['projekt'] as { felder: Values }).felder;
+    expect(felder['moebel_unterbau']).toBeUndefined();
+    expect(felder['moebel_front']).toBeUndefined();
+    expect(JSON.stringify(stale)).not.toContain('haengend');
+    // The same option is fine where the type offers it.
+    const side = anfrageJson({
+      ...input,
+      values: { ...values, moebel_art: 'sideboard', moebel_unterbau: 'haengend', moebel_front: 'gemischt' },
+    });
+    expect((side['projekt'] as { felder: Values }).felder).toMatchObject({
+      moebel_unterbau: 'haengend',
+      moebel_front: 'gemischt',
+    });
+  });
+
+  it('drops empty checkbox groups and lists the photos in anhaenge', () => {
+    const fenster = anfrageJson({
+      ...input,
+      svg: undefined,
+      fotos: ['kueche.jpg', 'flur.jpg'],
+      values: { typ: 'fenster', fenster_leistung: [], altbau_bereiche: ['dielen'], plz: '68161' },
+    });
+    expect((fenster['projekt'] as { felder: Values }).felder).toEqual({});
+    expect(fenster['anhaenge']).toEqual(['kueche.jpg', 'flur.jpg']);
+    const both = anfrageJson({ ...input, fotos: ['bad.jpg'], values: { ...values, fenster_leistung: ['neu'] } });
+    expect(both['anhaenge']).toEqual(['zeichnung.svg', 'bad.jpg']);
+    expect(JSON.stringify(both)).not.toContain('fenster_leistung');
+  });
+});
+
+describe('photoNames', () => {
+  it('lists the non-empty files of fotos[] and skips the empty file of an untouched input', () => {
+    const fd = new FormData();
+    fd.append('fotos[]', new File([], '', { type: 'application/octet-stream' }));
+    expect(photoNames(fd)).toEqual([]);
+    fd.append('fotos[]', new File(['x'], 'kueche.jpg', { type: 'image/jpeg' }));
+    fd.append('fotos[]', 'not a file');
+    expect(photoNames(fd)).toEqual(['kueche.jpg']);
   });
 });
 

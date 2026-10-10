@@ -3,8 +3,8 @@
 // keeps the two in sync. The pure library can't read the content collection (it also runs in the browser).
 //
 // Only what the generators and the drawing need lives here, because this module is part of the
-// Möbel preview chunk (≤ 7 KB gz). Texture ids and the finish list are in ./textures.ts, which only
-// the 3D viewer loads.
+// Möbel preview chunk (≤ 8.75 KB gz). Texture ids, the species key list and the finish list are in
+// ./textures.ts, which only the 3D viewer (and the texture pipeline) loads.
 //
 // OWNER TO CONFIRM (docs/owner-checklist.md "Shelf span values"): the E-moduli drive the shelf-span
 // rule and need the owner's sign-off. The average colours are the swatch/first-frame colours and are
@@ -26,8 +26,6 @@ export const SPECIES: Record<Species, SpeciesInfo> = {
   kernbuche: { name: 'Kernbuche', eModulusGPa: 14.3, avgColor: '#C98F63' },
   kirsche: { name: 'Kirsche', eModulusGPa: 10.3, avgColor: '#B5704A' },
 };
-
-export const SPECIES_KEYS = Object.keys(SPECIES) as Species[];
 
 export const FINISH_LABEL: Record<Finish, string> = {
   'natur-geoelt': 'natur geölt',

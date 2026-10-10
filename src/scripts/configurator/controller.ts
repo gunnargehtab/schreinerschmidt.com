@@ -13,25 +13,30 @@
 // - mounts the Möbel preview chunk on demand, and the submission (submit.ts).
 // Chunks loaded on request (core ≤ 11.25 KB gz): summary.ts (first change, or at start when a
 // session with values is restored), validate.ts + messages.de.ts (prefetched at the first
-// interaction, awaited at the first Weiter), preview/ (typ = moebel), submit.ts (SUBMIT), photos.ts
-// (file selection).
+// interaction, awaited at the first Weiter; at once when a restored step needs clamping), preview/
+// (typ = moebel), submit.ts (SUBMIT; live mode adds payload.ts and, for Möbel, preview/info.ts),
+// photos.ts (file selection). Core + validate + summary + submit + payload is the "full flow"
+// (target 18 KB gz, scripts/check-budgets.mjs FLOW). A chunk that fails to load (offline, stale
+// deployment) is reported: validation and photos announce it and retry on the next action, the
+// submission shows the error panel (live) or announces it (demo) and „Erneut senden“ / the submit
+// button retry; the preview announces once and keeps the sketch.
 // INP rule (§4.13): event handlers only record state; the work runs in the next animation frame.
 import { effectiveConditions, visible } from '../../lib/configurator/conditions';
 import {
   FIELDS,
   STEPS,
+  effectiveValues,
   fieldDefault,
   fieldRange,
   type ProjectType,
   type StepId,
   type Values,
 } from '../../lib/configurator/fields';
-import { serviceArea } from '../../lib/configurator/service-area';
 import { createAnnouncer, type Announce } from './announce';
 import { clearDraft, clearSession, draftDate, loadDraft, loadSession, saveDraft, saveSession } from './draft';
 import { createHistory } from './history';
 import { fromQuery, toQuery, toSnapshot } from './serialize';
-import { initialUi, reduce, type Action, type Effect, type WizardUi } from './state';
+import { MIN_FILL_MS, STATE_MSG, initialUi, reduce, type Action, type Effect, type WizardUi } from './state';
 import { createSteps, fill, type Msg } from './steps';
 import type { Submit } from './submit';
 import type { Item } from './summary';
@@ -57,7 +62,7 @@ export interface Wizard {
   text(): string;
   /** Absolute shareable URL of the configuration. */
   configUrl(): string;
-  /** Milliseconds since the first interaction, or -1 (time-trap). */
+  /** Milliseconds since the first human interaction (or a restored session), or -1 (time-trap). */
   elapsed(): number;
   dispatch(a: Action): void;
   /** New request after a successful send. */
@@ -75,7 +80,11 @@ const idx = (s: StepId) => STEPS.indexOf(s);
 /** Actions that validate (and therefore need the validation chunk). */
 const VALIDATES = new Set(['NEXT', 'GOTO', 'SUBMIT']);
 
-/** Values of every known control, disabled ones included (the branch may be about to activate). */
+/**
+ * Values of every known control, disabled ones included (the branch may be about to activate).
+ * A checked option that the chosen moebel_art does not offer (Sideboard „hängend“ after a switch
+ * to Regal) is dropped, so fillDefaults() checks the default and every consumer agrees.
+ */
 export function readValues(form: HTMLFormElement): Values {
   const v: Values = {};
   for (const el of form.elements as unknown as Iterable<Control>) {
@@ -88,7 +97,7 @@ export function readValues(form: HTMLFormElement): Values {
       if (el.checked) v[name] = el.value;
     } else v[name] = el.value;
   }
-  return v;
+  return effectiveValues(v);
 }
 
 export function writeValues(form: HTMLFormElement, v: Values): void {
@@ -140,11 +149,9 @@ export function init(root: HTMLElement): void {
   let previewMod: PreviewModule | null = null;
   let previewLoad: Promise<PreviewModule> | null = null;
   let val: ValidateModule | null = null;
-  let valLoad: Promise<ValidateModule> | null = null;
   let sum: SummaryModule | null = null;
-  let sumLoad: Promise<SummaryModule> | null = null;
+  let sumInit: Promise<unknown> | null = null;
   let submit: Submit | null = null;
-  let submitLoad: Promise<Submit> | null = null;
   let skipPop = false;
 
   const query = (): string => {
@@ -153,13 +160,36 @@ export function init(root: HTMLElement): void {
   };
   const configUrl = (): string => new URL(query(), location.href).href;
   const slider = (n: Control) => $<Control>(`[data-range-for="${n.name}"]`, form);
-  const loadValidate = () => (valLoad ??= import('./validate').then((m) => (val = m)));
-  const loadSummary = () => (sumLoad ??= import('./summary').then((m) => (sum = m)));
+  const noop = () => {};
+  /** Assertive feedback for a chunk that could not be loaded; the caller's next attempt retries. */
+  const loadFailed = () => announce(STATE_MSG.loadFailed, 'assertive');
+  /** A chunk loaded on request; after a failed load the next call tries again. */
+  function lazy<T>(load: () => Promise<T>): () => Promise<T> {
+    let p: Promise<T> | null = null;
+    return () =>
+      (p ??= load().catch((e: unknown) => {
+        p = null;
+        throw e;
+      }));
+  }
+  const loadValidate = lazy(() => import('./validate').then((m) => (val = m)));
+  const loadSummary = lazy(() => import('./summary').then((m) => (sum = m)));
+  const loadSubmit = lazy(() => import('./submit').then((m) => (submit = m.createSubmit(wizard))));
+  /** Starts the time-trap clock at the first human interaction (and prefetches the validation). */
+  const touch = () => {
+    if (first < 0) {
+      first = Date.now();
+      loadValidate().catch(noop);
+    }
+  };
   /** Announces a template with the project type's visible label. */
   const sayTyp = (key: string, t: string) =>
-    void loadSummary().then((m) => announce(fill(msg(key), { typ: m.optionLabel(form, 'typ', t) })));
+    void loadSummary().then((m) => announce(fill(msg(key), { typ: m.optionLabel(form, 'typ', t) })), noop);
+  /** The service-area hint; its data sits in the validation chunk, which the first interaction prefetches. */
   const serviceHint = (plz: string) => {
-    if (serviceOut) serviceOut.textContent = serviceArea(plz)?.message ?? '';
+    if (!serviceOut) return;
+    if (!plz) serviceOut.textContent = '';
+    else void loadValidate().then((m) => (serviceOut.textContent = m.serviceArea(plz)?.message ?? ''), noop);
   };
 
   // ---- conditions, required, ranges, defaults ------------------------------------------------
@@ -207,7 +237,8 @@ export function init(root: HTMLElement): void {
   function updateSummary(): void {
     if (shareUrl) shareUrl.value = configUrl();
     if (!sum) {
-      if (!sumLoad) void loadSummary().then(updateSummary);
+      // Quiet when it fails: the review step or the submission reports the missing chunk.
+      sumInit ??= loadSummary().then(updateSummary, () => (sumInit = null));
       return;
     }
     items = sum.collect(form, v);
@@ -257,13 +288,14 @@ export function init(root: HTMLElement): void {
   function syncPreview(): void {
     const moebel = v['typ'] === 'moebel' && !!panel;
     if (moebel && !preview) {
-      (previewLoad ??= import('./preview/index')).then((m) => {
+      // Announced once; the build-time sketch stays and a reload retries (no retry per keystroke).
+      (previewLoad ??= import('./preview/index').catch((e: unknown) => (loadFailed(), Promise.reject(e)))).then((m) => {
         previewMod = m;
         if (v['typ'] === 'moebel' && !preview) {
           preview = m.mountPreview(form, panel!, announce);
           applyConditions();
         }
-      });
+      }, noop);
     } else if (!moebel && preview) {
       preview.dispose();
       preview = null;
@@ -274,13 +306,13 @@ export function init(root: HTMLElement): void {
   // ---- the reducer and its effects -----------------------------------------------------------
   function dispatch(a: Action): void {
     if (!val && VALIDATES.has(a.t)) {
-      void loadValidate().then(() => dispatch(a));
+      void loadValidate().then(() => dispatch(a), loadFailed);
       return;
     }
     const [next, effects] = reduce(ui, a, {
       steps: STEPS,
       validate: (step) => val!.validateStep(form, steps.section(step), step, v),
-      ownHistory: hist.own(),
+      prevStep: hist.prev(),
       typ: a.t === 'TYPE' ? a.typ : typ,
     });
     ui = next;
@@ -316,14 +348,28 @@ export function init(root: HTMLElement): void {
           break;
         case 'send':
           // The submission (success view, live send, mailto) loads on request.
-          void (submitLoad ??= import('./submit').then((m) => (submit = m.createSubmit(wizard)))).then((s) => s.send());
+          void loadSubmit().then((s) => s.send(), sendUnavailable);
           break;
       }
     }
   }
 
+  /**
+   * The submit chunk could not load: the error panel (live) shows the network line, FAILED announces
+   * it (demo too); „Erneut senden“ (handled below while the chunk is missing) and the submit button retry.
+   */
+  function sendUnavailable(): void {
+    const p = $<HTMLElement>('[data-submit-error]', form);
+    if (p) {
+      for (const r of $$('[data-reason]', p)) r.hidden = r.dataset['reason'] !== 'network';
+      p.hidden = false;
+      p.tabIndex = -1;
+    }
+    dispatch({ t: 'FAILED', reason: 'network' });
+  }
+
   function focus(target: 'heading' | 'errors' | 'result'): void {
-    if (target === 'result') return submit?.focusResult();
+    if (target === 'result') return submit ? submit.focusResult() : $('[data-submit-error]', form)?.focus();
     const el = target === 'errors' ? errorUi.summary : steps.heading(ui.step);
     el?.focus({ preventScroll: true });
     (target === 'errors' ? el : steps.section(ui.step))?.scrollIntoView({ block: 'start' });
@@ -346,12 +392,11 @@ export function init(root: HTMLElement): void {
     raf ||= requestAnimationFrame(sync);
   };
 
+  form.addEventListener('pointerdown', touch);
+  form.addEventListener('keydown', touch);
   form.addEventListener('input', (e) => {
     const el = e.target as Control;
-    if (first < 0) {
-      first = Date.now();
-      void loadValidate();
-    }
+    touch();
     if (el.dataset['rangeFor']) {
       const n = $<Control>(`[name="${el.dataset['rangeFor']}"]`, form);
       if (n) n.value = el.value;
@@ -377,7 +422,8 @@ export function init(root: HTMLElement): void {
       fillDefaults();
     } else if (el.type === 'file') {
       const list = el.closest('.field')?.querySelector<HTMLElement>('[data-photo-list]') ?? null;
-      void import('./photos').then((m) => m.handlePhotos(el, list, msg('photo-remove'), schedule));
+      // The files stay in the input; the next selection retries the chunk.
+      void import('./photos').then((m) => m.handlePhotos(el, list, msg('photo-remove'), schedule), loadFailed);
     }
     schedule();
   });
@@ -397,16 +443,19 @@ export function init(root: HTMLElement): void {
         return dispatch({ t: 'NEXT' });
       case 'back':
         return dispatch({ t: 'BACK' });
+      case 'retry':
+        // submit.ts handles the panel once it is loaded; this is the retry while it is missing.
+        return submit ? undefined : dispatch({ t: 'SUBMIT' });
       case 'copy-link':
         return void loadSummary()
           .then((m) => m.copyText(configUrl()))
-          .then((ok) => ok && announce(msg('link-copied')));
+          .then((ok) => ok && announce(msg('link-copied')), loadFailed);
       case 'draft-delete':
         if (draftToggle) draftToggle.checked = false;
         return dropDraft();
       case 'draft-resume':
         if (draft) {
-          restore(draft.values, draft.step, draft.furthest);
+          restore(draft.values, draft.step, draft.furthest, true);
           if (draftToggle) draftToggle.checked = true;
           if (draftDelete) draftDelete.hidden = false;
         }
@@ -447,20 +496,38 @@ export function init(root: HTMLElement): void {
   });
 
   // ---- restore and start ---------------------------------------------------------------------
-  function restore(values: Values, step: StepId, furthest: number): void {
+  /** `stored`: the values come from this device's session or draft, which proves a human filled them (time-trap). */
+  function restore(values: Values, step: StepId, furthest: number, stored = false): void {
     writeValues(form, values);
     v = readValues(form);
     typ = (v['typ'] as ProjectType) || null;
     ui = { ...initialUi(step), furthest: Math.max(furthest, idx(step)) };
+    if (stored && first < 0) first = Date.now() - MIN_FILL_MS;
     if (typ) fillDefaults();
     applyConditions();
     syncPreview();
     serviceHint($<Control>('[name="plz"]', form)?.value ?? '');
-    steps.show(ui.step);
+    show(ui.step);
     // The empty sidebar text is in the HTML; the summary module loads once there is something to show.
     if (typ || sum) updateSummary();
-    hist.replace(ui.step, (lastUrl = query()));
+    // A shared link or a stale session may point past an incomplete step: fall back silently, like GOTO.
+    if (idx(step) > 0) void loadValidate().then(clampRestored, noop);
+  }
+
+  function show(step: StepId): void {
+    steps.show(step);
+    hist.replace(step, (lastUrl = query()));
     store();
+  }
+
+  function clampRestored(): void {
+    for (let i = 0; i < idx(ui.step); i++) {
+      const s = STEPS[i]!;
+      if (!val!.validateStep(form, steps.section(s), s, v).length) continue;
+      ui = { ...ui, step: s };
+      show(s);
+      return;
+    }
   }
 
   const wizard: Wizard = {
@@ -520,7 +587,7 @@ export function init(root: HTMLElement): void {
       preselected = fromUrl.values['typ'] as string;
     }
   }
-  restore(values, step, session?.furthest ?? 0);
+  restore(values, step, session?.furthest ?? 0, !!session);
   if (preselected) sayTyp('type-preselected', preselected);
   if (draft && banner) {
     const date = $('[data-draft-date]', banner);

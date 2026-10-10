@@ -1,8 +1,7 @@
 // mailto budget (docs/configurator.md §5, §7 "mailto").
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { buildMailto, MAILTO_LIMIT } from '../../../src/scripts/configurator/mailto';
-import { MAIL } from '../../../src/scripts/configurator/messages.de';
+import { buildMailto, MAIL, MAILTO_LIMIT } from '../../../src/scripts/configurator/mailto';
 
 const link = 'https://gunnargehtab.github.io/schreinerschmidt.com/konfigurator/?v=1&typ=moebel&moebel_art=regal';
 const footer = encodeURIComponent(`${MAIL.link}${link}\r\n${MAIL.photos}`);

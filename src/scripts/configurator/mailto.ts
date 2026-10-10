@@ -1,9 +1,14 @@
 // mailto builder of the demo success view and the failure panel (docs/configurator.md §5 "mailto
 // budget"). Pure: sections in, href out. Sections are added in priority order until the encoded
 // URL would exceed the budget; the config link and the photo hint are always included.
-import { MAIL } from './messages.de';
-
 export const MAILTO_LIMIT = 1800;
+
+/** mailto texts (§5): the always-included footer and the truncation marker. German copy, same style as messages.de.ts. */
+export const MAIL = {
+  truncated: '[gekürzt – vollständige Angaben über den Konfigurationslink]',
+  link: 'Konfigurationslink: ',
+  photos: 'Fotos bitte als Anhang hinzufügen.',
+} as const;
 
 const CRLF = '\r\n';
 const enc = encodeURIComponent;

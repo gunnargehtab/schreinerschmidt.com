@@ -56,6 +56,14 @@ export default defineConfig({
       retries: CI ? 2 : 1,
     },
     { name: 'mobile', use: { ...devices['Pixel 7'] }, testIgnore: dedicated },
+    // iPhone (WebKit, touch): the configurator flow and branch specs only, to keep the run short
+    // (docs/configurator.md §7 "Projects"). Same crash retry as webkit.
+    {
+      name: 'iphone',
+      use: { ...devices['iPhone 15'] },
+      testMatch: ['**/konfigurator-flow.spec.ts', '**/konfigurator-branches.spec.ts'],
+      retries: CI ? 2 : 1,
+    },
     {
       name: 'no-js',
       use: { ...devices['Desktop Chrome'], javaScriptEnabled: false },

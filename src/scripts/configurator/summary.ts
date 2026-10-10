@@ -3,7 +3,7 @@
 // `collect()` reads the DOM (labels, option texts, units); everything after it is pure and covered
 // by tests/unit/configurator/summary.test.ts.
 import { visible } from '../../lib/configurator/conditions';
-import { FIELDS, STEPS, type StepId, type Values } from '../../lib/configurator/fields';
+import { FIELDS, STEPS, effectiveValues, type StepId, type Values } from '../../lib/configurator/fields';
 
 /** A label as it reads in a summary line: trailing question mark or colon dropped (as messages.de.ts bare()). */
 const bare = (label: string): string => label.replace(/\s*[?:]\s*$/, '');
@@ -42,9 +42,13 @@ export function optionLabel(form: HTMLFormElement, name: string, value: string):
   return input?.closest('label')?.querySelector('.choice__label')?.textContent?.trim() || value;
 }
 
-/** Visible, filled fields in registry order; the values as the user reads them. */
-export function collect(form: HTMLFormElement, values: Values): Item[] {
+/**
+ * Visible, filled fields in registry order; the values as the user reads them. A stale option of
+ * another moebel_art (hidden by its label[data-when]) is left out, like in the payload and the URL.
+ */
+export function collect(form: HTMLFormElement, raw: Values): Item[] {
   const items: Item[] = [];
+  const values = effectiveValues(raw);
   for (const [name, f] of Object.entries(FIELDS)) {
     if (f.kind === 'file' || name === 'tisch_brett' || !visible(name, values)) continue;
     const raw = values[name];
@@ -86,7 +90,10 @@ export async function copyText(text: string): Promise<boolean> {
     ta.select();
     let ok = false;
     try {
-      ok = document.execCommand('copy');
+      // execCommand is deprecated, but it is the only copy path where the Clipboard API is missing
+      // or denied (insecure context, some embedded browsers); the structural type hides lib.dom's
+      // deprecation marker from `astro check`.
+      ok = (document as unknown as { execCommand(command: string): boolean }).execCommand('copy');
     } catch {
       // Not available either.
     }

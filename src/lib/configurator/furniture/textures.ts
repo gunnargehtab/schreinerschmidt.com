@@ -1,7 +1,10 @@
 // Texture data per species (docs/configurator.md §4.4), kept apart from species.ts so the Möbel
 // preview chunk carries no viewer-only strings. Loaded by the 3D viewer and the texture pipeline;
 // tests/unit/configurator/species.test.ts keeps it in sync with src/content/woods.yaml.
+import { SPECIES } from './species';
 import type { Finish, Species } from './types';
+
+export const SPECIES_KEYS = Object.keys(SPECIES) as Species[];
 
 export interface SpeciesTextures {
   /** Poly Haven texture id (§4.4). */

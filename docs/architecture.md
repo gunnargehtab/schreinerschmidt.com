@@ -463,7 +463,7 @@ jobs:
 - **Budgets per page (gz):** HTML ≤ 30 KB, CSS ≤ 25 KB, JS ≤ 15 KB, fonts ≤ 80 KB, LCP image ≤ 120 KB.
   - HTML is measured **without** the inline `<style>` blocks. All CSS is inlined (`inlineStylesheets: 'always'`), and it counts against the CSS budget. Since Phase 2, Home is about 23.5 + 13.9 KB.
   - Demo-only `/intern/` sheets have their own HTML budget (45 KB).
-  - `konfigurator/` pages have an 11.25 KB JS budget (initial). The Möbel-preview chunk (≤ 8.75 KB, and ≤ 20 KB together with the page JS) is `import()`ed and checked separately; the three.js chunk is not checked yet (TODO in `scripts/check-budgets.mjs`).
+  - `konfigurator/` pages have an 11.25 KB JS budget (initial). The Möbel-preview chunk (≤ 8.75 KB, and ≤ 20 KB together with the page JS) is `import()`ed and checked separately. The **full flow** (page JS + every chunk a completed enquiry loads besides the preview, photos and three.js: validation/messages, summary, submit/mailto, payload) has a target of 18 KB, 26 KB with the Möbel preview; `scripts/check-budgets.mjs` currently enforces 18.75 / 27.25 KB (docs/configurator.md §3 "JS budget") and prints the chunk list. The three.js chunk is not checked yet (TODO in `scripts/check-budgets.mjs`).
   - The LCP image is evaluated for a 1280 px desktop (DPR 1) and a 390 px phone (DPR 2.625); the larger file must stay within the budget. The phone run picks art-directed `<source media>` candidates (Home: the 4:5 crop below 48rem).
 - Typography lint: straight quotes, " - ".
 - A green-claim word list feeds the owner checklist.

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { TYP_LABELS } from '../../src/lib/konfigurator-links';
 
 // Every branch of the quote wizard (docs/configurator.md §1) reaches the demo success view: the
 // JS-required must-haves block "Weiter" with a German message until they are filled. The live-mode
@@ -18,6 +19,8 @@ interface Branch {
   ausfuehrung?(page: Page): Promise<void>;
   /** A line of the success summary. */
   summary: string;
+  /** Runs in firefox, webkit and the phones too (a representative subset: card, checkbox group, Möbel). */
+  crossEngine?: boolean;
 }
 
 const check = (page: Page, name: string, value: string) =>
@@ -26,6 +29,7 @@ const check = (page: Page, name: string, value: string) =>
 const BRANCHES: Branch[] = [
   {
     typ: 'moebel',
+    crossEngine: true,
     label: 'Möbel nach Maß',
     error: ['Welches Möbel?: Bitte wählen Sie eine Option bei „Welches Möbel“.'],
     details: async (page) => {
@@ -36,6 +40,7 @@ const BRANCHES: Branch[] = [
   },
   {
     typ: 'boden',
+    crossEngine: true,
     label: 'Boden',
     error: [
       'Was ist geplant?: Bitte wählen Sie eine Option bei „Was ist geplant“.',
@@ -56,6 +61,7 @@ const BRANCHES: Branch[] = [
   },
   {
     typ: 'fenster',
+    crossEngine: true,
     label: 'Fenster',
     error: ['Was ist geplant?: Bitte wählen Sie mindestens eine Option bei „Was ist geplant“.'],
     details: async (page) => {
@@ -103,7 +109,8 @@ const summaryBox = (page: Page) => page.locator('[data-error-summary]');
 const current = (page: Page) => page.locator('#anfrage .step:not([hidden])');
 
 for (const b of BRANCHES) {
-  test(`${b.typ}: must-haves block, then the branch reaches the success view`, async ({ page }) => {
+  const tag = b.crossEngine ? ' @cross-engine' : '';
+  test(`${b.typ}: must-haves block, then the branch reaches the success view${tag}`, async ({ page }) => {
     await page.goto(PATH);
     await check(page, 'typ', b.typ);
     await next(page).click();
@@ -153,7 +160,9 @@ for (const b of BRANCHES) {
     await expect(success.locator('[data-success-summary]')).toContainText(b.summary);
     const href = (await success.locator('[data-action="mail"]').getAttribute('data-href')) ?? '';
     expect(href.length).toBeLessThanOrEqual(1800);
-    expect(decodeURIComponent(href)).toContain(`Anfrage ${b.label}`);
+    // The subject carries the short type name (spec §5), the body the card label.
+    expect(decodeURIComponent(href)).toContain(`subject=Anfrage ${TYP_LABELS[b.typ as keyof typeof TYP_LABELS]}`);
+    expect(decodeURIComponent(href)).toContain(`Projektart: ${b.label}`);
     // No drawing: Bett has no generator, the other branches have no preview at all.
     await expect(success.locator('[data-success-drawing] svg')).toHaveCount(0);
   });

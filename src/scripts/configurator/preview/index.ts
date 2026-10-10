@@ -1,5 +1,5 @@
 // Möbel live preview (docs/configurator.md §3 "Files", §4.8, §4.11): the chunk the wizard core
-// import()s once typ=moebel. Budget ≤ 7 KB gz (scripts/check-budgets.mjs, tests/unit/configurator/
+// import()s once typ=moebel. Budget ≤ 8.75 KB gz (scripts/check-budgets.mjs, tests/unit/configurator/
 // preview-size.test.ts). It draws the front elevation of the configured furniture as SVG.
 //
 // API
@@ -16,10 +16,12 @@
 //   faecherRange(values) → [min, max] for moebel_faecher, or null (for the core's range narrowing).
 //   paramsFromValues(values) → generator params (pure, params.ts).
 //   buildFor(values) → Promise<Build | null>: the Build of the values (table generator on request);
-//               the live payload (payload.ts) reads derived values, hints and the cut list from it.
+//               ./info.ts (live payload, on request) derives the cut list and the description from it.
+//   screenDrawing(values, widthPx, idPrefix) → Promise<string>: the front view at a given width (the
+//               success view shows the drawing narrower than the preview panel, so it re-renders).
 //   printSheet(values, date) → Promise<string>: the DIN print sheet of the values (full renderer,
 //               loaded on request) for the success view's print action, '' when there is no drawing.
-//   The payload and the print sheet go through this module on purpose: everything they need is
+//   The payload info and the print sheet go through this module on purpose: everything they need is
 //   already in this chunk, so the bundler keeps the generators and the SVG core in it instead of
 //   splitting them into shared chunks (each extra file costs gzip overhead against the budget).
 //
@@ -40,6 +42,8 @@ import type { Values } from '../../../lib/configurator/fields';
 import { paramsFromValues } from './params';
 
 export { faecherRange, paramsFromValues } from './params';
+/** For ./info.ts: through this entry, so the describe modules stay in this chunk instead of a shared one. */
+export { describe };
 
 /** The Build of the values, or null for bett/andere and other project types. */
 export async function buildFor(v: Values): Promise<Build | null> {
@@ -53,6 +57,12 @@ export async function buildFor(v: Values): Promise<Build | null> {
  * The DIN print sheet (A4 landscape, 1:10–1:50) of the values; '' when there is nothing to draw.
  * The default id prefix differs from the screen drawing's ('vorschau'), so both can share a page.
  */
+/** The screen front view of the values at `widthPx` ('' when there is nothing to draw): the success view re-renders at its own width. */
+export async function screenDrawing(v: Values, widthPx: number, idPrefix: string): Promise<string> {
+  const b = await buildFor(v);
+  return b ? renderScreen(b, { view: 'vorne', widthPx, idPrefix }) : '';
+}
+
 export async function printSheet(v: Values, date: string): Promise<string> {
   const b = await buildFor(v);
   if (!b) return '';

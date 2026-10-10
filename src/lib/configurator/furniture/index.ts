@@ -16,6 +16,6 @@ export { maxShelfSpan, deriveBays, deriveShelves } from './constraints';
 export { liveEdgeOutline } from './live-edge';
 export { describe, KIND_LABEL, registerDescriber } from './describe';
 export { cutList } from './cutlist';
-export { SPECIES, SPECIES_KEYS, FINISH_LABEL } from './species';
-export { SPECIES_TEXTURES } from './textures';
+export { SPECIES, FINISH_LABEL } from './species';
+export { SPECIES_KEYS, SPECIES_TEXTURES } from './textures';
 export type * from './types';

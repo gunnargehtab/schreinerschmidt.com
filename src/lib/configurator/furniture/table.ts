@@ -1,7 +1,7 @@
 // Table generator: Esstisch with Vierfuß (legs + Zarge) or Kufen in wood or steel, optional Baumkante.
 // The Möbel preview chunk import()s this module only when moebel_art=esstisch, so the table sentence
 // of describe() lives here too (registered on load, see describe.ts).
-import { KNEE_ROOM, kufenOffset, legInset, legSize, seatRange, zargeHeight } from './constraints';
+import { KNEE_ROOM, kufenOffset, legInset, legSize, seatRange, zargeHeight } from './table-rules';
 import { count, registerDescriber } from './describe';
 import { NNBSP, boundsOf, cm, cmUnit, dim, part } from './dims';
 import { liveEdgeOutline } from './live-edge';

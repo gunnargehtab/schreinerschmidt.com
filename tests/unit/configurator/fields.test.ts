@@ -9,6 +9,7 @@ import {
   PLZ_PATTERN,
   STEPS,
   TEL_PATTERN,
+  effectiveValues,
   fieldDefault,
   fieldRange,
   fieldValues,
@@ -184,6 +185,33 @@ describe('per-type ranges and options (§4.2)', () => {
     expect(fieldValues('moebel_staerke', { moebel_art: 'sideboard' })).toEqual(['19', '25']);
     expect(fieldValues('moebel_staerke', {})).toEqual(['19', '25', '40']);
     expect(fieldValues('nope', {})).toEqual([]);
+  });
+
+  it('effectiveValues drops a stale option of another moebel_art and keeps everything else', () => {
+    // Sideboard „hängend“ chosen, then the type switched to Regal: the option is hidden and must not count.
+    const stale = { typ: 'moebel', moebel_art: 'regal', moebel_unterbau: 'haengend', moebel_breite: '120' };
+    expect(effectiveValues(stale)).toEqual({ typ: 'moebel', moebel_art: 'regal', moebel_breite: '120' });
+    expect(effectiveValues({ moebel_art: 'sideboard', moebel_unterbau: 'haengend' })).toEqual({
+      moebel_art: 'sideboard',
+      moebel_unterbau: 'haengend',
+    });
+    expect(effectiveValues({ moebel_art: 'sideboard', moebel_staerke: '40' })).toEqual({ moebel_art: 'sideboard' });
+    // Unknown enum values go too; checkbox groups are filtered; empty strings, numbers and text stay.
+    expect(
+      effectiveValues({ typ: 'boden', boden_holz: 'teak', fenster_leistung: ['neu', 'x'], name: 'Erika' }),
+    ).toEqual({ typ: 'boden', fenster_leistung: ['neu'], name: 'Erika' });
+    expect(effectiveValues({ moebel_art: '', moebel_breite: '' })).toEqual({ moebel_art: '', moebel_breite: '' });
+    expect(effectiveValues({})).toEqual({});
+  });
+
+  it('effectiveValues is idempotent and never adds keys', () => {
+    for (const art of ['regal', 'sideboard', 'einbauschrank', 'esstisch', 'bett', 'andere', 'junk']) {
+      const v = { moebel_art: art, moebel_front: 'schubkaesten', moebel_unterbau: 'ohne', moebel_staerke: '40' };
+      const once = effectiveValues(v);
+      expect(effectiveValues(once)).toEqual(once);
+      expect(Object.keys(once).every((k) => k in v)).toBe(true);
+      for (const [k, x] of Object.entries(once)) if (typeof x === 'string' && x) expect(fieldValues(k, v)).toContain(x);
+    }
   });
 });
 

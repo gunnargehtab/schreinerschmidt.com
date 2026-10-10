@@ -14,8 +14,20 @@ export const STATE_MSG = {
   typeChanged: 'Projektart geändert. Ihre Angaben zu anderen Projektarten bleiben erhalten.',
   sendFailed: 'Ihre Anfrage konnte nicht gesendet werden. Ihre Eingaben bleiben erhalten.',
   sent: 'Ihre Anfrage wurde gesendet.',
+  /**
+   * A chunk loaded on request failed (offline, stale deployment). The next action retries, but WebKit
+   * memoises a failed module fetch, so a reload is offered too.
+   */
+  loadFailed:
+    'Ein Teil des Konfigurators konnte nicht geladen werden. Bitte versuchen Sie es erneut oder laden Sie die Seite neu.',
 } as const;
 const MSG = STATE_MSG;
+
+/**
+ * Time-trap (§5 "Live mode"): a submit less than this after the first human interaction is faked.
+ * Lives in the core so the controller can date a restored session without the submit chunk.
+ */
+export const MIN_FILL_MS = 5000;
 
 export interface FieldError {
   /** Control name; the controller resolves it to the element and its id. */
@@ -55,8 +67,8 @@ export type Effect =
 export interface Context {
   steps: readonly StepId[];
   validate(step: StepId): FieldError[];
-  /** True when the previous history entry is one of ours, so BACK can use history.back(). */
-  ownHistory?: boolean;
+  /** Step of the previous history entry when it is one of ours (null otherwise), so BACK knows where history.back() lands. */
+  prevStep?: StepId | null;
   /** The project type before a TYPE action; the announcement is only made on a real change. */
   typ?: ProjectType | null;
 }
@@ -124,9 +136,12 @@ export function reduce(s: WizardUi, a: Action, ctx: Context): [WizardUi, Effect[
       return go(s, steps[cur + 1] as StepId, 'fwd', 'push', steps);
     }
     case 'BACK': {
+      // „Zurück“ always means the previous wizard step. history.back() only when that is where the
+      // previous entry leads; after an „Ändern“ or progress jump it would go forward, so push instead.
       if (busy || cur <= 0) return [s, []];
-      if (ctx.ownHistory) return [s, [{ e: 'history', mode: 'back' }]];
-      return go(s, steps[cur - 1] as StepId, 'back', 'replace', steps);
+      const to = steps[cur - 1] as StepId;
+      if (ctx.prevStep === to) return [s, [{ e: 'history', mode: 'back' }]];
+      return go(s, to, 'back', 'push', steps);
     }
     case 'GOTO': {
       const target = idx(steps, a.step);

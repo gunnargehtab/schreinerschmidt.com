@@ -142,13 +142,24 @@ test('the full Möbel flow: focus, live region, errors, history, reload, demo su
   await expect(done).toBeVisible(); // visually hidden text, un-hidden for done steps
   await expect(done).toHaveText('abgeschlossen');
   await expect(page.locator('nav.progress [data-goto="pruefen"] [data-done]')).toBeHidden();
+  // „Zurück“ is always the previous wizard step: after the jump back to pruefen it must not follow
+  // the history entry (rahmen) but open kontakt, with an entry of its own.
   await back(page).click();
-  await expectStep(page, 'rahmen', 'Zeitraum, Budget & Ort');
-  await page.goForward();
+  await expectStep(page, 'kontakt', 'Kontakt');
+  await page.goBack();
   await expectStep(page, 'pruefen', 'Prüfen & senden');
   await page.goBack();
   await expectStep(page, 'rahmen', 'Zeitraum, Budget & Ort');
-  await page.goBack();
+  await page.goForward();
+  await expectStep(page, 'pruefen', 'Prüfen & senden');
+  await page.goForward();
+  await expectStep(page, 'kontakt', 'Kontakt');
+  // From a plain Weiter, Zurück uses the history (one entry per step, no duplicates).
+  await next(page).click();
+  await expectStep(page, 'pruefen', 'Prüfen & senden');
+  await back(page).click();
+  await expectStep(page, 'kontakt', 'Kontakt');
+  await page.goForward();
   await expectStep(page, 'pruefen', 'Prüfen & senden');
 
   // Reload restores values (session) and the step (URL).
@@ -202,7 +213,119 @@ test('the full Möbel flow: focus, live region, errors, history, reload, demo su
   if (browserName !== 'webkit') await expect(page).not.toHaveURL(/schritt=/);
 });
 
-test('?typ= deep link preselects, opens step 2 and announces it', async ({ page }) => {
+test('a shared link to a later step opens the first incomplete step instead, silently', async ({ page }) => {
+  // The query carries no PII, so rahmen (PLZ) cannot be complete: the review step would be empty.
+  await page.goto(`${PATH}?v=1&typ=moebel&moebel_art=regal&moebel_breite=90&schritt=pruefen`);
+  await expectStep(page, 'rahmen', 'Zeitraum, Budget & Ort', false);
+  await expect(page).toHaveURL(/schritt=rahmen/);
+  await expect(page.locator('#f-moebel_breite')).toHaveValue('90');
+  await expect(summary(page)).toBeHidden();
+  await expect(page.locator('.field.is-invalid')).toHaveCount(0);
+  await expect(live(page)).toHaveText('');
+  // A link into the finished part of the configuration keeps its step.
+  await page.goto(`${PATH}?v=1&typ=moebel&moebel_art=regal&schritt=ausfuehrung`);
+  await expectStep(page, 'ausfuehrung', 'Holz & Oberfläche', false);
+});
+
+test('live mode: a restored session is not mistaken for a bot, the payload is sent', async ({ page }) => {
+  // The e2e server is the demo build. The live path is stubbed: before the wizard script runs, the
+  // root switches to data-mode="live" and the form posts to a same-origin URL that is intercepted.
+  const ENDPOINT = `${PATH}e2e-senden`;
+  await page.addInitScript((endpoint) => {
+    document.addEventListener('readystatechange', () => {
+      if (document.readyState !== 'interactive') return;
+      const root = document.querySelector<HTMLElement>('[data-configurator]');
+      const form = root?.querySelector('form');
+      if (root && form) {
+        root.dataset['mode'] = 'live';
+        form.setAttribute('action', new URL(endpoint, location.href).href);
+      }
+    });
+  }, ENDPOINT);
+  const bodies: string[] = [];
+  await page.route(`**/${ENDPOINT}`, async (route) => {
+    bodies.push(route.request().postDataBuffer()?.toString('latin1') ?? '');
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+  });
+
+  await page.goto(`${PATH}?typ=sonstiges`);
+  await page.locator('#f-sonstiges_beschreibung').fill('Ein Gartenhaus aus Lärche.');
+  await next(page).click();
+  await next(page).click();
+  await page.locator('#f-plz').fill(PLZ);
+  await next(page).click();
+  await page.locator('#f-name').fill(NAME);
+  await page.locator('#f-email').fill(EMAIL);
+  await next(page).click();
+  await expectStep(page, 'pruefen', 'Prüfen & senden');
+
+  // Reload: the session restores the values; the submit is the first interaction on this page.
+  await page.reload();
+  await expectStep(page, 'pruefen', 'Prüfen & senden', false);
+  await page.locator('[data-action="submit"]').click();
+  await expect(page.locator('[data-success]')).toBeFocused();
+  expect(bodies).toHaveLength(1);
+  const body = bodies[0] ?? '';
+  expect(body).toContain('name="anfrage_json"');
+  expect(body).toContain('name="zusammenfassung"');
+  expect(body).toContain('name="_subject"');
+  expect(body).toContain('Anfrage Sonstiges');
+  expect(body).toContain('"typ":"sonstiges"');
+  expect(body).not.toContain('name="homepage"'); // the honeypot never travels
+});
+
+test('a lazy chunk that fails to load is reported and the next action retries', async ({ page, browserName }) => {
+  // Offline or a stale deployment: import() of the submit chunk rejects. The user hears why, the
+  // submit button stays usable, and once the chunk is reachable the same click succeeds. WebKit
+  // memoises a failed module fetch (the message offers a reload), so there the retry follows a reload;
+  // the iPhone emulation keeps the failed import even across the reload and serves an already fetched
+  // chunk from cache past the route, so it only checks the submit feedback.
+  const retries = test.info().project.name !== 'iphone';
+  const recover = async () => {
+    if (browserName === 'webkit') await page.reload();
+  };
+  await page.route('**/_astro/submit.*.js', (route) => route.abort());
+  await page.goto(`${PATH}?typ=sonstiges`);
+  await page.locator('#f-sonstiges_beschreibung').fill('Ein Gartenhaus aus Lärche.');
+  await next(page).click();
+  await next(page).click();
+  await page.locator('#f-plz').fill(PLZ);
+  await next(page).click();
+  await page.locator('#f-name').fill(NAME);
+  await page.locator('#f-email').fill(EMAIL);
+  await next(page).click();
+  await expectStep(page, 'pruefen', 'Prüfen & senden');
+  await page.locator('[data-action="submit"]').click();
+  await expect(page.locator('[data-live="assertive"]')).toHaveText(
+    'Ihre Anfrage konnte nicht gesendet werden. Ihre Eingaben bleiben erhalten.',
+  );
+  await expect(page.locator('[data-success]')).toBeHidden();
+  await expect(page.locator('[data-action="submit"]')).toBeEnabled();
+  await page.unroute('**/_astro/submit.*.js');
+  if (retries) {
+    await recover();
+    await page.locator('[data-action="submit"]').click();
+    await expect(page.locator('[data-success]')).toBeFocused();
+  }
+
+  if (!retries) return;
+  // The validation chunk: Weiter announces the failure; once the chunk loads, the same click
+  // validates (the Boden must-haves are missing, so the error summary proves it).
+  await page.route('**/_astro/validate.*.js', (route) => route.abort());
+  await page.goto(`${PATH}?typ=boden`);
+  await expectStep(page, 'details', 'Ihr Vorhaben', false);
+  await next(page).click();
+  await expect(page.locator('[data-live="assertive"]')).toContainText('konnte nicht geladen werden');
+  await expectStep(page, 'details', 'Ihr Vorhaben', false);
+  await expect(summary(page)).toBeHidden();
+  await page.unroute('**/_astro/validate.*.js');
+  await recover();
+  await next(page).click();
+  await expect(summary(page)).toBeFocused();
+  await expectStep(page, 'details', 'Ihr Vorhaben', false);
+});
+
+test('?typ= deep link preselects, opens step 2 and announces it @cross-engine', async ({ page }) => {
   await page.goto(`${PATH}?typ=boden`);
   await expect(radio(page, 'typ', 'boden')).toBeChecked();
   await expectStep(page, 'details', 'Ihr Vorhaben', false);
@@ -212,7 +335,7 @@ test('?typ= deep link preselects, opens step 2 and announces it', async ({ page 
   await expect(page).toHaveURL(/typ=boden/);
 });
 
-test('a path variant is replaced by the query form of the deep link', async ({ page }) => {
+test('a path variant is replaced by the query form of the deep link @cross-engine', async ({ page }) => {
   await page.goto('konfigurator/treppe/');
   await expect(radio(page, 'typ', 'treppe')).toBeChecked();
   await expect(page).toHaveURL(/konfigurator\/\?.*typ=treppe/);

@@ -2,7 +2,8 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { ART_RANGES, FIELDS, type Values } from '../../../src/lib/configurator/fields';
-import { MAIL, MSG, num } from '../../../src/scripts/configurator/messages.de';
+import { MAIL } from '../../../src/scripts/configurator/mailto';
+import { MSG, num } from '../../../src/scripts/configurator/messages.de';
 import {
   controlMessage,
   crossErrors,

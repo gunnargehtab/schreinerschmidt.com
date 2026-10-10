@@ -2,7 +2,9 @@
 // ships in the client bundles; every other label is read from the DOM. Style follows
 // src/scripts/forms/messages.de.ts: full sentences, „…“ quotes, U+202F before units.
 // Loaded with the validation chunk (validate.ts) on the first "Weiter"; the reducer's own three
-// texts sit in state.ts (STATE_MSG) and are re-exported here.
+// texts sit in state.ts (STATE_MSG) and are re-exported here. The photo policy texts (photos.ts) and
+// the mailto texts (mailto.ts) live next to their only users, so this module has one importer and
+// the bundler folds it into the validation chunk (no chunk of its own in the flow budget).
 import { STATE_MSG } from './state';
 
 const NNBSP = ' ';
@@ -36,17 +38,4 @@ export const MSG = {
   datePast: 'Der Termin darf nicht in der Vergangenheit liegen.',
   baumkante: `Eine Baumkante braucht eine Plattenstärke von mindestens 40${NNBSP}mm.`,
   ...STATE_MSG,
-} as const;
-
-/** Photo policy (§1): shown as the file input's custom validity (photos.ts, lazy). */
-export const PHOTO = {
-  tooMany: 'Bitte wählen Sie höchstens 6 Fotos aus.',
-  tooBig: `Ein Foto ist größer als 10${NNBSP}MB und wurde nicht übernommen.`,
-} as const;
-
-/** mailto texts (§5): the always-included footer and the truncation marker. */
-export const MAIL = {
-  truncated: '[gekürzt – vollständige Angaben über den Konfigurationslink]',
-  link: 'Konfigurationslink: ',
-  photos: 'Fotos bitte als Anhang hinzufügen.',
 } as const;

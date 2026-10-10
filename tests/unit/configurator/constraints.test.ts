@@ -3,7 +3,6 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   GRID,
-  KNEE_ROOM,
   MAX_BAY,
   bayWidth,
   deriveBays,
@@ -12,16 +11,19 @@ import {
   doorsPerBay,
   drawerCount,
   hingesFor,
+  maxShelfSpan,
+  runnerLength,
+  shelfPositions,
+  splitAufsatz,
+} from '../../../src/lib/configurator/furniture/constraints';
+import {
+  KNEE_ROOM,
   kufenOffset,
   legInset,
   legSize,
-  maxShelfSpan,
-  runnerLength,
   seatRange,
-  shelfPositions,
-  splitAufsatz,
   zargeHeight,
-} from '../../../src/lib/configurator/furniture/constraints';
+} from '../../../src/lib/configurator/furniture/table-rules';
 import type { Board, Species } from '../../../src/lib/configurator/furniture/types';
 
 const BOARDS: Board[] = [19, 25, 40];

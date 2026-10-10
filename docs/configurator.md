@@ -276,16 +276,19 @@ Step 3:
 
 ### Files
 **Isomorphic** (`src/lib/configurator/`, no three.js; used in the Astro build, the browser and Vitest):
-- `furniture/{types,species,constraints,carcass,table,live-edge,dims,describe,cutlist,index}.ts`
-- `drawing/elevation.ts`
+- `furniture/{types,species,textures,constraints,table-rules,carcass,table,live-edge,dims,describe,cutlist,index}.ts` (`table-rules.ts` and `textures.ts` are kept apart so the preview chunk carries no table or viewer data)
+- `drawing/{svg,elevation}.ts` (`svg.ts` is the screen core the preview bundles; `elevation.ts` adds the print fitting, on request)
 - `conditions.ts`, `fields.ts`, `service-area.ts`, `pricing/{index,rules}.ts`
 
-**Browser** (`src/scripts/configurator/`):
-- `main.ts`: entry point, core ≤ 11.25 KB gz.
-- `controller.ts`, `steps.ts`, `state.ts`, `validate.ts`, `messages.de.ts`, `serialize.ts`, `history.ts`, `draft.ts`, `summary.ts`, `announce.ts`, `transitions.ts`, `submit.ts`, `payload.ts`, `mailto.ts`.
-- `photos.ts`: lazy, on file selection.
-- `preview/index.ts`, `preview/load3d.ts`: the Möbel chunk, ≤ 8.75 KB gz.
+**Browser** (`src/scripts/configurator/`), split by when a chunk loads:
+- **Core** (`main.ts` entry, ≤ 11.25 KB gz): `controller.ts`, `steps.ts`, `state.ts`, `serialize.ts`, `history.ts`, `draft.ts`, `announce.ts`, `transitions.ts` + `fields.ts`, `conditions.ts`, `service-area.ts`.
+- **First interaction** (prefetched; awaited at the first „Weiter“, or at once when a restored step needs clamping): `validate.ts` + `messages.de.ts` (one chunk).
+- **First change** (or at start when a session with values is restored): `summary.ts` (sidebar, review, mail text; also used by validate.ts and submit.ts).
+- **Möbel chosen**: `preview/{index,params}.ts` + `drawing/svg.ts` + the carcass generator, ≤ 8.75 KB gz; `preview/load3d.ts` (Phase B). On request from there: the table generator (`moebel_art=esstisch`), `drawing/elevation.ts` (print sheet).
+- **Submit**: `submit.ts` + `mailto.ts`; in live mode `payload.ts`, and for Möbel `preview/info.ts` (cut list + description, shares the preview's generators).
+- **File selection**: `photos.ts`.
 - `viewer3d/{index,types,renderer,scene,rig,panel-geometry,materials,textures,contact-shadow,camera,overlay,tween,snapshot,quality}.ts`: dynamic import only.
+- **Failed loads** (offline, stale deployment after a deploy): the controller reports every `import()` that rejects. Validation („Weiter“), photos and the share link announce `STATE_MSG.loadFailed` assertively and the next action retries (WebKit memoises a failed module fetch, so the text also offers a reload); the submission dispatches FAILED (assertive announcement, in live mode the error panel with the network line; „Erneut senden“ and the submit button retry); the preview announces once and keeps the build-time sketch; the summary stays quiet (the review step or the submission reports it). Covered by `konfigurator-flow.spec.ts` with `page.route` aborting the chunk.
 
 **Components** (`src/components/configurator/`):
 - `Wizard.astro`, `Progress.astro`, `ErrorSummary.astro`, `SummarySidebar.astro`, `SuccessTimeline.astro`
@@ -315,8 +318,8 @@ type Effect = { e:'show'; step; dir:'fwd'|'back' } | { e:'focus'; target:'headin
 export function reduce(s: WizardUi, a: Action, ctx: { steps: StepId[]; validate(st: StepId): FieldError[] }): [WizardUi, Effect[]];
 ```
 - **NEXT:** validate the current step. Errors → errors + focus on the summary. Otherwise → show, push history, focus the heading, persist.
-- **GOTO:** clamp forward jumps to the first invalid step.
-- **BACK:** `history.back()` if the previous entry is ours; otherwise GOTO + replace.
+- **GOTO:** clamp forward jumps to the first invalid step. A restored step (URL, session, draft) is clamped the same way, silently (no errors shown, no announcement, `replaceState`).
+- **BACK:** „Zurück“ always opens the previous wizard step. `history.back()` only when the previous history entry is ours **and** is that step (`prev` is stored in every entry of ours); otherwise GOTO that step with a push (direction back). After an „Ändern“ or progress jump backwards, `history.back()` would go forward.
 - **TYPE:** re-apply the conditions and announce that the other branch's values are kept.
 - **SUBMIT:** validate all active steps; jump to the first invalid step.
 
@@ -397,6 +400,7 @@ export function swapStep(update: () => void, dir: 'fwd'|'back'): Promise<void> {
 ### JS budget (gz)
 - Core ≤ 11.25 KB.
 - Möbel preview ≤ 8.75 KB (loaded when Möbel is chosen). Re-split from 13 + 7 KB with the user on 2026-10-10: the full carcass rules + screen elevation measure 8.5 KB gz; the 20 KB total is unchanged.
+- **Full flow:** everything a completed demo or live enquiry downloads besides the preview, photos and three.js (core + validation/messages + summary + submit/mailto + payload). Decided 2026-10-10: ≤ 18 KB, and with the Möbel preview ≤ 26 KB. Measured after Phase 3: 18.6 / 27.1 KB, of which about 1 KB is Vite's module-preload helper plus the hashed dependency maps Astro's client build adds to every chunk with an `import()`; `scripts/check-budgets.mjs` therefore enforces 18.75 / 27.25 KB (`FLOW`) until that overhead is settled, and prints the chunk list.
 - Photos ≈ 1.5 KB (on file select).
 - three.js chunk: on request only.
 - `scripts/check-budgets.mjs` enforces these.
@@ -728,20 +732,22 @@ function frame(now: number) { raf = 0;
 - `anfrage_json`: schema `ss-anfrage@1` with id, createdAt, source {mode, page, configUrl}, projekt, moebel {params, derived, hints, stueckliste}, rahmen (+ einzugsgebiet), kontakt, anhaenge.
 - `zusammenfassung`: German plain text, from `summary.ts`, the same source as the screen summary.
 - Attachments: `fotos[]`, `ansicht_3d`, `zeichnung`.
-- `_subject`: e.g. "Anfrage Möbel: Regal 120×200×35 – 68161 Mannheim – #7F3K".
+- `_subject`: e.g. "Anfrage Möbel: Regal 120×200×35 – 68161 Mannheim – #7F3K" (the short type names of `TYP_LABELS` in `src/lib/konfigurator-links.ts`).
+- `anhaenge` lists `zeichnung.svg` and the photo file names; empty checkbox groups are left out of `felder`. A checked option the chosen `moebel_art` does not offer (hidden `label[data-when]`) counts nowhere: summary, payload, URL and generator all use `effectiveValues()` from `fields.ts`, and the controller fills the default.
 - `_replyto`, `_lang=de`, `anfrage_id` (from `crypto.randomUUID()`).
 
 **Demo mode** (`PUBLIC_FORM_ENDPOINT` unset):
 - Nothing is sent.
 - A "Demo-Modus" ribbon shows, and the button reads "Anfrage abschließen (Demo)".
 - The success view offers: the summary, drawing and snapshot, plus "Per E-Mail senden" (mailto), "Zusammenfassung kopieren", "Als Textdatei speichern", "Drucken / als PDF speichern" and "Konfigurationslink kopieren".
+- The success drawing is rendered again for the measured width of `[data-success-drawing]` (`preview/index.ts` `screenDrawing()`), so its labels stay 12 px in the narrower success column; the panel-sized SVG shows until then, and the DIN print sheet is prepared afterwards.
 
 **Live mode:**
 - `fetch(endpoint, { method: 'POST', body: fd, headers: { Accept: 'application/json' }, signal: AbortSignal.any([AbortSignal.timeout(20000), userSignal]) })`. Success means `res.ok && json.success`.
-- **Time-trap:** a submit within 5 s with no recorded input gets a fake success.
+- **Time-trap:** a submit within 5 s of the first human interaction (`pointerdown`, `keydown` or `input` on the form), or with none recorded, gets a fake success. Values restored from this device's session or draft prove a human: the clock is dated 5 s back, so a submit right after a reload is sent for real.
 - **Retries:**
-  - network error or timeout: retry once after 1.5 s with the same id;
-  - `success:false` or 4xx: no retry; map `error_msg` to German;
+  - network error, timeout or 5xx: retry once after 1.5 s with the same id;
+  - `success:false` or 4xx: no retry. The English `error_msg` is never shown; the reason key selects one of the German lines in the markup (`[data-reason]`). A finer mapping needs the owner's list of form.taxi messages (owner checklist).
   - offline: show it immediately and re-enable on `online`.
 - **Error panel** (`role="alert"`): "Ihre Anfrage konnte nicht gesendet werden. Ihre Eingaben bleiben erhalten." with "Erneut senden / Per E-Mail senden / Zusammenfassung kopieren".
 
@@ -783,8 +789,8 @@ Focus moves to the heading; the session and draft are cleared.
 | Markup | Every named control is in `fields.ts`, and vice versa |
 
 **Playwright 1.64:**
-- **Projects:** chromium, firefox, webkit, Pixel 7, iPhone 15.
-- **Servers:** a demo build, plus a live build with `PUBLIC_FORM_ENDPOINT=https://form.taxi/s/e2e` (intercepted with `page.route`).
+- **Projects:** chromium and Pixel 7 run every spec; firefox and webkit run the `@cross-engine` subset (the full Möbel flow, the `?typ`/path deep links, the reduced-motion check and the boden, fenster and moebel branches); iPhone 15 (WebKit, touch) runs the konfigurator flow and branch specs; `no-js` and `a11y` have their own specs.
+- **Servers:** the demo build. The live path is exercised against it by switching the root to `data-mode="live"` before the wizard script runs and routing the (same-origin) form action with `page.route` (`konfigurator-flow.spec.ts`); a dedicated live build is not needed.
 - `baseURL` includes `/schreinerschmidt.com/`.
 
 | Spec | Covers |
@@ -796,10 +802,10 @@ Focus moves to the heading; the session and draft are cleared.
 | `viewer3d` | Chromium/SwiftShader: load → `data-viewer-state=ready`; canvas screenshot is non-blank (use `sharp().stats()`: ≥ 5% of pixels differ from the background, luma stdev > 5); zero rAF while idle; context-loss path |
 | `fallback` | `getContext('webgl2')` → null shows SVG only and downloads no chunk |
 | `isolation` | The three.js chunk never loads on content pages, nor before the click when auto-load is off |
-| `a11y` | axe with `wcag22aa` on every step, in the error state, no-JS, both schemes, and the success view |
+| `a11y` | axe with `wcag22aa` on every step, in the error state, both schemes, and the success view (`konfigurator.a11y.spec.ts`); the no-JS long form in both schemes (`konfigurator-nojs.a11y.spec.ts`: axe needs script execution, so it runs in the `a11y` project with the wizard script blocked by `page.route`, which yields the no-JS DOM; states: no choice, `konfigurator/moebel/` with Regal, Boden with conditions revealed) |
 | `motion-print` | Reduced motion: no `startViewTransition`; print shows summary + drawing + title block |
 
-**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, core + Möbel ≤ 20 KB; three.js chunk ≤ 160 KB.
+**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, core + Möbel ≤ 20 KB; full flow (core + validation + summary + submit + payload) target 18 KB, with the Möbel preview 26 KB (enforced at 18.75 / 27.25 KB for now, see §3 "JS budget"); three.js chunk ≤ 160 KB.
 
 **Manual:** NVDA + Firefox, VoiceOver + Safari, TalkBack, keyboard-only, 400% zoom, forced colours.
 

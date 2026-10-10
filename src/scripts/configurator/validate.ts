@@ -11,6 +11,9 @@ import { MSG } from './messages.de';
 import type { FieldError } from './state';
 import { fieldEl } from './summary';
 
+/** The PLZ hint (controller) and the payload read the service area from this chunk, not the core. */
+export { serviceArea } from '../../lib/configurator/service-area';
+
 /** The subset of ValidityState the messages depend on. */
 export interface ValidityLike {
   valid?: boolean;
@@ -55,10 +58,24 @@ const n = (x: string | number | undefined): number => (x === undefined || x === 
 const isPlz = (c: ControlLike): boolean => c.autocomplete === 'postal-code' || c.name === 'plz';
 const isDecimal = (c: ControlLike): boolean => c.inputMode === 'decimal';
 
+/** The flags of a ValidityState are prototype getters, so they are read by name, never via Object.values(). */
+const FLAGS = [
+  'valueMissing',
+  'typeMismatch',
+  'patternMismatch',
+  'tooShort',
+  'tooLong',
+  'rangeUnderflow',
+  'rangeOverflow',
+  'stepMismatch',
+  'badInput',
+  'customError',
+] as const;
+
 /** The German message for one control, or '' when it is valid. */
 export function controlMessage(c: ControlLike): string {
   const v = c.validity;
-  if (v.valid || !Object.values(v).some(Boolean)) return '';
+  if (v.valid || !FLAGS.some((k) => v[k])) return '';
   const { label, type } = c;
   if (v.customError) return c.validationMessage ?? MSG.pattern;
   if (v.valueMissing) {
@@ -127,22 +144,6 @@ export function crossErrors(values: Values, step: StepId, ctx: CrossContext): Fi
 
 type Control = HTMLInputElement;
 
-/** The flags of a ValidityState are prototype getters; controlMessage() wants a plain object. */
-const FLAGS = [
-  'valid',
-  'valueMissing',
-  'typeMismatch',
-  'patternMismatch',
-  'tooShort',
-  'tooLong',
-  'rangeUnderflow',
-  'rangeOverflow',
-  'stepMismatch',
-  'badInput',
-  'customError',
-] as const;
-const validityOf = (el: Control): ValidityLike => Object.fromEntries(FLAGS.map((k) => [k, el.validity[k]]));
-
 /** The error summary (GOV.UK pattern): a focusable box with one link per invalid field. */
 export interface ErrorUi {
   form: HTMLFormElement;
@@ -176,7 +177,7 @@ export function validateStep(form: HTMLFormElement, section: HTMLElement, step: 
       maxLength: el.maxLength > 0 ? el.maxLength : undefined,
       autocomplete: el.autocomplete,
       inputMode: el.inputMode,
-      validity: validityOf(el),
+      validity: el.validity,
       validationMessage: el.validationMessage,
     });
     if (message) errors.push({ name, message });

@@ -1,16 +1,20 @@
 // Submission of the wizard (docs/configurator.md §5). Demo: nothing is sent, the success view shows
 // the summary, the drawing and the actions (mailto, copy, .txt, print, config link). Live: the
 // payload chunk (payload.ts) builds the multipart body, fetch() posts it with Accept: application/json,
-// a 20 s timeout and one retry after 1.5 s for network errors; the time-trap and the honeypot fake a
-// success. The error panel (role=alert) offers retry, mail and copy. After a successful send, Back
-// shows the "Anfrage bereits gesendet" prompt. Loaded by the controller on the first SUBMIT, so
-// none of this counts against the initial core budget.
-import { FIELDS } from '../../lib/configurator/fields';
+// a 20 s timeout and one retry after 1.5 s for network errors, timeouts and 5xx; the time-trap and
+// the honeypot fake a success. The error panel (role=alert) offers retry, mail and copy; its German
+// reason lines come from the markup, the service's English `error_msg` is never shown. After a
+// successful send, Back shows the "Anfrage bereits gesendet" prompt. Loaded by the controller on the
+// first SUBMIT, so none of this counts against the initial core budget.
+import { FIELDS, type ProjectType } from '../../lib/configurator/fields';
+import { TYP_LABELS } from '../../lib/konfigurator-links';
 import type { Wizard } from './controller';
 import { clearDraft, clearSession } from './draft';
 import { buildMailto } from './mailto';
-import type { SubmitError } from './state';
+import { MIN_FILL_MS, type SubmitError } from './state';
 import { copyText, type Item } from './summary';
+
+export { MIN_FILL_MS };
 
 export interface Submit {
   send(): void;
@@ -19,8 +23,6 @@ export interface Submit {
   alreadySent(skip: () => void): void;
 }
 
-/** Minimum time between the first interaction and the submit (time-trap, §5). */
-export const MIN_FILL_MS = 5000;
 const TIMEOUT_MS = 20000;
 const RETRY_MS = 1500;
 
@@ -33,19 +35,37 @@ export function shortId(uuid: string): string {
   return Number.isFinite(n) ? n.toString(36).toUpperCase().slice(-4).padStart(4, '0') : '';
 }
 
-/** „Anfrage Möbel nach Maß: Regal 120×200×35 – 68161 Mannheim – #7F3K“. Pure. */
-export function subjectLine(items: Item[], short: string): string {
+/**
+ * Honeypot and time-trap (§5): a filled honeypot, or a submit less than MIN_FILL_MS after the first
+ * human interaction (`elapsed` is -1 when none was recorded), gets a fake success. Pure.
+ */
+export const isBot = (honeypot: string, elapsed: number): boolean => honeypot.trim() !== '' || elapsed < MIN_FILL_MS;
+
+/**
+ * The failure reason for a form.taxi answer, or null on success (`res.ok && json.success`). 4xx and
+ * `success: false` mean the request was rejected (no retry); 5xx counts as a network problem and is
+ * retried once. `error_msg` is English and stays out of the UI: the reason keys select the German
+ * lines of the markup (`[data-reason]`). Pure.
+ */
+export function reasonOf(status: number, json: { success?: boolean }): SubmitError | null {
+  if (status >= 200 && status < 300 && json.success) return null;
+  return status >= 500 ? 'network' : 'rejected';
+}
+
+/** „Anfrage Möbel: Regal 120×200×35 – 68161 Mannheim – #7F3K“ (§5): the short type name, else its label. Pure. */
+export function subjectLine(items: Item[], short: string, typ = ''): string {
   const find = (name: string) => items.find((i) => i.name === name)?.value ?? '';
   const details = items.filter((i) => i.step === 'details');
   const kind = details.find((i) => FIELDS[i.name]?.kind === 'enum')?.value ?? '';
   const dims = details
     .filter((i) => FIELDS[i.name]?.unit === 'cm')
     .slice(0, 3)
-    .map((i) => i.value.split(' ')[0])
+    // The number before the U+202F + unit („120 cm“ → „120“).
+    .map((i) => i.value.split(/\s/)[0])
     .join('×');
   const what = [kind, dims].filter(Boolean).join(' ');
   return [
-    `Anfrage ${find('typ')}${what ? `: ${what}` : ''}`,
+    `Anfrage ${TYP_LABELS[typ as ProjectType] ?? find('typ')}${what ? `: ${what}` : ''}`,
     [find('plz'), find('ort')].filter(Boolean).join(' '),
     `#${short}`,
   ]
@@ -65,13 +85,15 @@ export function createSubmit(w: Wizard): Submit {
   let svg = '';
   let prompt: HTMLElement | null = null;
   let printReady: Promise<void> | null = null;
+  /** The preview chunk (loaded while typ = moebel): drawing at a width, print sheet. One import site. */
+  const preview = () => import('./preview/index');
 
   /** Recipient from the page (the settings e-mail is already in the DOM). */
   const recipient = (): string =>
     decodeURIComponent(
       document.querySelector<HTMLAnchorElement>('a[href^="mailto:"]')?.href.slice(7).split('?')[0] ?? '',
     );
-  const subject = () => subjectLine(w.items(), short);
+  const subject = () => subjectLine(w.items(), short, String(w.values()['typ'] ?? ''));
   const mailto = () =>
     buildMailto({ to: recipient(), subject: subject(), sections: w.sections(), configUrl: w.configUrl() });
   const fullText = () =>
@@ -94,7 +116,7 @@ export function createSubmit(w: Wizard): Submit {
       const mail = $('[data-action="mail"]', success);
       if (mail) mail.dataset['href'] = mailto().href;
       success.hidden = false;
-      if (svg) preparePrint();
+      if (svg && drawing) void refit(drawing).then(preparePrint);
     }
     clearSession();
     clearDraft();
@@ -117,14 +139,12 @@ export function createSubmit(w: Wizard): Submit {
 
   async function sendLive(): Promise<void> {
     if (!navigator.onLine) {
-      announce(msg('offline'), 'assertive');
+      // The FAILED effect announces assertively; the alert panel shows the offline line.
       addEventListener('online', () => panel && (panel.hidden = true), { once: true });
       return fail('offline');
     }
-    const hp = $<HTMLInputElement>('[data-hp] input', form)?.value ?? '';
-    const t = w.elapsed();
     // Bots get a fake success, never an error (nothing is sent).
-    if (hp.trim() || t < MIN_FILL_MS) return done();
+    if (isBot($<HTMLInputElement>('[data-hp] input', form)?.value ?? '', w.elapsed())) return done();
     if (button) button.disabled = true;
     let reason: SubmitError = 'network';
     try {
@@ -149,14 +169,14 @@ export function createSubmit(w: Wizard): Submit {
             headers: { Accept: 'application/json' },
             signal: AbortSignal.timeout(TIMEOUT_MS),
           });
-          const json = (await res.json().catch(() => ({}))) as { success?: boolean };
-          if (res.ok && json.success) return done();
-          reason = 'rejected';
-          break;
+          const r = reasonOf(res.status, (await res.json().catch(() => ({}))) as { success?: boolean });
+          if (!r) return done();
+          reason = r;
+          if (r === 'rejected') break;
         } catch (e) {
           reason = (e as Error).name === 'TimeoutError' ? 'timeout' : 'network';
-          if (!attempt) await new Promise((r) => setTimeout(r, RETRY_MS));
         }
+        if (!attempt) await new Promise((r) => setTimeout(r, RETRY_MS));
       }
     } catch {
       // Chunk failed to load: reported as a network problem.
@@ -164,11 +184,25 @@ export function createSubmit(w: Wizard): Submit {
     fail(reason);
   }
 
+  /**
+   * The preview rendered its SVG for the panel's width (12 px labels there); the success column is
+   * narrower, so the drawing is rendered again for the measured width (the preview chunk is loaded).
+   */
+  const refit = (host: HTMLElement): Promise<void> =>
+    preview()
+      .then((m) => m.screenDrawing(w.values(), Math.round(host.getBoundingClientRect().width) || 400, 'erfolg'))
+      .then((s) => {
+        if (s) host.innerHTML = s;
+      })
+      .catch(() => {
+        // The panel-sized drawing stays.
+      });
+
   /** The DIN print sheet of the Möbel drawing (full renderer, loaded on request via the preview chunk). */
   const preparePrint = (): Promise<void> =>
     (printReady ??= !svg
       ? Promise.resolve()
-      : import('./preview/index')
+      : preview()
           .then((m) => m.printSheet(w.values(), new Date().toLocaleDateString('de-DE')))
           .then((sheet) => {
             const host = $('[data-success-drawing]', success ?? root);
@@ -186,13 +220,13 @@ export function createSubmit(w: Wizard): Submit {
           }));
   addEventListener('beforeprint', () => void preparePrint());
 
+  /** The summary as a .txt download (a data: URL: a few KB at most, nothing to revoke). */
   function download(): void {
     const a = document.body.appendChild(document.createElement('a'));
-    a.href = URL.createObjectURL(new Blob([fullText()], { type: 'text/plain;charset=utf-8' }));
+    a.href = `data:text/plain;charset=utf-8,${encodeURIComponent(fullText())}`;
     a.download = `anfrage-${short}.txt`;
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
   function reset(): void {
@@ -253,24 +287,19 @@ export function createSubmit(w: Wizard): Submit {
       if (!success) return;
       skipNext = skip;
       if (!prompt) {
+        // The texts are the page's own data-msg-* copy; escaped anyway. No inline handlers (CSP).
+        const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
+        const button = (action: string, cls: string, text: string) =>
+          `<button type="button" class="btn btn--small${cls}" data-action="${action}">${esc(text)}</button>`;
         prompt = success.insertBefore(document.createElement('div'), success.firstChild);
         prompt.className = 'already-sent';
         prompt.setAttribute('role', 'alert');
         prompt.tabIndex = -1;
-        const p = prompt.appendChild(document.createElement('p'));
-        p.textContent = msg('already-sent');
-        const row = prompt.appendChild(document.createElement('div'));
-        row.className = 'cluster';
-        for (const [action, cls] of [
-          ['restart', 'btn btn--small'],
-          ['cancel', 'btn btn--secondary btn--small'],
-        ] as const) {
-          const b = row.appendChild(document.createElement('button'));
-          b.type = 'button';
-          b.className = cls;
-          b.dataset['action'] = action;
-          b.textContent = msg(action === 'restart' ? 'already-sent-confirm' : 'already-sent-cancel');
-        }
+        prompt.innerHTML =
+          `<p>${esc(msg('already-sent'))}</p><div class="cluster">` +
+          button('restart', '', msg('already-sent-confirm')) +
+          button('cancel', ' btn--secondary', msg('already-sent-cancel')) +
+          '</div>';
       }
       prompt.hidden = false;
       prompt.focus();
