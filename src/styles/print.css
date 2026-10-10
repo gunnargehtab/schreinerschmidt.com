@@ -21,6 +21,7 @@
   .skip-link,
   .site-header .nav,
   .site-header .menu-button,
+  .site-header .phone,
   .theme-toggle,
   .btn--icon,
   .nav-sheet,
@@ -49,8 +50,21 @@
     word-break: break-all;
   }
 
+  /* Button links print their label only; the URL suffix is for links in running text. */
+  a.btn[href^='http']::after {
+    content: none;
+  }
+
+  /* The map caption: one link per line, so the appended URLs stay readable. */
+  .static-map__caption,
+  .static-map__caption > a {
+    display: block;
+  }
+
+  /* break-after alone let a two-line h2 split across pages (Phase 5 print QA). */
   :is(h1, h2, h3, h4) {
     break-after: avoid;
+    break-inside: avoid;
   }
 
   :is(p, li, dd) {
@@ -58,8 +72,23 @@
     widows: 3;
   }
 
-  :is(img, picture, figure, table, .mass) {
+  /* Stats, testimonials, the CTA band and the footer print in one piece: a split CTA band put the
+     Maßlinie on top of its button. Not the cards in the service and type grids: when Chromium pushes
+     a grid item with break-inside: avoid to the next page, the grid keeps its old height and the
+     next section prints over the card (Phase 5 print QA), so those cards split naturally instead. */
+  :is(img, picture, figure, table, .mass, .stats, .testimonials__item, .cta-band__inner, .schriftfeld, .site-footer) {
     break-inside: avoid;
+  }
+
+  /* Title-block cells are narrow: long German compounds hyphenate instead of breaking mid-word. */
+  .schriftfeld dd {
+    hyphens: auto;
+  }
+
+  /* Sketch → photo: the pencil layer exists for the scroll timeline only (motion.css); with
+     animations off it would sit fully opaque on the photo. */
+  .sketch-photo__sketch {
+    display: none !important;
   }
 
   .section {

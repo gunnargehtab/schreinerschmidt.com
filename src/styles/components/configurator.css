@@ -594,6 +594,11 @@
     place-self: stretch;
     min-block-size: 0;
     overflow: clip;
+    /* Dimension labels at the edge of the fit (e.g. the depth under a side view) may use the
+       stage's padding instead of being cut in half; the hairline border still clips. A plain
+       length: Chromium rejects math functions here, so the `--space-s` clamp() cannot be used
+       (1rem is the padding's minimum). */
+    overflow-clip-margin: 1rem;
   }
 
   .preview__viewer:not([data-viewer-state='ready']) {

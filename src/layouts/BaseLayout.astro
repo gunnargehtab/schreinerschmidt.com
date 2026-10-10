@@ -3,6 +3,7 @@
 // index, and the layer statement in global.css has to precede every component's `@layer components`.
 import '../styles/global.css';
 import { Font } from 'astro:assets';
+import { PUBLIC_DEMO } from 'astro:env/client';
 import type { ComponentProps } from 'astro/types';
 import { themeInitScript, vtTypesScript, speculationRulesScript } from '../lib/inline-scripts.mjs';
 import { vt } from '../lib/vt';
@@ -36,7 +37,7 @@ vt(Astro.locals, 'site-header');
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFBF5" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#160D07" />
     <link rel="icon" href={asset('favicon.svg')} type="image/svg+xml" />
-    <link rel="icon" href={asset('favicon.ico')} sizes="32x32" />
+    <link rel="icon" href={asset('favicon.ico')} sizes="16x16 32x32" />
     <link rel="apple-touch-icon" href={asset('apple-touch-icon.png')} />
     <link rel="manifest" href={asset('site.webmanifest')} />
     <Seo {...props} />
@@ -54,6 +55,6 @@ vt(Astro.locals, 'site-header');
       <slot />
     </main>
     <SiteFooter />
-    <ReviewView />
+    {PUBLIC_DEMO && <ReviewView />}
   </body>
 </html>

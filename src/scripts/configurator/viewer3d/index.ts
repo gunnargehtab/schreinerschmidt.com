@@ -304,6 +304,8 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
         if (Math.abs(spherical().az) > azLimit) rotate(0);
         toggle('open', false);
         toggle('explode', false);
+        // The new kind starts closed and assembled at once, not collapsing from the old pose.
+        rig.animate(0, 0, 0);
       }
       const movable = rig.movable();
       if (!movable) toggle('open', false);

@@ -54,6 +54,12 @@
     font-size: var(--step--1);
   }
 
+  /* The fixed legend must not cover the end of the page (the © line and the legal links on a
+     phone): the footer gets room to scroll past it. print.css resets the footer padding. */
+  :root[data-pruefen] .site-footer {
+    padding-block-end: 9rem;
+  }
+
   .review-legend p {
     margin: 0;
   }

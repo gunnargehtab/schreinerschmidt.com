@@ -230,6 +230,11 @@ test.describe('reduced motion @cross-engine', () => {
       '.mass__line',
       '.stat__value:not(.stat__value--static)',
       '.hero__media',
+      '.process__list',
+      '.site-header .wordmark',
+      '.site-header',
+      // Not .sketch-photo__sketch: its finished state is hidden, so checkVisibility() never counts it.
+      '.sketch-photo__img',
     ]) {
       expect(counts[sel], sel).toBeGreaterThan(0);
     }

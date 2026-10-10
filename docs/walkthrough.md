@@ -81,7 +81,7 @@ Alle Pfade stehen relativ zur Demo-Adresse: `https://gunnargehtab.github.io/schr
 - Die Filter „Alle“, „Möbel“, „Böden“, „Treppen“, „Fenster und Türen“, „Altbau“, „Terrassen“. Einmal „Treppen“ wählen, dann zurück auf „Alle“.
 - Ein Projekt mit einem Foto öffnet sich groß in der Bildansicht; Projekte mit mehreren Fotos haben eine eigene Seite.
 - `referenzen/holzhaustuer-aufgearbeitet/` öffnen: der Vorher-nachher-Vergleich mit dem Schieber und den Knöpfen „Vorher“, „Beide“, „Nachher“.
-- `referenzen/einbauschrankwand/` öffnen: das Schriftfeld mit den Projektdaten, die Galerie, der Text in „Ausgangslage, Lösung, Ergebnis“. Die Texte sind bewusst knapp, weil wir die Hintergründe noch nicht kennen.
+- `referenzen/einbauschrankwand/` öffnen: das Schriftfeld mit den Projektdaten, die Galerie und ein kurzer Beschreibungssatz. Die Gliederung Ausgangslage / Lösung / Ergebnis füllen wir, sobald wir Ihre Hintergründe zu den Projekten haben.
 
 **Sagen:** „Die 15 Projekte haben wir aus Ihren Fotos zusammengestellt. Wir haben geraten, welche Fotos zusammengehören. Das müssen Sie korrigieren.“
 
@@ -159,7 +159,7 @@ Alle Pfade stehen relativ zur Demo-Adresse: `https://gunnargehtab.github.io/schr
 
 **Zeigen:**
 - Oben der Satz „In 3 Minuten zu Ihrem individuellen Angebot – Sie beschreiben Ihr Projekt, Schreinermeister Ulf Schmidt erstellt Ihr Angebot persönlich.“ Er ist markiert: „3 Minuten“ meint die Dauer des Formulars; „persönlich“ setzt voraus, dass Sie die Anfragen selbst beantworten.
-- Sechs Schritte, immer dieselben: Projekt, Möbel & Maße, Holz & Oberfläche, Zeitraum, Budget & Ort, Kontakt, Prüfen & senden. Der Fortschritt ist als Maßlinie gezeichnet.
+- Sechs Schritte, immer dieselben: Projekt, Möbel & Maße, Holz & Oberfläche, „Zeitraum, Budget & Ort“, Kontakt, Prüfen & senden. Der Fortschritt ist als Maßlinie gezeichnet.
 - **Regal:** Bei „Welches Möbel?“ ist „Regal“ zu wählen. Rechts entsteht die technische Zeichnung mit Maßketten. Die Breite am Schieberegler vergrößern: Sobald ein Fachboden länger würde, als er tragen kann (Eiche 19 mm: rund 74 cm), teilt die Zeichnung das Regal in mehrere Felder. Am Laptop lädt die 3D-Ansicht nach einem Moment von selbst; am Handy über „3D-Ansicht laden (ca. 0,3 MB)“. Mit der Maus drehen oder die Knöpfe „Vorne“, „Seite“, „3/4-Ansicht“, „Nach links drehen“/„Nach rechts drehen“, „Vergrößern“, „Verkleinern“, „Zurücksetzen“ zeigen.
 - **Sideboard:** auf „Sideboard“ wechseln, „Fronten“ auf „Gemischt“. Dann „Türen und Schubkästen öffnen“ drücken: Die Türen schwenken auf, die Schubkästen fahren aus. Danach „Aufbau zeigen“: Das Möbel zieht sich in seine Teile auseinander. Beides sind Schalter; noch einmal drücken schließt wieder.
 - **Esstisch:** auf „Esstisch“ wechseln, „Kante“ auf „Baumkante“. Die Platte bekommt eine unregelmäßige Waldkante; „Draufsicht“ zeigt sie von oben. Weiter zu Schritt 3 „Holz & Oberfläche“: Holzart „Kernbuche“ wählen. Im 3D erscheint „Holzbild beispielhaft“, denn für Kernbuche haben wir noch kein echtes Holzbild; Eiche, Nussbaum, Esche und Kirsche sind freie Fototexturen. Oberflächen: „Natur geölt“, „Weiß geölt“, „Lackiert matt“.

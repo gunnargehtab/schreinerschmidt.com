@@ -19,7 +19,7 @@ This repository holds an Astro 7 static site for a carpentry business in Mannhei
   - Inline scripts live only in `src/lib/inline-scripts.mjs`.
 - **Motion:**
   - Base CSS renders the finished state.
-  - Hidden start states exist only inside keyframes, gated by `prefers-reduced-motion: no-preference` and `@supports`.
+  - Hidden start states exist only inside keyframes, gated by `prefers-reduced-motion: no-preference` and `@supports`. (Exception: closed popovers, see design-system §6.)
   - Never hide the LCP image.
   - View-transition names come only from `src/lib/vt.ts`.
 - **No third-party requests, no cookies.** Fonts are self-hosted. Storage only after the user acts (`ss-theme`) or as session state.

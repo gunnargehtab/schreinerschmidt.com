@@ -5,7 +5,8 @@
 // through the site; `?pruefen=aus` turns it off and clears the flag. `?schritt=pruefen` (configurator
 // share links) does not match: only the exact parameter name counts.
 // The marks come from ReviewMark, Schriftfeld, the legal templates and the Markdown placeholder
-// plugin, so BaseLayout renders this once per page, at the end of <body>: Astro renders a component's
+// plugin, so BaseLayout renders this once per page in demo builds only (production has no review marks
+// and so never writes `ss-pruefen`), at the end of <body>: Astro renders a component's
 // <script> where the component first appears, and inside ReviewMark that could be within a
 // `tel:` link (html-validate tel-non-breaking). A bundled module script (processed and CSP-hashed
 // by Astro), not one of our inline scripts. Without JS (or without `?pruefen`) nothing happens.
