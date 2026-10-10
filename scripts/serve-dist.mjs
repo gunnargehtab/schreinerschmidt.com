@@ -9,6 +9,7 @@ import { createReadStream } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 
 const ROOT = resolve(fileURLToPath(new URL('../dist/', import.meta.url)));
 const PORT = Number(process.env['PORT']) || 4173;
@@ -41,6 +42,11 @@ const MIME = {
   '.pdf': 'application/pdf',
 };
 
+const COMPRESSIBLE = /^(?:text\/|application\/(?:json|xml|manifest\+json)|image\/svg\+xml)/;
+
+/** @param {import('node:http').IncomingMessage} req */
+const acceptsGzip = (req) => /\bgzip\b/.test(String(req.headers['accept-encoding'] ?? ''));
+
 /** @param {string} p */
 async function statOrNull(p) {
   try {
@@ -63,13 +69,23 @@ const insideRoot = (p) => p === ROOT || p.startsWith(ROOT + sep);
  * @param {number} status
  * @param {number} size
  */
-function sendFile(req, res, file, status, size) {
-  res.writeHead(status, {
-    'Content-Type': MIME[extname(file).toLowerCase()] ?? 'application/octet-stream',
-    'Content-Length': size,
-    'Cache-Control': 'no-cache',
-    'X-Content-Type-Options': 'nosniff',
-  });
+async function sendFile(req, res, file, status, size) {
+  const type = MIME[extname(file).toLowerCase()] ?? 'application/octet-stream';
+  const headers = { 'Content-Type': type, 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' };
+  // GitHub Pages compresses text responses; do the same so Lighthouse sees realistic transfer sizes.
+  if (COMPRESSIBLE.test(type)) {
+    const body = await readFile(file);
+    const gzip = acceptsGzip(req);
+    const payload = gzip ? gzipSync(body) : body;
+    res.writeHead(status, {
+      ...headers,
+      Vary: 'Accept-Encoding',
+      ...(gzip ? { 'Content-Encoding': 'gzip' } : {}),
+      'Content-Length': payload.length,
+    });
+    return void res.end(req.method === 'HEAD' ? undefined : payload);
+  }
+  res.writeHead(status, { ...headers, 'Content-Length': size });
   if (req.method === 'HEAD') return void res.end();
   createReadStream(file).pipe(res);
 }
@@ -80,11 +96,15 @@ function sendFile(req, res, file, status, size) {
  */
 async function notFound(req, res) {
   const page = join(ROOT, '404.html');
-  const body = await readFile(page).catch(() => Buffer.from('404 Not Found\n'));
+  const raw = await readFile(page).catch(() => Buffer.from('404 Not Found\n'));
+  const gzip = acceptsGzip(req);
+  const body = gzip ? gzipSync(raw) : raw;
   res.writeHead(404, {
     'Content-Type': (await statOrNull(page)) ? MIME['.html'] : MIME['.txt'],
     'Content-Length': body.length,
     'Cache-Control': 'no-cache',
+    Vary: 'Accept-Encoding',
+    ...(gzip ? { 'Content-Encoding': 'gzip' } : {}),
   });
   res.end(req.method === 'HEAD' ? undefined : body);
 }
