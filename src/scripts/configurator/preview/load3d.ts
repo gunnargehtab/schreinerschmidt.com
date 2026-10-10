@@ -182,9 +182,9 @@ export function mount3d(
     o.observe(panel);
     signal.addEventListener('abort', () => o.disconnect());
   };
+  // `input` too: a slider drag after its pointerdown, and values set without a key or pointer.
   const input = () => (lastInput = performance.now());
-  addEventListener('pointerdown', input, { signal, passive: true });
-  addEventListener('keydown', input, { signal, passive: true });
+  for (const t of ['pointerdown', 'keydown', 'input']) addEventListener(t, input, { signal, passive: true });
 
   // The poster tools are JS-only; `?3d=aus` keeps them hidden (SVG only, nothing else happens). The
   // wizard rewrites the query on the first change, so the navigation entry keeps the original URL.

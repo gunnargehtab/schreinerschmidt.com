@@ -36,6 +36,13 @@ async function expectStep(page: Page, id: string, title: string, focused = true)
   await expect(page).toHaveURL(id === 'projekt' ? /konfigurator\/(\?.*)?$/ : new RegExp(`schritt=${id}`));
 }
 
+// No 3D auto-load here (Save-Data closes its gate, docs/configurator.md §4.9): on a software
+// renderer (CI) the viewer's init holds back the debounced polite region for seconds. The viewer
+// has its own specs (konfigurator-viewer*.spec.ts).
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }));
+});
+
 function expectNoPii(page: Page): void {
   const url = decodeURIComponent(page.url());
   for (const s of PII) expect(url, `URL must not contain "${s}"`).not.toContain(s);
