@@ -553,16 +553,18 @@ html:has(#site-menu:popover-open) { overflow: hidden; }
 | Hero annotation draw | Time-based, 900 ms, once | NP | Static |
 | Sketch draw-on / hover redraw / sketch → photo | See §3 | NP (+ `@supports`) | Finished state |
 | Counters | `@property` + `view()` | NP + `@supports` | Static number |
-| Header condense | `scroll(root)`: wordmark scale .85, hairline opacity | NP + `@supports` | Condensed |
-| Process Maßlinie | `view()`: scale + opacity | NP + `@supports` | Full line |
+| Header condense | `scroll(root)`: wordmark scale .85; hairline colour (`header-rule`) | NP + `@supports` | Condensed |
+| Process Maßlinie | `view()`: scale only (the draw reads as drawing; opacity would double it) | NP + `@supports` | Full line |
 | Jahresringe highlight | `timeline-scope` + per-milestone view timelines | NP + `@supports (timeline-scope: --a)` | Static |
-| Popovers | `@starting-style` + `allow-discrete` | NP (reduce = opacity only) | Instant |
+| Popovers | `@starting-style` + `allow-discrete` | Fade: `@supports` only; drop-in `translate`: NP | Instant |
 | Details | `::details-content` + `interpolate-size` | NP | Instant |
 
 **Hard rules:**
-- No `opacity: 0` or other start state in base styles.
+- No `opacity: 0` or other start state in base styles. **One exception:** closed popovers (`:not(:popover-open)`, which are `display: none` anyway) carry `opacity: 0` for the reduce-safe fade, gated by `@supports (transition-behavior: allow-discrete)`.
 - **Use longhands** for scroll-driven animations (`animation-name`, `-timing-function`, `-fill-mode`, then `animation-timeline`). Astro's lightningcss folds a following `animation-timeline` into the `animation` shorthand, where it is reset-only, so browsers drop it (found in Phase 1).
-- Allowed non-compositor exceptions: `stroke-dashoffset` (small SVGs), the hero `clip-path`, counters, details `block-size`.
+- Allowed non-compositor exceptions: `stroke-dashoffset` (small SVGs), the hero `clip-path`, counters, details `block-size`, the header hairline `border-block-end-color`.
+- **Under reduced motion** only colour/opacity fades ≤ `--dur-2` may run (popover fade, chip and in-page-nav colours); `tests/e2e/motion-reduced.spec.ts` enforces this on every page type.
+- **View-transition exits and entries:** a named element with no counterpart on the other page (`::view-transition-old/new(*.media|*.title):only-child`) uses the root's direction keyframes, so it leaves and arrives with its page instead of fading in place.
 
 ### Cross-document view transitions
 **Name registry:** `src/lib/vt.ts` provides `vt(Astro.locals, 'proj', slug)`.

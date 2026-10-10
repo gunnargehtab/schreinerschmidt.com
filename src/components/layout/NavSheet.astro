@@ -182,26 +182,43 @@ const site = await getSite();
       overflow: hidden;
     }
 
-    @media (prefers-reduced-motion: no-preference) {
-      @supports (transition-behavior: allow-discrete) {
-        .nav-sheet {
+    /* Open/close (docs/design-system.md §6 "Popovers"): a fade, plus a drop-in where motion is welcome;
+       reduced motion keeps the opacity only. Closed popovers are display:none, so base CSS shows no hidden state. */
+    @supports (transition-behavior: allow-discrete) {
+      .nav-sheet {
+        opacity: 0;
+        transition:
+          opacity var(--dur-2) var(--ease-out),
+          display var(--dur-2) allow-discrete,
+          overlay var(--dur-2) allow-discrete;
+      }
+
+      .nav-sheet:popover-open {
+        opacity: 1;
+      }
+
+      @starting-style {
+        .nav-sheet:popover-open {
           opacity: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .nav-sheet {
           translate: 0 -0.75rem;
           transition:
-            opacity var(--dur-2),
+            opacity var(--dur-2) var(--ease-out),
             translate var(--dur-2) var(--ease-out),
             display var(--dur-2) allow-discrete,
             overlay var(--dur-2) allow-discrete;
         }
 
         .nav-sheet:popover-open {
-          opacity: 1;
           translate: 0;
         }
 
         @starting-style {
           .nav-sheet:popover-open {
-            opacity: 0;
             translate: 0 -0.75rem;
           }
         }

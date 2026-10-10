@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Site chrome: header navigation, Leistungen disclosure, mobile sheet, theme toggle.
 // Navigate relative to baseURL (goto('kontakt/')); the base path contains a dot.
@@ -7,6 +7,30 @@ const DESKTOP = { width: 1440, height: 900 };
 const MOBILE = { width: 390, height: 844 };
 const SERVICE_KEYS = ['moebel', 'boeden', 'treppen', 'fenster', 'tueren', 'altbau', 'terrassen'];
 const NAV_PAGES = ['leistungen/', 'referenzen/', 'ueber-uns/', 'karriere/', 'kontakt/'];
+
+/**
+ * Waits until no time-based animation runs on the page: popover open/close transitions
+ * (`display`/`overlay` with allow-discrete keep a closing popover rendered for --dur-2) and
+ * same-document view transitions (whose pseudo-elements intercept pointer events). Scroll-driven
+ * animations are always "running" and are ignored. Clicking into a popover while it still moves, or
+ * during a view transition, makes Playwright retry its actionability checks; under CI load those
+ * retries added up to the 30 s test timeout.
+ */
+const settled = (page: Page) =>
+  expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document.getAnimations().filter((a) => a.playState === 'running' && a.timeline instanceof DocumentTimeline)
+              .length,
+        ),
+      { message: 'time-based animations have finished' },
+    )
+    .toBe(0);
+
+/** The popover state itself (`:popover-open`), independent of the exit transition that keeps it rendered. */
+const popoverOpen = (popover: Locator) => popover.evaluate((el) => el.matches(':popover-open'));
 
 test.describe('desktop header', () => {
   test.use({ viewport: DESKTOP });
@@ -90,30 +114,51 @@ test.describe('desktop header', () => {
 test.describe('mobile sheet', () => {
   test.use({ viewport: MOBILE });
 
-  test('opens, lists all links incl. Kontakt, and closes with the close button and Escape', async ({ page }) => {
+  /** Opens the sheet and waits for its drop-in to finish, so the next click inside is immediately actionable. */
+  const openSheet = async (page: Page) => {
+    const sheet = page.locator('#site-menu');
+    await page.locator('.menu-button').click();
+    await expect.poll(() => popoverOpen(sheet)).toBe(true);
+    await settled(page);
+    await expect(sheet).toBeVisible();
+    return sheet;
+  };
+
+  test('opens below the button and lists all links incl. Kontakt', async ({ page }) => {
     await page.goto('');
     const button = page.locator('.menu-button');
     const sheet = page.locator('#site-menu');
     await expect(page.getByRole('navigation', { name: 'Hauptnavigation' })).toBeHidden();
     await expect(sheet).toBeHidden();
 
-    await button.click();
-    await expect(sheet).toBeVisible();
+    await openSheet(page);
     const menu = sheet.getByRole('navigation', { name: 'Hauptmenü' });
     for (const name of ['Leistungen', 'Referenzen', 'Über uns', 'Karriere', 'Kontakt']) {
       await expect(menu.getByRole('link', { name, exact: true })).toBeVisible();
     }
     await expect(sheet.getByRole('link', { name: 'Angebot konfigurieren' })).toBeVisible();
-    // The menu button stays reachable above the sheet.
+    // The menu button stays reachable above the sheet (measured once the drop-in has settled).
     const [b, s] = await Promise.all([button.boundingBox(), sheet.boundingBox()]);
     expect(b && s && b.y + b.height <= s.y + 1, 'sheet starts below the button').toBe(true);
+  });
 
+  test('closes with the close button and reopens', async ({ page }) => {
+    await page.goto('');
+    const sheet = await openSheet(page);
     await sheet.getByRole('button', { name: 'Menü schließen' }).click();
+    // The popover state flips at once; the exit transition keeps the sheet rendered for --dur-2.
+    await expect.poll(() => popoverOpen(sheet)).toBe(false);
     await expect(sheet).toBeHidden();
+    // Focus returns to the menu button, which opens the sheet again.
+    await expect(page.locator('.menu-button')).toBeFocused();
+    await openSheet(page);
+  });
 
-    await button.click();
-    await expect(sheet).toBeVisible();
+  test('closes with Escape', async ({ page }) => {
+    await page.goto('');
+    const sheet = await openSheet(page);
     await page.keyboard.press('Escape');
+    await expect.poll(() => popoverOpen(sheet)).toBe(false);
     await expect(sheet).toBeHidden();
   });
 
@@ -189,23 +234,32 @@ test.describe('header reflow (WCAG 1.4.10) @cross-engine', () => {
 });
 
 test.describe('theme toggle', () => {
+  /** Opens the picker and waits for its drop-in, so the radios are immediately actionable. */
+  const openPicker = async (page: Page) => {
+    await page.getByRole('button', { name: 'Farbschema' }).click();
+    await expect.poll(() => popoverOpen(page.locator('#theme-menu'))).toBe(true);
+    await settled(page);
+  };
+
   test('flips data-theme, persists after reload, and storage is empty before a click', async ({ page }) => {
     await page.goto('');
     expect(await page.evaluate(() => localStorage.getItem('ss-theme'))).toBeNull();
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
 
-    await page.getByRole('button', { name: 'Farbschema' }).click();
+    await openPicker(page);
     await page.getByLabel('Werkstatt bei Nacht').check();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     expect(await page.evaluate(() => localStorage.getItem('ss-theme'))).toBe('dark');
 
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await page.getByRole('button', { name: 'Farbschema' }).click();
+    await openPicker(page);
     await expect(page.getByLabel('Werkstatt bei Nacht')).toBeChecked();
 
+    // Each pick runs inside a view transition whose pseudo-elements intercept pointer events: let it finish.
     await page.getByLabel('Hell', { exact: true }).check();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await settled(page);
 
     await page.getByLabel('Wie System').check();
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);

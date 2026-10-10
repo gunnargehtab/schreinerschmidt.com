@@ -166,11 +166,29 @@ const inServices = inSection(pathname, SERVICES_HREF);
       border-block-start: var(--rule);
     }
 
-    /* Open/close: fade and drop in. Closed popovers are display:none, so base CSS shows no hidden state. */
-    @media (prefers-reduced-motion: no-preference) {
-      @supports (transition-behavior: allow-discrete) {
-        .nav__panel {
+    /* Open/close (docs/design-system.md §6 "Popovers"): a fade, plus a drop-in where motion is welcome;
+       reduced motion keeps the opacity only. Closed popovers are display:none, so base CSS shows no hidden state. */
+    @supports (transition-behavior: allow-discrete) {
+      .nav__panel {
+        opacity: 0;
+        transition:
+          opacity var(--dur-2) var(--ease-out),
+          display var(--dur-2) allow-discrete,
+          overlay var(--dur-2) allow-discrete;
+      }
+
+      .nav__panel:popover-open {
+        opacity: 1;
+      }
+
+      @starting-style {
+        .nav__panel:popover-open {
           opacity: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .nav__panel {
           translate: 0 -0.25rem;
           transition:
             opacity var(--dur-2) var(--ease-out),
@@ -180,13 +198,11 @@ const inServices = inSection(pathname, SERVICES_HREF);
         }
 
         .nav__panel:popover-open {
-          opacity: 1;
           translate: 0;
         }
 
         @starting-style {
           .nav__panel:popover-open {
-            opacity: 0;
             translate: 0 -0.25rem;
           }
         }

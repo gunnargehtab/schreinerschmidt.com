@@ -106,16 +106,18 @@ test.describe('review view', () => {
   test('is plain by default and highlighted with ?pruefen', async ({ page }) => {
     await page.goto(PAGE);
     await expect(page.locator('html')).not.toHaveAttribute('data-pruefen', /.*/);
-    // The legend is generated content on body::after (src/styles/components/review.css).
-    const legend = () => page.evaluate(() => getComputedStyle(document.body, '::after').content);
-    expect(await legend()).toBe('none');
+    // The legend is markup from ui/ReviewView.astro, display: none until the view is on
+    // (session persistence and the exit link: review.spec.ts).
+    const legend = page.locator('.review-legend');
+    await expect(legend).toBeHidden();
     const mark = page.locator('.review-mark').first();
     const plain = await mark.evaluate((el) => getComputedStyle(el).outlineStyle);
     expect(plain).toBe('none');
 
     await page.goto(`${PAGE}?pruefen`);
     await expect(page.locator('html')).toHaveAttribute('data-pruefen', '');
-    expect(await legend()).toContain('Prüfansicht');
+    await expect(legend).toBeVisible();
+    await expect(legend).toContainText('Prüfansicht');
     expect(await mark.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
   });
 });

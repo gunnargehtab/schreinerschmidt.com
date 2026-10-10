@@ -433,6 +433,7 @@ async function settledAzimuth(page: Page): Promise<number> {
 test('the orbit limit follows the furniture kind: ±120° Regal, ±60° Einbauschrank, free for the Esstisch', async ({
   page,
 }) => {
+  test.setTimeout(90_000); // ~14 s alone; three viewer kinds and ~30 settled rotations on SwiftShader under suite load
   await open(page);
   await load(page);
   expect(await settledAzimuth(page)).toBe(35); // the 3/4 preset

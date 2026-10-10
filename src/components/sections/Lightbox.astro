@@ -139,11 +139,12 @@
       }
     }
 
-    /* The image morphs between thumbnail and dialog; names are set by lightbox.ts around the transition. */
+    /* The image morphs between thumbnail and dialog; names are set by lightbox.ts around the transition.
+       The spring easing (docs/plan.md §5 "Tokens": lightbox only) gives the photo a slight settle. */
     @media (prefers-reduced-motion: no-preference) {
       ::view-transition-group(lightbox-img) {
         animation-duration: var(--dur-3);
-        animation-timing-function: var(--ease-out);
+        animation-timing-function: var(--ease-spring);
         z-index: 50;
       }
 

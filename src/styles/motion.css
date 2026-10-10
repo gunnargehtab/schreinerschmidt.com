@@ -54,6 +54,17 @@
       interpolate-size: allow-keywords;
     }
 
+    /*
+     * Untyped root crossfade (theme switch, lightbox, Referenzen filter, navigations without a
+     * direction): the UI token instead of the UA's 0.25 s ease. The typed page transitions below
+     * set the shorthand and win.
+     */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: var(--dur-2);
+      animation-timing-function: var(--ease-out);
+    }
+
     ::view-transition-group(site-header) {
       animation: none;
       z-index: 100;
@@ -73,10 +84,21 @@
       z-index: 50;
     }
 
+    /* Referenzen filter: cards slide to their new place (match-element) at the same pace. */
+    ::view-transition-group(*.card) {
+      animation-duration: var(--dur-3);
+      animation-timing-function: var(--ease-out);
+    }
+
     ::view-transition-old(*.media),
     ::view-transition-new(*.media) {
       block-size: 100%;
       object-fit: cover;
+    }
+
+    ::view-transition-group(*.title) {
+      animation-duration: var(--dur-3);
+      animation-timing-function: var(--ease-out);
     }
 
     ::view-transition-old(*.title),
@@ -85,28 +107,53 @@
       block-size: auto;
     }
 
+    /*
+     * Named elements without a counterpart on the other page (the six other service sketches when a
+     * card opens its page, project cards that only the next page has, the title leaving for Home)
+     * would otherwise fade in place while the root slides: they looked like debris hanging over the
+     * new page. `:only-child` picks exactly those exits and entries; they get the root's own
+     * keyframes below, so they travel with the page they belong to.
+     */
+    ::view-transition-old(*.media):only-child,
+    ::view-transition-old(*.title):only-child,
+    ::view-transition-new(*.media):only-child,
+    ::view-transition-new(*.title):only-child {
+      animation-duration: var(--dur-2);
+      animation-timing-function: var(--ease-out);
+    }
+
     html:active-view-transition-type(forward) {
-      &::view-transition-old(root) {
+      &::view-transition-old(root),
+      &::view-transition-old(*.media):only-child,
+      &::view-transition-old(*.title):only-child {
         animation: var(--dur-2) var(--ease-out) both vt-out-start;
       }
 
-      &::view-transition-new(root) {
+      &::view-transition-new(root),
+      &::view-transition-new(*.media):only-child,
+      &::view-transition-new(*.title):only-child {
         animation: var(--dur-3) var(--ease-out) both vt-in-end;
       }
     }
 
     html:active-view-transition-type(back) {
-      &::view-transition-old(root) {
+      &::view-transition-old(root),
+      &::view-transition-old(*.media):only-child,
+      &::view-transition-old(*.title):only-child {
         animation: var(--dur-2) var(--ease-out) both vt-out-end;
       }
 
-      &::view-transition-new(root) {
+      &::view-transition-new(root),
+      &::view-transition-new(*.media):only-child,
+      &::view-transition-new(*.title):only-child {
         animation: var(--dur-3) var(--ease-out) both vt-in-start;
       }
     }
 
     html:active-view-transition-type(lateral) {
-      &::view-transition-new(root) {
+      &::view-transition-new(root),
+      &::view-transition-new(*.media):only-child,
+      &::view-transition-new(*.title):only-child {
         animation: var(--dur-3) var(--ease-out) both vt-rise-in;
       }
     }
@@ -303,7 +350,11 @@
         animation-range: 0 50svh;
       }
 
-      /* Header condense: the wordmark scales to .85 over the first 6rem of scroll. */
+      /*
+       * Header condense: the wordmark scales to .85 over the first 6rem of scroll, and the header's
+       * hairline appears with it. At the top of the page the header is part of the sheet; once it
+       * sticks it gets its rule. Base CSS keeps the rule (the condensed, finished state).
+       */
       .site-header .wordmark {
         animation-name: shrink;
         animation-timing-function: linear;
@@ -311,6 +362,14 @@
         animation-timeline: scroll(root);
         animation-range: 0 6rem;
         transform-origin: left center;
+      }
+
+      .site-header {
+        animation-name: header-rule;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root);
+        animation-range: 0 6rem;
       }
     }
 
@@ -446,6 +505,12 @@
   @keyframes shrink {
     to {
       scale: 0.85;
+    }
+  }
+
+  @keyframes header-rule {
+    from {
+      border-block-end-color: transparent;
     }
   }
 

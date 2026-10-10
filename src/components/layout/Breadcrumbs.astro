@@ -53,5 +53,10 @@ const items: Crumb[] = [{ label: 'Startseite', href: '' }, ...trail];
       display: inline-block;
       padding-block: var(--space-3xs);
     }
+
+    /* A long current title wraps inside its item, so the "/" stays with its first word on phones. */
+    .breadcrumbs [aria-current] {
+      display: inline;
+    }
   }
 </style>

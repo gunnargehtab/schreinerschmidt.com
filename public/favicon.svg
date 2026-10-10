@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <style>
     .bg { fill: #8B101B; }
-    .s { fill: #FFFBF5; }
+    .s { stroke: #FFFBF5; }
     @media (prefers-color-scheme: dark) {
       .bg { fill: #160D07; }
-      .s { fill: #EB8278; }
+      .s { stroke: #EB8278; }
     }
   </style>
-  <rect class="bg" width="64" height="64" rx="12" />
-  <path class="s" d="M16 14H48V22H24V28H48V50H16V42H40V36H16Z" />
+  <rect class="bg" width="64" height="64" />
+  <path class="s" d="M42 22A10 10 0 1 0 32 32A10 10 0 1 1 22 42" fill="none" stroke-width="9" stroke-linecap="butt" stroke-linejoin="round" />
 </svg>
