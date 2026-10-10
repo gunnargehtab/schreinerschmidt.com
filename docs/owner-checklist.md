@@ -31,6 +31,16 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Is "1.000+ Projekte" still accurate?
 - [ ] Should Treppen be a service of its own?
 
+## Services and copy (from the Phase 2 copy draft)
+- [ ] Fenster and Türen: does he make them himself, or install manufacturer products (PaX, KOWA)? This decides whether the copy may say „maßgefertigt“ or „handgemacht“.
+- [ ] Founding year of the Schreinerei. Only „Meister seit 2010“ is sourced.
+- [ ] Default surface finish (geölt/gewachst?) and the finishes offered for furniture.
+- [ ] Treppen scope: new stairs, treads on concrete, handrails, restoration?
+- [ ] Terrace wood species (Lärche, Douglasie, Robinie?). Steel bases: made in-house or by a partner?
+- [ ] Are „Kein Anschreiben nötig“ (applications) and „wir rufen zurück“ (contact) acceptable promises?
+- [ ] Home h1: keep „Ihr Experte für umweltbewusstes Holzhandwerk“ (green claim, legal review), or switch to the alternative „Ihr Schreinermeister für Holz nach Maß in Mannheim“?
+- [ ] form.taxi: legal entity and address, AVV retention period. Is he exempt from appointing a data protection officer (headcount)?
+
 ## Sustainability claims (UWG / EU 2024/825, since 27.09.2026)
 - [ ] Evidence for certified sources (FSC/PEFC certificate numbers?), and for natural oils and adhesives (Auro products?).
 - [ ] Tagline "Umweltbewusstes Holzhandwerk": keep it, or reword it after legal review.
