@@ -198,4 +198,16 @@ const settings = defineCollection({
   }),
 });
 
-export const collections = { services, projects, testimonials, team, jobs, woods, faqs, settings };
+// Page copy (Phase 2). Each page validates its own file with a schema from src/lib/page-copy/,
+// so parallel work on different pages never touches this file.
+const pages = defineCollection({
+  loader: glob({ pattern: '*.yaml', base: './src/content/pages' }),
+  schema: z.looseObject({}),
+});
+
+const legal = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/legal' }),
+  schema: z.object({ title: z.string(), seo: Seo, stand: z.coerce.date(), review }),
+});
+
+export const collections = { services, projects, testimonials, team, jobs, woods, faqs, settings, pages, legal };

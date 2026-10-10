@@ -30,5 +30,14 @@ const sizing = width ? { width } : {};
 
 <div class:list={['sketch-photo', className]} style={`--ar: ${photo.width} / ${photo.height}`}>
   <Picture class="sketch-photo__img" src={photo} alt={alt} sizes={sizes} loading="lazy" {...sizing} />
-  <Image class="sketch-photo__sketch" src={sketch} alt="" sizes={sizes} loading="lazy" decoding="async" {...sizing} />
+  <Image
+    class="sketch-photo__sketch"
+    data-decorative
+    src={sketch}
+    alt=""
+    sizes={sizes}
+    loading="lazy"
+    decoding="async"
+    {...sizing}
+  />
 </div>

@@ -13,6 +13,9 @@ test('dist/ has pages to check', () => {
 
 for (const { path, label } of pages) {
   test(`${label} renders its h1 and main content without JS`, async ({ page }) => {
+    // Base CSS (motion gates closed) must render the finished state. Scroll-driven reveals live only
+    // inside `prefers-reduced-motion: no-preference` gates, so they are checked separately below.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(path);
     await page.waitForLoadState('load');
 
@@ -52,6 +55,36 @@ for (const { path, label } of pages) {
         });
     });
     expect(hidden).toEqual([]);
+
+    // With motion allowed, below-the-fold reveals may start hidden, but everything must reach full
+    // opacity once it is scrolled into view (scroll-driven animations run without JS).
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    const targets = page.locator('main > *, main img');
+    const count = await targets.count();
+    for (let i = 0; i < count; i++) {
+      const target = targets.nth(i);
+      // Decorative overlays (e.g. the sketch layer of SketchPhoto) are meant to fade out.
+      if (!(await target.isVisible()) || (await target.getAttribute('data-decorative')) !== null) continue;
+      // Centre it: tall elements would otherwise sit at the very start of their view timeline.
+      const what = await target.evaluate((el) => {
+        el.scrollIntoView({ block: 'center', behavior: 'instant' });
+        const cls = typeof el.className === 'string' ? el.className.trim().replace(/\s+/g, '.') : '';
+        return `${el.tagName.toLowerCase()}${cls ? `.${cls}` : ''}`;
+      });
+      await expect
+        .poll(
+          () =>
+            target.evaluate((el) => {
+              let opacity = 1;
+              for (let node: Element | null = el; node; node = node.parentElement) {
+                opacity *= Number(getComputedStyle(node).opacity);
+              }
+              return opacity;
+            }),
+          { message: `${what} reaches full opacity in view`, timeout: 3000 },
+        )
+        .toBeGreaterThan(0.99);
+    }
   });
 }
 
