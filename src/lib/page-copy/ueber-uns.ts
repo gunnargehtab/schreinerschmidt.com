@@ -16,7 +16,6 @@ const ueberUnsSchema = z.object({
     h2: z.string(),
     text: z.string(),
     ctaConfigurator: z.string(),
-    ctaPhone: z.string(),
   }),
 });
 

@@ -15,6 +15,12 @@ site:
     city: Mannheim
     region: Baden-Württemberg
     country: DE
+  geo:
+    value:
+      lat: 49.4907376
+      lng: 8.5231086
+    status: needs-review
+    note: Die Karte (src/lib/map.ts) setzt den Pin auf die Straße, nicht auf Hausnummer 33. Koordinaten des Hauses vom Inhaber bestätigen (z. B. Rechtsklick in OpenStreetMap), dann hier und in map.ts / scripts/make-static-map.mjs eintragen und Karte neu erzeugen.
   phone:
     display: +49 179 9467822
     e164: '+491799467822'

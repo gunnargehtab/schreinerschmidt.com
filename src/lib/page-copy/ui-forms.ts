@@ -7,7 +7,6 @@ export const uiFormsSchema = z.object({
   rating: z.object({ profileLink: z.string() }),
   demoBanner: z.object({ legalPending: z.string() }),
   form: z.object({
-    demoNotice: z.string(),
     demoSuccess: z.string(),
     sending: z.string(),
     errorSummaryTitle: z.string(),

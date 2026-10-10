@@ -19,6 +19,7 @@ import { telHref } from '../../lib/format';
 import { getPageCopy } from '../../lib/page-copy';
 import { karriereSchema } from '../../lib/page-copy/karriere';
 import { uiFormsSchema } from '../../lib/page-copy/ui-forms';
+import { marked as status } from '../../lib/review-mark';
 import { url } from '../../lib/url';
 
 const copy = await getPageCopy('karriere', karriereSchema);
@@ -46,8 +47,6 @@ const faqs = copy.faq.map((item, i) => ({
   },
 })) as unknown as FaqEntry[];
 
-type Marked = { review?: 'confirmed' | 'needs-review' | 'placeholder' | undefined; note?: string | undefined };
-const status = ({ review }: Marked) => (review && review !== 'confirmed' ? review : undefined);
 const heroStatus = status(copy.hero);
 const jobsStatus = status(copy.jobs);
 const appStatus = status(app);

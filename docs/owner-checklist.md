@@ -28,6 +28,7 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Service area and PLZ tiers (core: Mannheim / Ludwigshafen; region: Rhein-Neckar).
 - [ ] Promised response time ("innerhalb von 2 Werktagen"?) and the policy on Aufmaß costs.
 - [ ] Google Business Profile URL.
+- [ ] Exact map coordinates of the workshop (Andreas-Hofer-Str. 33): the pin on /kontakt/ sits on the street, not on the house. Right-click the house in OpenStreetMap and send the coordinates. Tracked as `settings.yaml` `site.geo` (Prüfliste, Kontakt) and in `src/lib/map.ts`.
 - [ ] Is "1.000+ Projekte" still accurate?
 - [ ] Should Treppen be a service of its own?
 

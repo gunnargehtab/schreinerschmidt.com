@@ -7,7 +7,7 @@ import { render } from 'astro:content';
 import { PUBLIC_DEMO } from 'astro:env/client';
 import ReviewMark from '../ui/ReviewMark.astro';
 import type { Job } from '../../lib/content';
-import { formatCurrencyRange } from '../../lib/format';
+import { jobMeta, visibleSalary } from '../../lib/jobs';
 import { shy } from '../../lib/shy';
 
 interface Props {
@@ -26,20 +26,9 @@ const { title, employmentType, workHours, baseSalary, responsibilities, qualific
 const Heading = `h${level}` as 'h2' | 'h3';
 const { Content } = await render(job);
 
-const TYPES: Record<string, string> = {
-  FULL_TIME: 'Vollzeit',
-  PART_TIME: 'Teilzeit',
-  CONTRACTOR: 'Freie Mitarbeit',
-  TEMPORARY: 'befristet',
-  INTERN: 'Praktikum',
-};
-const UNITS: Record<string, string> = { HOUR: 'pro Stunde', MONTH: 'pro Monat', YEAR: 'pro Jahr' };
-const meta = [...employmentType.map((t) => TYPES[t] ?? t), workHours].filter(Boolean).join(' · ');
+const meta = jobMeta(employmentType, workHours);
 // Same rule as the job page: never publish an unconfirmed salary outside the demo.
-const salary =
-  baseSalary && (baseSalary.status === 'confirmed' || PUBLIC_DEMO)
-    ? `${formatCurrencyRange(baseSalary.value.min, baseSalary.value.max)} ${UNITS[baseSalary.value.unit]}`
-    : undefined;
+const salary = visibleSalary(baseSalary, PUBLIC_DEMO);
 const lists = [
   { heading: 'Aufgaben', items: responsibilities },
   { heading: 'Voraussetzungen', items: qualifications },

@@ -32,14 +32,13 @@ const homeSchema = z.object({
     lead: z.string(),
     claims: z.array(reviewable({ text: z.string() })).min(1),
   }),
-  testimonials: reviewable({ h2: z.string(), ratingLine: z.string() }),
+  testimonials: reviewable({ h2: z.string() }),
   configurator: reviewable({ h2: z.string(), text: z.string(), ...cta }),
   careers: reviewable({ h2: z.string(), text: z.string(), ...cta }),
   ctaBand: reviewable({
     h2: z.string(),
     text: z.string(),
     ctaConfigurator: z.string(),
-    ctaPhone: z.string(),
   }),
 });
 

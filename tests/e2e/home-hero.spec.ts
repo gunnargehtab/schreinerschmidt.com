@@ -104,10 +104,9 @@ test.describe('home hero @cross-engine', () => {
     for (const scale of lines) expect(scale).toBe('none');
     // Scrolling never opens the frame: the media is still inset once it is in view.
     await page.locator('.hero__media').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(100);
-    const inset = await heroInset(page);
-    expect(inset).not.toBeNull();
-    expect(inset!).toBeGreaterThan(0);
+    await expect.poll(async () => (await heroInset(page)) ?? -1).toBeGreaterThan(0);
+    // ...and it stays inset: a second reading after the scroll settled shows the same frame.
+    await expect.poll(async () => (await heroInset(page)) ?? -1, { intervals: [100, 100] }).toBeGreaterThan(0);
   });
 
   for (const width of WIDTHS) {
@@ -138,10 +137,7 @@ test.describe('home hero enhancements (chromium)', () => {
     expect(framed!).toBeGreaterThan(0);
     const height = await page.evaluate(() => window.innerHeight);
     await page.evaluate((y) => window.scrollTo(0, y), height * 0.5);
-    await page.waitForTimeout(150);
-    const open = await heroInset(page);
-    expect(open).not.toBeNull();
-    expect(open!).toBeLessThanOrEqual(2);
+    await expect.poll(async () => (await heroInset(page)) ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(2);
   });
 
   test('annotations draw once after load and end at the finished line', async ({ page }) => {

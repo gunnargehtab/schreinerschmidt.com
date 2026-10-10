@@ -24,6 +24,7 @@ import Picture from '../../components/ui/Picture.astro';
 import { dominantColor } from '../../lib/dominant-color';
 import { getFaqsByRefs, getProjects, getProjectsByRefs, getSite } from '../../lib/content';
 import { breadcrumbJsonLd, serviceJsonLd } from '../../lib/jsonld';
+import { konfiguratorPath } from '../../lib/konfigurator-links';
 import { basePathLinks } from '../../lib/markdown/base-path-links.mjs';
 import { placeholderMarks } from '../../lib/markdown/placeholder-marks.mjs';
 import { getProcessCopy } from '../../lib/page-copy/leistungen';
@@ -69,6 +70,13 @@ for (let i = 0; i < pieces.length; i += 2) {
 // Service pages show the Ablauf without the five drawings (they sit on /leistungen/ and Home):
 // five more inline SVGs would push the Böden page over the 30 KB HTML budget.
 const plainSteps = process.steps.map((step) => ({ ...step, key: '' }));
+
+// The TypeCards sit under the first section whose title names the types ("Unsere Bodenarten",
+// "Unsere Treppenarten", ...): derived from the data, not hard-coded per service.
+const typesSectionId = types.length > 0 ? sections.find((s) => /^unsere\s/i.test(s.title))?.id : undefined;
+if (types.length > 0 && !typesSectionId) {
+  throw new Error(`Service "${key}" has types but no "## Unsere …" section in its Markdown body to hold them`);
+}
 
 const unconfirmed = service.data.review.status !== 'confirmed';
 const reviewStatus = service.data.review.status === 'confirmed' ? 'needs-review' : service.data.review.status;
@@ -155,7 +163,7 @@ const jsonLd = [
               {shy(section.title)}
             </h2>
             <div class="prose" set:html={section.html} />
-            {section.id === 'unsere-bodenarten' && types.length > 0 && (
+            {section.id === typesSectionId && types.length > 0 && (
               <TypeCards
                 types={types}
                 level={3}
@@ -193,8 +201,12 @@ const jsonLd = [
     </div>
   </section>
 
-  {/* Phase 3: link to konfigurator/<typ>/ per service type once the deep links exist. */}
-  <CtaBand heading={ui.ctaBand.h2} lead={ui.ctaBand.text} buttonLabel={ui.ctaBand.ctaConfigurator} />
+  <CtaBand
+    heading={ui.ctaBand.h2}
+    lead={ui.ctaBand.text}
+    href={konfiguratorPath(key)}
+    buttonLabel={ui.ctaBand.ctaConfigurator}
+  />
 </BaseLayout>
 
 <style>

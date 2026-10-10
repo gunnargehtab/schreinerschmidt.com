@@ -9,14 +9,12 @@ import ServiceGrid from '../../components/sections/ServiceGrid.astro';
 import ReviewMark from '../../components/ui/ReviewMark.astro';
 import { getFaqsByRefs, getServices } from '../../lib/content';
 import { getLeistungenCopy, getProcessCopy } from '../../lib/page-copy/leistungen';
+import { marked } from '../../lib/review-mark';
 
 const [copy, process, services] = await Promise.all([getLeistungenCopy(), getProcessCopy(), getServices()]);
 // General questions only; the per-service ones sit on the service pages.
 const faqs = await getFaqsByRefs([{ id: 'ablauf' }, { id: 'einzugsgebiet' }, { id: 'altbau-aufarbeiten' }]);
 
-/** Review marks sit next to the block as `review`/`note`; confirmed or absent means plain text. */
-const marked = (block: { review?: 'confirmed' | 'needs-review' | 'placeholder' | undefined }) =>
-  block.review === 'needs-review' || block.review === 'placeholder' ? block.review : undefined;
 const introStatus = marked(copy.intro);
 const teaserStatus = marked(copy.sustainabilityTeaser);
 ---

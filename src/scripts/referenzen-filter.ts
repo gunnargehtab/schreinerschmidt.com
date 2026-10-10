@@ -1,6 +1,8 @@
 // Referenzen filter (docs/design-system.md §6). The CSS `:has()` rules do the filtering; this adds the
 // status text and, where view transitions exist, the choreography: revert the radio, mark the list
 // `.is-filtering` (motion.css gives the items `match-element` names), then switch inside the transition.
+import { projectCountLabel } from '../lib/referenzen-filter';
+
 const root = document.querySelector<HTMLElement>('[data-refs]');
 const list = root?.querySelector<HTMLElement>('[data-filter-list]');
 const status = root?.querySelector<HTMLElement>('[data-status]');
@@ -15,7 +17,7 @@ if (root && list && status) {
     radio.checked = true;
     current = radio;
     const n = Number(radio.dataset['n']);
-    status.textContent = `${n} ${n === 1 ? 'Projekt' : 'Projekte'}`;
+    status.textContent = projectCountLabel(n);
   };
 
   root.addEventListener('change', (e) => {

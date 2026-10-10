@@ -64,36 +64,10 @@ const items = await Promise.all(
 
 <style>
   @layer components {
-    .gallery {
-      --cols: 1;
-      display: grid;
-      display: grid-lanes;
-      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-      gap: var(--space-xs);
-      margin: 0;
-      padding: 0;
-    }
-
-    @container section (inline-size >= 40rem) {
-      .gallery {
-        --cols: 2;
-      }
-    }
-
-    @container section (inline-size >= 64rem) {
-      .gallery {
-        --cols: 3;
-      }
-    }
-
-    /* Higher specificity than the container-query column counts above. */
+    /* The grid itself is global (styles/components/gallery.css). Higher specificity than its container-query column counts. */
     .gallery.gallery--single {
       --cols: 1;
       max-inline-size: 48rem;
-    }
-
-    .gallery__item {
-      min-inline-size: 0;
     }
 
     .gallery__link {

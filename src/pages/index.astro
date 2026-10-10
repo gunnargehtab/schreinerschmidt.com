@@ -18,6 +18,7 @@ import { getProject, getProjects, getServices, getSite, getTestimonials } from '
 import { formatNumber } from '../lib/format';
 import { getHomeCopy } from '../lib/page-copy/home';
 import { getProcessCopy } from '../lib/page-copy/leistungen';
+import { marked } from '../lib/review-mark';
 import { shy } from '../lib/shy';
 import { url } from '../lib/url';
 import sketchPhoto from '../assets/sketches/einbauschrankwand-01.jpg';
@@ -37,11 +38,6 @@ if (!wardrobe) throw new Error('Home: project "einbauschrankwand" is missing');
 // topped up with the next projects that have one.
 const withPage = allProjects.filter((p) => p.data.detailPage);
 const projects = [...withPage.filter((p) => p.data.featured), ...withPage.filter((p) => !p.data.featured)].slice(0, 3);
-
-/** Review marks sit next to the block as `review`/`note`; confirmed or absent means plain text. */
-type Mark = 'needs-review' | 'placeholder';
-const marked = (block: { review?: 'confirmed' | 'needs-review' | 'placeholder' | undefined }): Mark | undefined =>
-  block.review === 'needs-review' || block.review === 'placeholder' ? block.review : undefined;
 
 // Stats: labels from the copy, figures from settings (years computed at build, in Europe/Berlin).
 const year = Number(

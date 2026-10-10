@@ -10,9 +10,9 @@ import Lightbox from '../../components/sections/Lightbox.astro';
 import ProjectCard from '../../components/sections/ProjectCard.astro';
 import { getPageCopy } from '../../lib/page-copy';
 import { referenzenSchema } from '../../lib/page-copy/referenzen';
-import { projectCount, uiReferenzenSchema } from '../../lib/page-copy/ui-referenzen';
+import { uiReferenzenSchema } from '../../lib/page-copy/ui-referenzen';
 import { getProjects } from '../../lib/content';
-import { dataCat } from '../../lib/referenzen-filter';
+import { dataCat, projectCountLabel } from '../../lib/referenzen-filter';
 
 const copy = await getPageCopy('referenzen', referenzenSchema);
 const ui = await getPageCopy('ui', uiReferenzenSchema);
@@ -22,7 +22,7 @@ const projects = await getProjects();
 <PageLayout title={copy.seo.title ?? copy.hero.h1} heading={copy.hero.h1} description={copy.seo.description}>
   <div class="stack" slot="lead">
     <p class="lead">{copy.hero.lead}</p>
-    <p class="refs-count text-muted">{projectCount(ui, projects.length)}</p>
+    <p class="refs-count text-muted">{projectCountLabel(projects.length)}</p>
   </div>
   <section class="section">
     <FilterBar items={projects.map((p) => p.data)} legend={ui.filter.label} reveal>

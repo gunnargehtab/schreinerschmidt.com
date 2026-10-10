@@ -6,12 +6,13 @@ import ReviewMark from '../../../components/ui/ReviewMark.astro';
 import { getPageCopy } from '../../../lib/page-copy';
 import { konfiguratorDankeSchema } from '../../../lib/page-copy/konfigurator-danke';
 import { uiFormsSchema } from '../../../lib/page-copy/ui-forms';
+import { marked } from '../../../lib/review-mark';
 import { url } from '../../../lib/url';
 
 const copy = await getPageCopy('konfigurator-danke', konfiguratorDankeSchema);
 const ui = await getPageCopy('ui', uiFormsSchema);
 const { next } = copy;
-const status = next.review && next.review !== 'confirmed' ? next.review : undefined;
+const status = marked(next);
 ---
 
 <PageLayout

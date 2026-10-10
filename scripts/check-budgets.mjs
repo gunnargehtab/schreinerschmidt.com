@@ -8,8 +8,10 @@
 //   Dynamic import() targets are excluded (loaded on request), except for the three.js check.
 // - Fonts: files every page loads: <link rel=preload as=font> + @font-face sources without a
 //   unicode-range. Faces limited by unicode-range (latin-ext) only load for those characters.
-// - LCP image: first img[fetchpriority=high]; the candidate a browser picks at a 1280 px wide
-//   viewport (DPR 1) from the first <source> of its <picture> (AVIF), else from the img itself.
+// - LCP image: first img[fetchpriority=high]; the candidate a browser picks from the first matching
+//   <source> of its <picture> (AVIF), else from the img itself. Evaluated for two viewports, a
+//   1280 px desktop (DPR 1) and a 390 px phone (DPR 2.625); the larger file counts. The phone run
+//   picks art-directed sources (Home: 4:5 crop below 48rem) via their `media` attribute.
 // - three.js: no JS reachable from a page outside /konfigurator/ (static or dynamic) may contain it.
 //
 // Usage: node scripts/check-budgets.mjs  (reads BASE_PATH, falls back to env/pages.env)
@@ -35,13 +37,17 @@ const DEFAULT_BUDGET = { html: 30, css: 25, js: 15, fonts: 80, lcp: 120 };
 
 /**
  * Per-route overrides; the first match on the page path below the base (`konfigurator/regal/`) wins.
- * Add the configurator budgets here (13 KB initial JS, docs/configurator.md).
  * @type {{ match: RegExp, budget: Partial<Budget> }[]}
  */
 const ROUTE_BUDGETS = [
   // Demo-only, noindex internal sheets (style guide, component and sketch catalogues) render many
   // components at once; they are never part of the public site.
   { match: /^intern\//, budget: { html: 45 } },
+  // Configurator: 13 KB gz initial JS (docs/configurator.md §3 "JS budget").
+  // TODO(Phase 3, Möbel preview wave): also check the on-request Möbel preview chunk (<= 7 KB gz) and
+  // the three.js chunk (<= 160 KB gz). Both are import()ed on request, so `js` above excludes them
+  // (docs/configurator.md §3 "JS budget").
+  { match: /^konfigurator\//, budget: { js: 13 } },
 ];
 
 /** Pages that may load three.js. */
@@ -49,8 +55,11 @@ const THREE_ALLOWED = /^konfigurator\//;
 /** Strings that survive minification of three.js (`__THREE__` global, renderer and core class names). */
 const THREE_SIGNATURE = /__THREE__|WebGLRenderer|BufferGeometry|MeshStandardMaterial/;
 
-const LCP_VIEWPORT = 1280;
-const LCP_DPR = 1;
+/** Viewports the LCP candidate is evaluated for: desktop and a typical phone (390 css px, DPR 2.625). */
+const LCP_VIEWPORTS = [
+  { name: 'desktop', width: 1280, dpr: 1 },
+  { name: 'mobile', width: 390, dpr: 2.625 },
+];
 const REM = 16;
 
 /** @param {number} bytes */
@@ -171,21 +180,51 @@ function pickCandidate(srcset, needed) {
 }
 
 /**
+ * Does a `<source media>` query match? Supports `(min-width: X)` / `(max-width: X)` in px/rem/em;
+ * anything else counts as not matching, so an unknown query falls through to the default source.
+ * @param {string | undefined} media
+ * @param {number} viewport
+ */
+function mediaMatches(media, viewport) {
+  if (!media) return true;
+  const m = /^\s*\(\s*(min|max)-width:\s*(\d*\.?\d+)(px|rem|em)\s*\)\s*$/.exec(media);
+  if (!m) return false;
+  const limit = Number(m[2]) * (m[3] === 'px' ? 1 : REM);
+  return m[1] === 'min' ? viewport >= limit : viewport <= limit;
+}
+
+/**
+ * The LCP candidate for one viewport: the first <source> whose `media` matches, else the <img>.
+ * @param {import('node-html-parser').HTMLElement} img
+ * @param {string} pageUrl
+ * @param {{ name: string, width: number, dpr: number }} viewport
+ */
+function lcpCandidate(img, pageUrl, viewport) {
+  const picture = img.parentNode?.tagName === 'PICTURE' ? img.parentNode : null;
+  const source = picture?.querySelectorAll('source').find((s) => mediaMatches(s.getAttribute('media'), viewport.width));
+  const from = source ?? img;
+  const srcset = from.getAttribute('srcset');
+  const sizes = from.getAttribute('sizes') ?? img.getAttribute('sizes');
+  const needed = slotWidth(sizes, viewport.width) * viewport.dpr;
+  const url = srcset ? pickCandidate(srcset, needed) : img.getAttribute('src');
+  const file = url ? toDistFile(url, pageUrl) : null;
+  return { name: viewport.name, url: url ?? '(none)', bytes: file ? statSync(file).size : 0, missing: !file };
+}
+
+/**
+ * The larger of the desktop and the phone candidate, so a heavy art-directed mobile crop is caught.
  * @param {import('node-html-parser').HTMLElement} root
  * @param {string} pageUrl
  */
 function lcpImage(root, pageUrl) {
   const img = root.querySelector('img[fetchpriority="high"]');
   if (!img) return null;
-  const picture = img.parentNode?.tagName === 'PICTURE' ? img.parentNode : null;
-  const source = picture?.querySelectorAll('source').find((s) => !s.getAttribute('media')) ?? null;
-  const from = source ?? img;
-  const srcset = from.getAttribute('srcset');
-  const sizes = from.getAttribute('sizes') ?? img.getAttribute('sizes');
-  const needed = slotWidth(sizes, LCP_VIEWPORT) * LCP_DPR;
-  const url = srcset ? pickCandidate(srcset, needed) : img.getAttribute('src');
-  const file = url ? toDistFile(url, pageUrl) : null;
-  return { url: url ?? '(none)', bytes: file ? statSync(file).size : 0, missing: !file };
+  const candidates = LCP_VIEWPORTS.map((viewport) => lcpCandidate(img, pageUrl, viewport));
+  const missing = candidates.find((c) => c.missing);
+  if (missing) return { ...missing, label: missing.url };
+  const worst = candidates.reduce((a, b) => (b.bytes > a.bytes ? b : a));
+  const files = [...new Set(candidates.map((c) => c.url.slice(c.url.lastIndexOf('/') + 1)))];
+  return { ...worst, label: files.join(' | ') };
 }
 
 const FONT_FACE = /@font-face\s*{([^}]*)}/g;
@@ -288,7 +327,7 @@ for (const rel of listHtml(DIST)) {
   // LCP image
   const lcp = lcpImage(root, pageUrl);
   if (lcp?.missing) notes.push(`LCP candidate not found in dist: ${lcp.url}`);
-  else if (lcp) notes.push(`LCP ${lcp.url.slice(lcp.url.lastIndexOf('/') + 1)}`);
+  else if (lcp) notes.push(`LCP ${lcp.label}`);
 
   const values = {
     // Inline <style> blocks are counted in the CSS budget; the site inlines all CSS on purpose
@@ -319,7 +358,7 @@ const widths = header.map((h, i) => Math.max(h.length, ...table.map((row) => (ro
 const line = (cells) =>
   cells.map((c, i) => (i === 0 ? c.padEnd(widths[i] ?? 0) : c.padStart(widths[i] ?? 0))).join('  ');
 console.log(
-  `Budgets (gz for HTML/CSS/JS, raw for fonts/LCP image; LCP at ${LCP_VIEWPORT} px, DPR ${LCP_DPR}), base ${BASE}`,
+  `Budgets (gz for HTML/CSS/JS, raw for fonts/LCP image; LCP: larger of ${LCP_VIEWPORTS.map((v) => `${v.width} px @ ${v.dpr}x`).join(' and ')}), base ${BASE}`,
 );
 console.log(line(header));
 console.log(widths.map((w) => '-'.repeat(w)).join('  '));

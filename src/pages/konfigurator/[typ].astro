@@ -1,0 +1,32 @@
+---
+// Static variant of the configurator per project type (docs/configurator.md §1 "Deep links"):
+// service pages link to `konfigurator/<typ>/`. Placeholder until the wizard lands: same content as
+// konfigurator/index.astro. The canonical stays `konfigurator/`, the variants are not separate pages.
+import type { GetStaticPaths } from 'astro';
+import PageLayout from '../../layouts/PageLayout.astro';
+import { KONFIGURATOR_TYPEN, TYP_LABELS, type KonfiguratorTyp } from '../../lib/konfigurator-links';
+import { url } from '../../lib/url';
+
+export const getStaticPaths = (() => KONFIGURATOR_TYPEN.map((typ) => ({ params: { typ } }))) satisfies GetStaticPaths;
+
+// Distinct titles: the variants are separate files, and titles must be unique per page.
+const typ = Astro.params.typ as KonfiguratorTyp;
+---
+
+<PageLayout
+  title={`Angebot konfigurieren: ${TYP_LABELS[typ]}`}
+  description="Konfigurieren Sie Möbel oder Böden online und fordern Sie ein unverbindliches Angebot der Schreinerei Schmidt an. Der Konfigurator entsteht gerade."
+  canonicalPath={url('konfigurator/')}
+>
+  <p class="lead" slot="lead">
+    In wenigen Schritten zum individuellen Angebot.
+  </p>
+  <section class="section">
+    <div class="prose">
+      <p>Diese Seite entsteht gerade.</p>
+      <p>
+        <a href={url('leistungen/')}>Zu den Leistungen</a> · <a href={url('kontakt/')}>Kontakt</a>
+      </p>
+    </div>
+  </section>
+</PageLayout>

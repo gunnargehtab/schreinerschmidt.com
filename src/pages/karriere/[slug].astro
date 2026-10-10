@@ -10,7 +10,7 @@ import PageLayout from '../../layouts/PageLayout.astro';
 import JsonLd from '../../components/seo/JsonLd.astro';
 import ReviewMark from '../../components/ui/ReviewMark.astro';
 import { getJobs, getSite, type Job } from '../../lib/content';
-import { formatCurrencyRange } from '../../lib/format';
+import { jobMeta, visibleSalary } from '../../lib/jobs';
 import { breadcrumbJsonLd, jobPostingJsonLd } from '../../lib/jsonld';
 import { escapeHtml } from '../../lib/legal-tokens';
 import { absolute, url } from '../../lib/url';
@@ -31,15 +31,7 @@ const site = await getSite();
 const origin = Astro.site;
 if (!origin) throw new Error('Job page: `site` must be set in astro.config.mjs');
 
-const TYPES: Record<string, string> = {
-  FULL_TIME: 'Vollzeit',
-  PART_TIME: 'Teilzeit',
-  CONTRACTOR: 'Freie Mitarbeit',
-  TEMPORARY: 'befristet',
-  INTERN: 'Praktikum',
-};
-const UNITS: Record<string, string> = { HOUR: 'pro Stunde', MONTH: 'pro Monat', YEAR: 'pro Jahr' };
-const meta = [...employmentType.map((t) => TYPES[t] ?? t), workHours].filter(Boolean).join(' · ');
+const meta = jobMeta(employmentType, workHours);
 const lists = [
   { heading: 'Aufgaben', items: responsibilities },
   { heading: 'Voraussetzungen', items: qualifications },
@@ -47,10 +39,7 @@ const lists = [
 ].filter((l) => l.items.length > 0);
 
 const salaryConfirmed = baseSalary?.status === 'confirmed';
-const salaryText = baseSalary
-  ? `${formatCurrencyRange(baseSalary.value.min, baseSalary.value.max)} ${UNITS[baseSalary.value.unit]}`
-  : undefined;
-const showSalary = Boolean(salaryText) && (salaryConfirmed || PUBLIC_DEMO);
+const salaryText = visibleSalary(baseSalary, PUBLIC_DEMO);
 
 // JobPosting description: the intro plus the lists, as simple HTML (Google requires a description).
 const intro = (job.body ?? '').trim();
@@ -128,7 +117,7 @@ const crumbs = breadcrumbJsonLd([
             </ul>
           </>
         ))}
-        {showSalary && baseSalary && (
+        {salaryText && baseSalary && (
           <p>
             <strong>Gehalt:</strong>{' '}
             {salaryConfirmed ? (

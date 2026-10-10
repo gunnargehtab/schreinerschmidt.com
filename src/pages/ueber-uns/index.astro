@@ -15,16 +15,13 @@ import ReviewMark from '../../components/ui/ReviewMark.astro';
 import Sketch from '../../components/ui/Sketch.astro';
 import { getAsset } from '../../lib/asset-manifest';
 import { getUeberUnsCopy } from '../../lib/page-copy/ueber-uns';
+import { markOf as marked } from '../../lib/review-mark';
 import { isSketchName } from '../../lib/sketch';
 import { url } from '../../lib/url';
 import teamPhoto from '../../assets/team/team-gruppe.jpg';
 
 const [copy, ulf] = await Promise.all([getUeberUnsCopy(), getEntry('team', 'ulf-schmidt')]);
 if (!ulf) throw new Error('Über uns: team entry "ulf-schmidt" is missing');
-
-type Mark = 'needs-review' | 'placeholder';
-const marked = (status: 'confirmed' | 'needs-review' | 'placeholder' | undefined): Mark | undefined =>
-  status === 'needs-review' || status === 'placeholder' ? status : undefined;
 
 const teamAsset = getAsset('team-gruppe');
 const teamConsent = teamAsset.privacyCheck === 'done';

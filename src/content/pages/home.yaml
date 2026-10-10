@@ -97,7 +97,6 @@ herkunft:
 
 testimonials:
   h2: 'Was Kunden sagen'
-  ratingLine: '5,0 bei 115 Google-Bewertungen (Stand 30.09.2026)'
   review: needs-review
   note: 'Zitate wörtlich aus der Altseite, Erlaubnis zum Zitieren ausstehend. Bewertung aus Drittquelle; Google-Profil-URL fehlt.'
 
@@ -119,4 +118,3 @@ ctaBand:
   h2: 'Lassen Sie uns über Ihr Projekt sprechen'
   text: 'Konfigurieren Sie Ihr Vorhaben online oder rufen Sie direkt an. Ulf Schmidt ist Ihr Ansprechpartner, vom ersten Gespräch bis zur Montage.'
   ctaConfigurator: 'Angebot konfigurieren'
-  ctaPhone: 'Anrufen'

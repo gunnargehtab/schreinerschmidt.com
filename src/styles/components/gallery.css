@@ -1,0 +1,34 @@
+/*
+ * Gallery grid, shared by components/sections/Gallery.astro and FilterBar.astro (the Referenzen list):
+ * one column, two from a 40rem and three from a 64rem section; Safari 26.4+ lays it out as lanes.
+ * The gap defaults to --space-xs; a component sets --gallery-gap to change it. Item and link styles
+ * stay with the components. Global so both share one rule set (tests/dist/layers.test.ts guards the
+ * layer order).
+ */
+@layer components {
+  .gallery {
+    --cols: 1;
+    display: grid;
+    display: grid-lanes;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: var(--gallery-gap, var(--space-xs));
+    margin: 0;
+    padding: 0;
+  }
+
+  @container section (inline-size >= 40rem) {
+    .gallery {
+      --cols: 2;
+    }
+  }
+
+  @container section (inline-size >= 64rem) {
+    .gallery {
+      --cols: 3;
+    }
+  }
+
+  .gallery__item {
+    min-inline-size: 0;
+  }
+}

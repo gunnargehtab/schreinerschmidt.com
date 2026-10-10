@@ -132,30 +132,9 @@ const chips = [{ value: 'alle', label: 'Alle' }, ...FILTER_CHIPS.filter((c) => c
       display: none;
     }
 
+    /* The grid itself is global (styles/components/gallery.css); the list gets a wider gap. */
     .gallery {
-      --cols: 1;
-      display: grid;
-      display: grid-lanes;
-      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-      gap: var(--space-s);
-      margin: 0;
-      padding: 0;
-    }
-
-    @container section (inline-size >= 40rem) {
-      .gallery {
-        --cols: 2;
-      }
-    }
-
-    @container section (inline-size >= 64rem) {
-      .gallery {
-        --cols: 3;
-      }
-    }
-
-    .gallery :global(.gallery__item) {
-      min-inline-size: 0;
+      --gallery-gap: var(--space-s);
     }
   }
 </style>
