@@ -2,6 +2,7 @@
 // and the .astro sources, and runs the production guard. Build-time only (Prüfliste route).
 import { getCollection, type CollectionKey } from 'astro:content';
 import { assets } from './asset-manifest';
+import { selectModeBlocks, stripComments } from './legal-tokens';
 import {
   collectReviewItems,
   formatGuardReport,
@@ -53,15 +54,31 @@ export function loadReviewItems(): Promise<ReviewItem[]> {
         });
       }
     }
-    return collectReviewItems({ entries, assets, sources: sourceFiles });
+    // Page copy and legal templates are only scanned for `[[Platzhalter: …]]` markers. A legal body is
+    // reduced to its production text: demo-only blocks never go live, so their markers can't block.
+    const copy: ReviewEntry[] = [
+      ...(await getCollection('pages')).map((e) => ({
+        collection: 'pages',
+        id: e.id,
+        data: e.data as Record<string, unknown>,
+      })),
+      ...(await getCollection('legal')).map((e) => ({
+        collection: 'legal',
+        id: e.id,
+        data: e.data as Record<string, unknown>,
+        body: stripComments(selectModeBlocks(e.body ?? '', false)),
+      })),
+    ];
+    return collectReviewItems({ entries, copy, assets, sources: sourceFiles });
   })();
   return cached;
 }
 
 /**
  * Production guard (plan §1.2): in non-demo builds, throws when legal, contact, hours or salary
- * data still holds placeholders. `ALLOW_PLACEHOLDERS=true` (env/audit.env) downgrades that to a
- * warning so the Lighthouse audit build keeps working.
+ * data still holds placeholders, or published copy a `[[Platzhalter: …]]` marker.
+ * `ALLOW_PLACEHOLDERS=true` (env/audit.env) downgrades that to a warning so the Lighthouse audit
+ * build keeps working.
  */
 export async function runProductionGuard(demo: boolean): Promise<GuardDecision> {
   const allowPlaceholders = process.env['ALLOW_PLACEHOLDERS'] === 'true';

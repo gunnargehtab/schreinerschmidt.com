@@ -24,13 +24,22 @@ interface Props {
   class?: string;
 }
 
+// A single image would sit small in the first of three columns: it gets one wide column instead.
+const single = Astro.props.images.length === 1;
+
 const {
   images,
-  sizes = '(min-width: 64em) 22rem, (min-width: 40em) 50vw, 100vw',
+  sizes = single ? '(min-width: 48rem) 48rem, 100vw' : '(min-width: 64em) 22rem, (min-width: 40em) 50vw, 100vw',
   fullWidth = 2000,
   reveal = false,
   class: className,
 } = Astro.props;
+
+// Thumbnail candidates: 720 serves a one-column phone (~380 css px at DPR 1.75) instead of 960.
+const widthsFor = (src: ImageMetadata): number[] => {
+  const all = single ? [400, 768, 1152, 1536] : [400, 720, 960, 1280];
+  return all.filter((w, i) => i === 0 || w <= src.width);
+};
 
 // `getImage` URLs are base-prefixed by Astro, so the links need no url() helper.
 const items = await Promise.all(
@@ -41,11 +50,11 @@ const items = await Promise.all(
 );
 ---
 
-<ul class:list={['gallery', 'list-plain', { reveal }, className]} data-gallery>
+<ul class:list={['gallery', 'list-plain', { reveal, 'gallery--single': single }, className]} data-gallery>
   {items.map((item) => (
     <li class="gallery__item" style={`--ar:${item.src.width} / ${item.src.height}`}>
       <a class="gallery__link" href={item.href} data-lightbox data-caption={item.caption}>
-        <Picture src={item.src} alt={item.alt} sizes={sizes} width={640} />
+        <Picture src={item.src} alt={item.alt} sizes={sizes} width={single ? 768 : 640} widths={widthsFor(item.src)} />
       </a>
       {item.caption && <p class="gallery__caption">{item.caption}</p>}
     </li>
@@ -77,6 +86,12 @@ const items = await Promise.all(
       }
     }
 
+    /* Higher specificity than the container-query column counts above. */
+    .gallery.gallery--single {
+      --cols: 1;
+      max-inline-size: 48rem;
+    }
+
     .gallery__item {
       min-inline-size: 0;
     }
@@ -103,6 +118,11 @@ const items = await Promise.all(
       aspect-ratio: 4 / 3;
       block-size: auto;
       object-fit: cover;
+    }
+
+    /* One image: show it uncropped. */
+    .gallery--single .gallery__link :global(img) {
+      aspect-ratio: var(--ar, 4 / 3);
     }
 
     @supports (display: grid-lanes) {

@@ -3,9 +3,7 @@
 // (docs/architecture.md §7), plus a BreadcrumbList.
 // Salary: shown when confirmed. While unconfirmed it appears only in the demo, inside a review mark
 // (like the JobCard on the overview); production builds omit it and jobPostingJsonLd() leaves
-// baseSalary out. jobLocation needs a confirmed address: the settings address is unconfirmed, so
-// the demo treats it as confirmed (it is printed on the site anyway) to keep the markup testable,
-// while production emits no JobPosting until the owner confirms the address.
+// baseSalary out. jobLocation needs a confirmed address: see DEMO_ASSUMES_CONFIRMED_ADDRESS below.
 import { render } from 'astro:content';
 import { PUBLIC_DEMO } from 'astro:env/client';
 import PageLayout from '../../layouts/PageLayout.astro';
@@ -63,7 +61,13 @@ const description = [
 
 const home = absolute(url(''), origin);
 const pageUrl = absolute(url(`karriere/${job.id}/`), origin);
-const addressStatus = PUBLIC_DEMO ? 'confirmed' : site.review.status;
+// DEMO-ONLY OVERRIDE (the only one of its kind): JobPosting needs a confirmed address for
+// jobLocation, and the settings address is still unconfirmed. Demo builds (noindex, never crawled
+// for jobs) treat it as confirmed, so the JobPosting markup is built and tested. Production builds
+// use the real status and emit no JobPosting until the owner confirms the address
+// (tests/dist/jsonld.test.ts asserts both).
+const DEMO_ASSUMES_CONFIRMED_ADDRESS = PUBLIC_DEMO;
+const addressStatus = DEMO_ASSUMES_CONFIRMED_ADDRESS ? 'confirmed' : site.review.status;
 const posting =
   addressStatus !== 'confirmed'
     ? null

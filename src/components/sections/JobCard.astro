@@ -1,8 +1,10 @@
 ---
 // Job posting as a native disclosure (docs/design-system.md §5). All JobCards share name="jobs", so
 // opening one closes the others, with zero JS (Chrome, Safari, Firefox). The summary is the title
-// plus a meta line; the body holds the intro, lists, salary and the application link.
+// plus a meta line; the body holds the intro, lists, salary, the application link and (with `href`)
+// the link to the job's own page. An unconfirmed salary shows only in the demo, inside a review mark.
 import { render } from 'astro:content';
+import { PUBLIC_DEMO } from 'astro:env/client';
 import ReviewMark from '../ui/ReviewMark.astro';
 import type { Job } from '../../lib/content';
 import { formatCurrencyRange } from '../../lib/format';
@@ -15,9 +17,11 @@ interface Props {
   applyHref?: string;
   /** Heading level of the title inside the summary. */
   level?: 2 | 3;
+  /** The job's own page (`url('karriere/<slug>/')`); adds a link next to the application button. */
+  href?: string;
 }
 
-const { job, open = false, applyHref = '#bewerbung', level = 3 } = Astro.props;
+const { job, open = false, applyHref = '#bewerbung', level = 3, href } = Astro.props;
 const { title, employmentType, workHours, baseSalary, responsibilities, qualifications, benefits } = job.data;
 const Heading = `h${level}` as 'h2' | 'h3';
 const { Content } = await render(job);
@@ -31,9 +35,11 @@ const TYPES: Record<string, string> = {
 };
 const UNITS: Record<string, string> = { HOUR: 'pro Stunde', MONTH: 'pro Monat', YEAR: 'pro Jahr' };
 const meta = [...employmentType.map((t) => TYPES[t] ?? t), workHours].filter(Boolean).join(' · ');
-const salary = baseSalary
-  ? `${formatCurrencyRange(baseSalary.value.min, baseSalary.value.max)} ${UNITS[baseSalary.value.unit]}`
-  : undefined;
+// Same rule as the job page: never publish an unconfirmed salary outside the demo.
+const salary =
+  baseSalary && (baseSalary.status === 'confirmed' || PUBLIC_DEMO)
+    ? `${formatCurrencyRange(baseSalary.value.min, baseSalary.value.max)} ${UNITS[baseSalary.value.unit]}`
+    : undefined;
 const lists = [
   { heading: 'Aufgaben', items: responsibilities },
   { heading: 'Voraussetzungen', items: qualifications },
@@ -73,11 +79,20 @@ const lists = [
         )}
       </p>
     )}
-    <p>
-      <a class="btn" href={applyHref}>
-        Jetzt bewerben
-      </a>
-    </p>
+    <ul class="cluster list-plain">
+      <li>
+        <a class="btn" href={applyHref}>
+          Jetzt bewerben
+        </a>
+      </li>
+      {href && (
+        <li>
+          <a class="btn btn--secondary" href={href}>
+            Zur Stellenanzeige<span class="visually-hidden">: {title}</span>
+          </a>
+        </li>
+      )}
+    </ul>
   </div>
 </details>
 

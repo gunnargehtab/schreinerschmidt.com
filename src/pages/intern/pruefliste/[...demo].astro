@@ -6,7 +6,8 @@
 // getStaticPaths, after the content layer has loaded and with getCollection() available. That makes
 // it the one place that sees all collections in every build mode (an integration hook can't read
 // collections). In non-demo builds runProductionGuard() throws on placeholders in legal, contact,
-// hours or salary data, unless ALLOW_PLACEHOLDERS=true (env/audit.env).
+// hours or salary data and on `[[Platzhalter: …]]` markers in published copy, unless
+// ALLOW_PLACEHOLDERS=true (env/audit.env).
 import { PUBLIC_DEMO } from 'astro:env/client';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { groupByArea, type ReviewItem } from '../../../lib/review';
@@ -33,6 +34,7 @@ const KIND: Record<ReviewItem['kind'], string> = {
   consent: 'Einwilligung',
   asset: 'Bild',
   'green-claim': 'Umweltaussage',
+  marker: 'Platzhaltertext',
 };
 
 const slug = (area: string): string =>
@@ -61,8 +63,9 @@ const blockingCount = items.filter(blocks).length;
         Jeder Punkt wird vor dem Livegang bestätigt, ergänzt oder gestrichen.
       </p>
       <p class="measure-prose">
-        {items.length} offene Punkte, davon {blockingCount} mit Platzhaltern in Rechtlichem, Kontakt, Zeiten oder
-        Gehalt. Solche Platzhalter verhindern den Livegang: Der Bau der Live-Website bricht dann ab.
+        {items.length} offene Punkte, davon {blockingCount} Platzhalter: in Rechtlichem, Kontakt, Zeiten oder Gehalt
+        oder als Platzhaltertext „[[Platzhalter: …]]“ in veröffentlichten Texten. Solche Platzhalter verhindern den
+        Livegang: Der Bau der Live-Website bricht dann ab.
       </p>
       <nav aria-label="Bereiche der Prüfliste">
         <ul class="pruef-toc list-plain">

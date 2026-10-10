@@ -8,6 +8,11 @@ export const karriereSchema = z.object({
   seo: pageSeo.extend({ title: z.string().max(38) }),
   hero: reviewable({ h1: z.string(), lead: z.string() }),
   benefits: z.array(reviewable({ title: z.string(), text: z.string() })).min(1),
+  /**
+   * Salary range, shown under the benefit titled `benefit`: in the demo inside a review mark; in
+   * production only once an active job has a confirmed baseSalary (src/pages/karriere/index.astro).
+   */
+  salary: reviewable({ benefit: z.string(), text: z.string() }),
   jobs: reviewable({ h2: z.string(), lead: z.string() }),
   application: reviewable({
     h2: z.string(),

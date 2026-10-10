@@ -35,6 +35,7 @@ export async function getService(key: ServiceKey | string): Promise<Service | un
   return (await getServices()).find((s) => s.data.key === key);
 }
 
+/** Sorted projects, optionally by `featured`, `category` and `detailPage` (e.g. `{ detailPage: true }`). */
 export async function getProjects(filter: ProjectFilter = {}): Promise<Project[]> {
   return filterProjects(await getCollection('projects'), filter);
 }

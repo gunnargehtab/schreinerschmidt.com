@@ -51,7 +51,10 @@ if (dialog && img && caption && count) {
     const a = (e.target as Element).closest<HTMLAnchorElement>('a[data-lightbox]');
     if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    items = [...(a.closest('[data-gallery]') ?? document).querySelectorAll<HTMLAnchorElement>('a[data-lightbox]')];
+    // Same group only, and only rendered items: the Referenzen filter hides cards with display:none.
+    items = [
+      ...(a.closest('[data-gallery]') ?? document).querySelectorAll<HTMLAnchorElement>('a[data-lightbox]'),
+    ].filter((l) => l === a || (l.checkVisibility?.() ?? l.offsetParent !== null));
     await show(items.indexOf(a));
     morph(() => dialog.showModal(), thumb(), img);
   });

@@ -106,14 +106,16 @@ test.describe('review view', () => {
   test('is plain by default and highlighted with ?pruefen', async ({ page }) => {
     await page.goto(PAGE);
     await expect(page.locator('html')).not.toHaveAttribute('data-pruefen', /.*/);
-    await expect(page.locator('.review-legend')).toHaveCount(0);
+    // The legend is generated content on body::after (src/styles/components/review.css).
+    const legend = () => page.evaluate(() => getComputedStyle(document.body, '::after').content);
+    expect(await legend()).toBe('none');
     const mark = page.locator('.review-mark').first();
     const plain = await mark.evaluate((el) => getComputedStyle(el).outlineStyle);
     expect(plain).toBe('none');
 
     await page.goto(`${PAGE}?pruefen`);
     await expect(page.locator('html')).toHaveAttribute('data-pruefen', '');
-    await expect(page.locator('.review-legend')).toHaveCount(1);
+    expect(await legend()).toContain('Prüfansicht');
     expect(await mark.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
   });
 });

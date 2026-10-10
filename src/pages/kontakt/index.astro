@@ -13,6 +13,7 @@ import ReviewMark from '../../components/ui/ReviewMark.astro';
 import StaticMap from '../../components/ui/StaticMap.astro';
 import { getSite } from '../../lib/content';
 import { telHref } from '../../lib/format';
+import { routeUrl } from '../../lib/map';
 import { getPageCopy } from '../../lib/page-copy';
 import { kontaktSchema } from '../../lib/page-copy/kontakt';
 import { uiFormsSchema } from '../../lib/page-copy/ui-forms';
@@ -22,18 +23,14 @@ const ui = await getPageCopy('ui', uiFormsSchema);
 const site = await getSite();
 const { form } = copy;
 
-// Same pin as StaticMap's default (MAP_POINT in scripts/make-static-map.mjs, needs-review there).
-const routeHref = `https://www.openstreetmap.org/directions?to=${encodeURIComponent('49.49074,8.52311')}`;
+// Same pin as the StaticMap below (src/lib/map.ts).
+const routeHref = routeUrl();
 
 const napStatus = site.review.status === 'confirmed' ? undefined : site.review.status;
 const hoursStatus = site.hours.status === 'confirmed' ? undefined : site.hours.status;
 const hours = formatHours(site.hours.value);
-// The copy's hours text repeats the settings hours in its first sentence; only the remark after it is
-// shown next to the hours list, so the hours themselves have a single source (settings.yaml).
-const hoursNote = copy.hours.text
-  .split(/(?<=\.)\s+/)
-  .slice(1)
-  .join(' ');
+// The hours have a single source (settings.yaml); the copy only adds the remark below them.
+const remarkStatus = copy.hours.review && copy.hours.review !== 'confirmed' ? copy.hours.review : undefined;
 const profile = site.rating.profileUrl?.status === 'confirmed' ? site.rating.profileUrl.value : undefined;
 
 // FormShell appends the link to the note, so the label at the end of the sentence is removed.
@@ -132,7 +129,15 @@ const phone = nbsp(site.phone.display);
               </li>
             ))}
           </ul>
-          {hoursNote && <p class="text-small">{hoursNote}</p>}
+          <p class="text-small">
+            {remarkStatus ? (
+              <ReviewMark status={remarkStatus} note={copy.hours.note}>
+                {copy.hours.remark}
+              </ReviewMark>
+            ) : (
+              copy.hours.remark
+            )}
+          </p>
         </div>
         <StaticMap
           alt={copy.map.alt}

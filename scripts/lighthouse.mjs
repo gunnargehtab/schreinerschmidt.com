@@ -2,7 +2,8 @@
 // - expects `npm run build:audit` (BASE_PATH=/, production robots/canonical) in dist/
 // - serves dist/ with scripts/serve-dist.mjs and env/audit.env on PORT (default 4173)
 // - mobile (Lighthouse default), 3 runs per URL; gates on the median of each score and metric
-// - URLs: every dist/**/index.html except meta-refresh pages
+// - URLs: every dist/**/index.html except meta-refresh pages; LH_ONLY=leistungen/tueren/,referenzen/
+//   (routes below the base, comma-separated; "home" or "" for the start page) audits only those
 // - writes the representative median run per URL as HTML + JSON, plus summary.json, to
 //   lighthouse-reports/; exits 1 when a target is missed
 // Chrome: CHROME_PATH, else a system Chrome, else Playwright's Chromium (PLAYWRIGHT_BROWSERS_PATH).
@@ -20,6 +21,11 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 const OUT = join(ROOT, 'lighthouse-reports');
 const RUNS = Number(process.env['LH_RUNS'] ?? 3);
+/** Optional route filter for local investigation, e.g. LH_ONLY=leistungen/tueren/,referenzen/ */
+const ONLY = process.env['LH_ONLY']
+  ?.split(',')
+  .map((r) => r.trim().replace(/^\/+/, ''))
+  .map((r) => (r === 'home' ? '' : r.endsWith('/') || r === '' ? r : `${r}/`));
 const PORT = Number(process.env['PORT'] ?? 4173);
 const AUDIT_ENV = parseEnv(readFileSync(join(ROOT, 'env/audit.env'), 'utf8'));
 const trimmed = (AUDIT_ENV['BASE_PATH'] ?? '/').replace(/^\/+|\/+$/g, '');
@@ -125,8 +131,9 @@ let exitCode = 0;
 
 try {
   assertAuditBuild();
-  const pages = routes();
-  if (pages.length === 0) throw new Error('No pages found in dist/.');
+  const pages = routes().filter((r) => !ONLY || ONLY.includes(r));
+  if (pages.length === 0)
+    throw new Error(ONLY ? `LH_ONLY matched no page: ${ONLY.join(', ')}` : 'No pages found in dist/.');
   if (await isUp()) throw new Error(`Port ${PORT} is busy. Stop the other server or set PORT.`);
 
   server = spawn(process.execPath, [join(ROOT, 'scripts/serve-dist.mjs')], {
@@ -150,7 +157,8 @@ try {
   chrome = await chromeLauncher.launch({ chromeFlags, ...(path ? { chromePath: path } : {}) });
   console.log(`Lighthouse ${RUNS}x per URL, mobile, ${pages.length} URL(s), Chrome: ${path ?? 'system'}`);
 
-  rmSync(OUT, { recursive: true, force: true });
+  // A filtered run keeps the other pages' reports (summary.json then lists the filtered pages only).
+  if (!ONLY) rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
 
   /** @type {{ url: string, values: Record<keyof Targets, number>, misses: string[], report: string }[]} */

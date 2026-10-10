@@ -52,6 +52,14 @@ const heroStatus = status(copy.hero);
 const jobsStatus = status(copy.jobs);
 const appStatus = status(app);
 const benefits = copy.benefits.map((item) => ({ ...item, mark: status(item) }));
+
+// The salary range (karriere.yaml `salary`) comes from a third-party source: the demo shows it in a
+// review mark; production only once an active job has a confirmed baseSalary.
+if (!benefits.some((b) => b.title === copy.salary.benefit)) {
+  throw new Error(`karriere.yaml: salary.benefit "${copy.salary.benefit}" matches no benefit title`);
+}
+const salaryConfirmed = jobs.some((job) => job.data.baseSalary?.status === 'confirmed');
+const salary = PUBLIC_DEMO || salaryConfirmed ? { ...copy.salary, mark: status(copy.salary) } : undefined;
 ---
 
 <PageLayout title={copy.seo.title} heading={copy.hero.h1} description={copy.seo.description}>
@@ -65,7 +73,11 @@ const benefits = copy.benefits.map((item) => ({ ...item, mark: status(item) }));
     )}
   </p>
 
-  <section class="section" aria-label="Das bieten wir">
+  {/* A (visually hidden) h2 keeps the heading order h1 → h2 → h3 for the benefit titles. */}
+  <section class="section" aria-labelledby="benefits-title">
+    <h2 id="benefits-title" class="visually-hidden">
+      Das bieten wir
+    </h2>
     <ul class="benefits list-plain hairline-grid">
       {benefits.map((item) => (
         <li class="benefits__item stack stack--xs">
@@ -79,6 +91,17 @@ const benefits = copy.benefits.map((item) => ({ ...item, mark: status(item) }));
               item.text
             )}
           </p>
+          {salary && item.title === salary.benefit && (
+            <p>
+              {salary.mark ? (
+                <ReviewMark status={salary.mark} note={salary.note}>
+                  {salary.text}
+                </ReviewMark>
+              ) : (
+                salary.text
+              )}
+            </p>
+          )}
         </li>
       ))}
     </ul>
@@ -100,18 +123,9 @@ const benefits = copy.benefits.map((item) => ({ ...item, mark: status(item) }));
       </div>
       <div class="jobs">
         {jobs.map((job) => (
-          <JobCard job={job} />
+          <JobCard job={job} href={url(`karriere/${job.id}/`)} />
         ))}
       </div>
-      <ul class="cluster list-plain">
-        {jobs.map((job) => (
-          <li>
-            <a class="btn btn--secondary" href={url(`karriere/${job.id}/`)}>
-              {job.data.title}
-            </a>
-          </li>
-        ))}
-      </ul>
     </div>
   </section>
 

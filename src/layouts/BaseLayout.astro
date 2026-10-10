@@ -12,6 +12,7 @@ import DemoBanner from '../components/layout/DemoBanner.astro';
 import SiteFooter from '../components/layout/SiteFooter.astro';
 import SiteHeader from '../components/layout/SiteHeader.astro';
 import SkipLink from '../components/layout/SkipLink.astro';
+import ReviewView from '../components/ui/ReviewView.astro';
 
 // title / description / noindex / canonicalPath / image pass straight to <Seo>. Omit `title` on Home.
 type Props = ComponentProps<typeof Seo>;
@@ -48,5 +49,6 @@ vt(Astro.locals, 'site-header');
       <slot />
     </main>
     <SiteFooter />
+    <ReviewView />
   </body>
 </html>

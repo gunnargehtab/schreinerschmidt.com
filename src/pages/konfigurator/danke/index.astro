@@ -1,10 +1,8 @@
 ---
 // Thank-you page of the configurator request (noindex; excluded from prerendering by the
 // speculation rules). Copy: src/content/pages/konfigurator-danke.yaml.
-// Unconfirmed steps use the plain review-mark span instead of <ReviewMark>: on this page the component's
-// CSS is bundled ahead of global.css, which flips the layer order and gives buttons the link colour.
 import PageLayout from '../../../layouts/PageLayout.astro';
-import { escapeHtml, reviewSpan } from '../../../lib/legal-tokens';
+import ReviewMark from '../../../components/ui/ReviewMark.astro';
 import { getPageCopy } from '../../../lib/page-copy';
 import { konfiguratorDankeSchema } from '../../../lib/page-copy/konfigurator-danke';
 import { uiFormsSchema } from '../../../lib/page-copy/ui-forms';
@@ -46,7 +44,15 @@ const status = next.review && next.review !== 'confirmed' ? next.review : undefi
         <h2>{next.h2}</h2>
         <ol>
           {next.steps.map((step) => (
-            <li>{status ? <Fragment set:html={reviewSpan(escapeHtml(step), status, next.note)} /> : step}</li>
+            <li>
+              {status ? (
+                <ReviewMark status={status} note={next.note}>
+                  {step}
+                </ReviewMark>
+              ) : (
+                step
+              )}
+            </li>
           ))}
         </ol>
       </div>

@@ -125,11 +125,14 @@ const jsonLd = [
         </p>
       </div>
       <div class="service-hero__media vt-media" style={mediaStyle}>
+        {/* LCP image: `sizes` follows the slot (gutters on mobile, 6/11 of the two-column grid from a
+            48rem section, 36rem on desktop); 720 serves a ~380 css px phone at DPR 1.75 instead of 960. */}
         <Picture
           src={hero.src}
           alt={hero.alt}
-          sizes="(min-width: 64em) 36rem, 100vw"
+          sizes="(min-width: 64em) 36rem, (min-width: 52rem) 55vw, calc(100vw - 2rem)"
           width={576}
+          widths={[400, 576, 720, 960, 1152].filter((w, i) => i === 0 || w <= hero.src.width)}
           loading="eager"
           fetchpriority="high"
         />

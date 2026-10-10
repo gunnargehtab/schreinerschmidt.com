@@ -2,9 +2,14 @@
 // Project card (docs/design-system.md §5 Cards). One link around image, title and meta. The image is
 // decorative (alt="") because the title names the project. Only projects with a detail page link
 // and carry a view-transition name (`proj-<slug>`, the morph target of the detail hero).
+// `lightbox`: a card without a detail page links its image to the full photo (`a[data-lightbox]`,
+// opened by lightbox.ts; the page renders <Lightbox />). The image then carries the cover alt, as
+// the link's name. `cardOnly` photos (legacy or small) are never enlarged, so they stay plain.
+import { getImage } from 'astro:assets';
 import Picture from '../ui/Picture.astro';
 import { dominantColor } from '../../lib/dominant-color';
 import { getServices, type Project } from '../../lib/content';
+import { isCardOnly } from '../../lib/project-assets';
 import { shy } from '../../lib/shy';
 import { url } from '../../lib/url';
 import { vtStyle } from '../../lib/vt';
@@ -15,13 +20,31 @@ interface Props {
   level?: 2 | 3;
   /** Overrides the detail-page link (default `referenzen/<slug>/` when the project has a detail page). */
   href?: string;
+  /** Without a detail page: the image opens the full photo in the lightbox. */
+  lightbox?: boolean;
   loading?: 'eager' | 'lazy';
+  /** `high` only on the page's LCP candidate (the first card above the fold). */
+  fetchpriority?: 'high';
+  /** Image `sizes`; the default fits the 1/2/3-column card grids. */
+  sizes?: string;
 }
 
-const { project, level = 3, href, loading = 'lazy' } = Astro.props;
+const {
+  project,
+  level = 3,
+  href,
+  lightbox = false,
+  loading = 'lazy',
+  fetchpriority,
+  sizes = '(min-width: 64em) 24rem, (min-width: 40em) 50vw, 100vw',
+} = Astro.props;
 const { title, year, categories, cover, detailPage } = project.data;
 const Heading = `h${level}` as 'h2' | 'h3';
 const link = href ?? (detailPage ? url(`referenzen/${project.id}/`) : undefined);
+const zoom = lightbox && !link && !isCardOnly(cover.src);
+const full = zoom
+  ? (await getImage({ src: cover.src, format: 'webp', width: Math.min(2000, cover.src.width) })).src
+  : undefined;
 const services = await getServices();
 const category = services.find((s) => s.data.key === categories[0])?.data.title;
 const meta = [category, year].filter((part) => part !== undefined).join(' · ');
@@ -30,19 +53,34 @@ const mediaStyle = [link ? vtStyle(Astro.locals, 'proj', project.id) : '', domin
   .filter(Boolean)
   .join('; ');
 const Wrapper = link ? 'a' : 'div';
+// Candidates for a card that is at most 24rem wide: 400 (1x), 720 (a one-column phone, ~380 css px
+// at DPR 1.75 ≈ 660 device px, which would otherwise round up to 960), 960 (2x desktop). Three only:
+// card grids repeat them, and the HTML budget counts every srcset entry. Larger widths stay within the
+// source's own size. The renditions are cropped to the card's 4:3 (height 432): a portrait cover
+// would otherwise ship its full height only for `object-fit: cover` to hide half of it.
+const fitting = [400, 720, 960].filter((w) => w <= cover.src.width);
+const CARD_WIDTHS = fitting.length > 0 ? fitting : [cover.src.width];
+// A plain div when there is no lightbox, so the card's grid rows stay the same.
+const Zoom = zoom ? 'a' : 'div';
+const zoomProps = zoom ? { href: full, 'data-lightbox': '', 'data-caption': title } : {};
 ---
 
 <article class="project-card card">
   <Wrapper class="project-card__link" {...(link ? { href: link } : {})}>
-    <div class:list={['project-card__media', link && 'vt-media']} style={mediaStyle || undefined}>
-      <Picture
-        src={cover.src}
-        alt=""
-        sizes="(min-width: 64em) 24rem, (min-width: 40em) 50vw, 100vw"
-        width={576}
-        loading={loading}
-      />
-    </div>
+    <Zoom class="project-card__zoom" {...zoomProps}>
+      <div class:list={['project-card__media', link && 'vt-media']} style={mediaStyle || undefined}>
+        <Picture
+          src={cover.src}
+          alt={zoom ? cover.alt : ''}
+          sizes={sizes}
+          width={576}
+          height={432}
+          widths={CARD_WIDTHS}
+          loading={loading}
+          {...(fetchpriority ? { fetchpriority } : {})}
+        />
+      </div>
+    </Zoom>
     <Heading class="project-card__title">{shy(title)}</Heading>
     {meta && <p class="project-card__meta">{meta}</p>}
   </Wrapper>
@@ -95,6 +133,15 @@ const Wrapper = link ? 'a' : 'div';
     }
 
     a.project-card__link:focus-visible {
+      outline-offset: var(--focus-offset);
+    }
+
+    a.project-card__zoom {
+      cursor: zoom-in;
+    }
+
+    a.project-card__zoom:focus-visible {
+      outline: var(--focus-width) solid var(--focus);
       outline-offset: var(--focus-offset);
     }
 

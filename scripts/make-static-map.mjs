@@ -37,7 +37,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE = join(ROOT, '.cache/osm-tiles');
 const OUT = join(ROOT, 'src/assets/map/kontakt.avif');
 
-/** Pin position (needs-review, see above). Keep in sync with StaticMap.astro. */
+/** Pin position (needs-review, see above). Keep in sync with MAP_POINT in src/lib/map.ts. */
 export const MAP_POINT = { lat: 49.4907376, lon: 8.5231086 };
 export const MAP_ZOOM = 16;
 /** Output size in px: inside the 3 × 2 tile block (768 × 512). */
