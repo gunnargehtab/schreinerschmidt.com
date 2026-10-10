@@ -1,29 +1,75 @@
 ---
+// /leistungen/ (docs/design-system.md §8): PageHero, 7 larger ServiceCards, compact Ablauf,
+// sustainability teaser, general FAQ, CtaBand. Copy: src/content/pages/leistungen.yaml.
 import PageLayout from '../../layouts/PageLayout.astro';
-import { getCollection } from 'astro:content';
-import { url } from '../../lib/url';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Faq from '../../components/sections/Faq.astro';
+import ProcessSteps from '../../components/sections/ProcessSteps.astro';
+import ServiceGrid from '../../components/sections/ServiceGrid.astro';
+import ReviewMark from '../../components/ui/ReviewMark.astro';
+import { getFaqsByRefs, getServices } from '../../lib/content';
+import { getLeistungenCopy, getProcessCopy } from '../../lib/page-copy/leistungen';
 
-const services = (await getCollection('services')).sort((a, b) => a.data.order - b.data.order);
+const [copy, process, services] = await Promise.all([getLeistungenCopy(), getProcessCopy(), getServices()]);
+// General questions only; the per-service ones sit on the service pages.
+const faqs = await getFaqsByRefs([{ id: 'ablauf' }, { id: 'einzugsgebiet' }, { id: 'altbau-aufarbeiten' }]);
+
+/** Review marks sit next to the block as `review`/`note`; confirmed or absent means plain text. */
+const marked = (block: { review?: 'confirmed' | 'needs-review' | 'placeholder' | undefined }) =>
+  block.review === 'needs-review' || block.review === 'placeholder' ? block.review : undefined;
+const introStatus = marked(copy.intro);
+const teaserStatus = marked(copy.sustainabilityTeaser);
 ---
 
-<PageLayout
-  title="Leistungen"
-  description="Leistungen der Schreinerei Schmidt in Mannheim: Möbel nach Maß, Böden, Treppen, Fenster, Türen, Altbausanierung und Terrassen. Die Seite entsteht gerade."
->
+<PageLayout title={copy.seo.title ?? 'Leistungen'} heading={copy.hero.h1} description={copy.seo.description}>
   <p class="lead" slot="lead">
-    Sieben Leistungen aus einer Hand: Beratung, Aufmaß, Fertigung und Montage.
+    {copy.hero.lead}
   </p>
-  <section class="section">
+
+  <section class="section section--compact" aria-label="Überblick">
     <div class="stack stack--m">
-      <p>Diese Seite entsteht gerade.</p>
-      <ul class="stack list-plain">
-        {services.map(({ data }) => (
-          <li>
-            <a href={url(`leistungen/${data.key}/`)}>{data.title}</a>
-            <span class="text-muted"> – {data.teaser}</span>
-          </li>
-        ))}
-      </ul>
+      <p class="measure-lead">
+        {introStatus ? (
+          <ReviewMark status={introStatus} note={copy.intro.note}>
+            {copy.intro.text}
+          </ReviewMark>
+        ) : (
+          copy.intro.text
+        )}
+      </p>
+      <ServiceGrid services={services} variant="large" level={2} />
     </div>
   </section>
+
+  <section class="section section--alt" aria-labelledby="ablauf-title">
+    <div class="section-intro">
+      <h2 id="ablauf-title">{process.h2}</h2>
+      <p class="lead">{process.lead}</p>
+    </div>
+    <ProcessSteps steps={process.steps} level={3} review={marked(process) !== undefined} />
+  </section>
+
+  <section class="section section--panel" aria-labelledby="herkunft-title">
+    <div class="section-intro">
+      <h2 id="herkunft-title">{copy.sustainabilityTeaser.h2}</h2>
+      <p>
+        {teaserStatus ? (
+          <ReviewMark status={teaserStatus} note={copy.sustainabilityTeaser.note}>
+            {copy.sustainabilityTeaser.text}
+          </ReviewMark>
+        ) : (
+          copy.sustainabilityTeaser.text
+        )}
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="faq-title">
+    <div class="stack stack--m">
+      <h2 id="faq-title">{copy.faq.h2}</h2>
+      <Faq faqs={faqs} label={copy.faq.h2} />
+    </div>
+  </section>
+
+  <CtaBand heading={copy.ctaBand.h2} lead={copy.ctaBand.text} buttonLabel={copy.ctaBand.ctaConfigurator} />
 </PageLayout>
