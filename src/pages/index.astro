@@ -1,35 +1,297 @@
 ---
-// Home (docs/design-system.md §8): hero and stats from wave A; wave B assembles sections 4–12
-// below. The placeholder block stays until then so the page keeps its links. Exactly one h1,
-// rendered by HomeHero.
+// Home (docs/design-system.md §8 "Home"): the 12 sections in order. Copy: src/content/pages/home.yaml.
+// Section 1 (banner, header) and 12's footer come from BaseLayout; exactly one h1, rendered by HomeHero.
+// Below the fold only: the sketch→photo reveal, the stagger on grids and the drawing teaser.
 import BaseLayout from '../layouts/BaseLayout.astro';
+import BeforeAfter from '../components/sections/BeforeAfter.astro';
+import CtaBand from '../components/sections/CtaBand.astro';
 import HomeHero from '../components/sections/HomeHero.astro';
-import StatCounter from '../components/sections/StatCounter.astro';
+import ProcessSteps from '../components/sections/ProcessSteps.astro';
+import ProjectGrid from '../components/sections/ProjectGrid.astro';
+import ServiceGrid from '../components/sections/ServiceGrid.astro';
+import StatCounter, { type Stat } from '../components/sections/StatCounter.astro';
+import Testimonials from '../components/sections/Testimonials.astro';
+import ReviewMark from '../components/ui/ReviewMark.astro';
+import Sketch from '../components/ui/Sketch.astro';
+import SketchPhoto from '../components/ui/SketchPhoto.astro';
+import { getProject, getProjects, getServices, getSite, getTestimonials } from '../lib/content';
+import { formatNumber } from '../lib/format';
+import { getHomeCopy } from '../lib/page-copy/home';
+import { getProcessCopy } from '../lib/page-copy/leistungen';
+import { shy } from '../lib/shy';
 import { url } from '../lib/url';
+import sketchPhoto from '../assets/sketches/einbauschrankwand-01.jpg';
+
+const [copy, process, services, site, testimonials, allProjects, door, wardrobe] = await Promise.all([
+  getHomeCopy(),
+  getProcessCopy(),
+  getServices(),
+  getSite(),
+  getTestimonials(),
+  getProjects(),
+  getProject('holzhaustuer-aufgearbeitet'),
+  getProject('einbauschrankwand'),
+]);
+if (!wardrobe) throw new Error('Home: project "einbauschrankwand" is missing');
+// Three cards that link to a detail page: featured projects first (only two have a page so far),
+// topped up with the next projects that have one.
+const withPage = allProjects.filter((p) => p.data.detailPage);
+const projects = [...withPage.filter((p) => p.data.featured), ...withPage.filter((p) => !p.data.featured)].slice(0, 3);
+
+/** Review marks sit next to the block as `review`/`note`; confirmed or absent means plain text. */
+type Mark = 'needs-review' | 'placeholder';
+const marked = (block: { review?: 'confirmed' | 'needs-review' | 'placeholder' | undefined }): Mark | undefined =>
+  block.review === 'needs-review' || block.review === 'placeholder' ? block.review : undefined;
+
+// Stats: labels from the copy, figures from settings (years computed at build, in Europe/Berlin).
+const year = Number(
+  new Intl.DateTimeFormat('en-CA', { year: 'numeric', timeZone: 'Europe/Berlin' }).format(new Date()),
+);
+const figures: Record<string, number | string> = {
+  years: year - site.owner.masterSince,
+  reviews: site.rating.count,
+  rating: formatNumber(site.rating.value, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+};
+const statStatus = marked(copy.stats);
+const stats: Stat[] = copy.stats.items.map((item) => ({
+  value: figures[item.key] ?? '',
+  label: item.label,
+  ...(statStatus ? { status: statStatus } : {}),
+}));
+
+const { hero } = copy;
+const configuratorMark = marked(copy.configurator);
+const careersMark = marked(copy.careers);
 ---
 
-<BaseLayout description="Schreinerei Schmidt in Mannheim: Möbel nach Maß, Böden, Fenster und Türen vom Schreinermeister. Beratung, Aufmaß und Montage aus einer Hand.">
-  <HomeHero />
-  <StatCounter />
-  <section class="section section--alt">
+<BaseLayout description={copy.seo.description}>
+  <HomeHero
+    eyebrow={hero.eyebrow}
+    titleBefore={hero.h1Before}
+    titleAccent={hero.h1Em}
+    titleAfter={hero.h1After}
+    accentStatus={marked(hero) ?? 'confirmed'}
+    lead={hero.lead}
+    primary={{ label: hero.ctaPrimary, href: url('konfigurator/') }}
+    secondary={{ label: hero.ctaSecondary, href: url('referenzen/') }}
+  />
+
+  <h2 class="visually-hidden">{copy.stats.h2}</h2>
+  <StatCounter stats={stats} />
+
+  <section class="section" aria-labelledby="leistungen-title">
     <div class="stack stack--m">
-      <h2>Weitere Inhalte folgen</h2>
-      <p class="lead">
-        Diese Startseite ist noch ein technischer Platzhalter. Leistungen, Ablauf, Referenzen und Konfigurator folgen in
-        den nächsten Schritten.
+      <div class="section-intro">
+        <h2 id="leistungen-title">{copy.services.h2}</h2>
+        <p class="lead">{copy.services.lead}</p>
+      </div>
+      <ServiceGrid services={services} level={3} />
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="entwurf-title">
+    <div class="split">
+      <figure class="split__media frame">
+        <SketchPhoto
+          photo={wardrobe.data.cover.src}
+          sketch={sketchPhoto}
+          alt={wardrobe.data.cover.alt}
+          sizes="(min-width: 64rem) 42rem, 100vw"
+          width={672}
+        />
+      </figure>
+      <div class="split__text stack">
+        <h2 id="entwurf-title">{copy.sketchPhoto.h2}</h2>
+        <p>{copy.sketchPhoto.text}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="ablauf-title">
+    <div class="stack stack--m">
+      <div class="section-intro">
+        <h2 id="ablauf-title">{process.h2}</h2>
+        <p class="lead">{process.lead}</p>
+      </div>
+      <ProcessSteps steps={process.steps} level={3} review={marked(process) !== undefined} />
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="referenzen-title">
+    <div class="stack stack--l">
+      <div class="section-intro">
+        <h2 id="referenzen-title">{copy.projects.h2}</h2>
+        <p class="lead">{copy.projects.lead}</p>
+      </div>
+      <ProjectGrid projects={projects} level={3} label="Ausgewählte Referenzen" />
+      {door?.data.beforeAfter && (
+        <div class="home-ba">
+          <BeforeAfter
+            before={door.data.beforeAfter.before}
+            after={door.data.beforeAfter.after}
+            ratio={`${door.data.beforeAfter.before.src.width} / ${door.data.beforeAfter.before.src.height}`}
+            sizes="(min-width: 48em) 22rem, 100vw"
+            caption={door.data.title}
+          />
+        </div>
+      )}
+      <p>
+        <a class="btn btn--secondary" href={url('referenzen/')}>
+          {copy.projects.cta}
+        </a>
       </p>
-      <ul class="cluster list-plain">
-        <li>
-          <a class="btn btn--secondary" href={url('leistungen/boeden/')}>
-            Böden
-          </a>
-        </li>
-        <li>
-          <a class="btn btn--primary" href={url('kontakt/')}>
-            Kontakt
-          </a>
-        </li>
+    </div>
+  </section>
+
+  <section class="section section--panel graph-paper" aria-labelledby="herkunft-title">
+    <div class="stack stack--m">
+      <div class="section-intro">
+        <h2 id="herkunft-title">{copy.herkunft.h2}</h2>
+        <p class="lead">{copy.herkunft.lead}</p>
+      </div>
+      <ul class="claims list-plain reveal" aria-label={copy.herkunft.h2}>
+        {copy.herkunft.claims.map((claim) => {
+          const status = marked(claim);
+          return (
+            <li class="claims__item paper">
+              <p>
+                {status ? (
+                  <ReviewMark status={status} note={claim.note}>
+                    {claim.text}
+                  </ReviewMark>
+                ) : (
+                  claim.text
+                )}
+              </p>
+            </li>
+          );
+        })}
       </ul>
     </div>
   </section>
+
+  <section class="section" aria-labelledby="stimmen-title">
+    <div class="stack stack--m">
+      <h2 id="stimmen-title">{copy.testimonials.h2}</h2>
+      <Testimonials items={testimonials} />
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="konfigurator-title">
+    <div class="split split--reverse">
+      <div class="split__text stack">
+        <h2 id="konfigurator-title">{shy(copy.configurator.h2)}</h2>
+        <p>
+          {configuratorMark ? (
+            <ReviewMark status={configuratorMark} note={copy.configurator.note}>
+              {copy.configurator.text}
+            </ReviewMark>
+          ) : (
+            copy.configurator.text
+          )}
+        </p>
+        <p>
+          <a class="btn btn--primary" href={url('konfigurator/')}>
+            {copy.configurator.cta}
+          </a>
+        </p>
+      </div>
+      <div class="split__media teaser-sketch" aria-hidden="true">
+        <Sketch name="konfigurator" draw="scroll" size="100%" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="karriere-title">
+    <div class="split">
+      <div class="split__text stack">
+        <h2 id="karriere-title">{copy.careers.h2}</h2>
+        <p>
+          {careersMark ? (
+            <ReviewMark status={careersMark} note={copy.careers.note}>
+              {copy.careers.text}
+            </ReviewMark>
+          ) : (
+            copy.careers.text
+          )}
+        </p>
+        <p>
+          <a class="btn btn--secondary" href={url('karriere/')}>
+            {copy.careers.cta}
+          </a>
+        </p>
+      </div>
+      <div class="split__media teaser-sketch teaser-sketch--small" aria-hidden="true">
+        <Sketch name="montage" draw="scroll" size="100%" />
+      </div>
+    </div>
+  </section>
+
+  <CtaBand heading={copy.ctaBand.h2} lead={copy.ctaBand.text} buttonLabel={copy.ctaBand.ctaConfigurator} />
 </BaseLayout>
+
+<style>
+  @layer components {
+    /* Two-column composition inside a `.section` (a size container): stacked below 48rem, 7/5 above. */
+    .split {
+      display: grid;
+      gap: var(--space-l);
+      align-items: center;
+    }
+
+    .split__media {
+      margin: 0;
+      min-inline-size: 0;
+    }
+
+    .split__text {
+      min-inline-size: 0;
+      max-inline-size: 36rem;
+    }
+
+    @container section (inline-size >= 48rem) {
+      .split {
+        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+        gap: var(--space-xl);
+      }
+
+      .split--reverse {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      }
+
+      .split--reverse .split__media {
+        order: 2;
+      }
+    }
+
+    .teaser-sketch {
+      inline-size: min(100%, 34rem);
+      justify-self: center;
+    }
+
+    .teaser-sketch--small {
+      inline-size: min(100%, 16rem);
+    }
+
+    /* The front-door comparison is portrait; keep it narrow so it doesn't dominate the section. */
+    .home-ba {
+      max-inline-size: 22rem;
+    }
+
+    .claims {
+      --cols: 2;
+      display: grid;
+      gap: var(--space-s);
+    }
+
+    .claims__item {
+      padding: var(--space-m);
+    }
+
+    @container section (inline-size >= 48rem) {
+      .claims {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  }
+</style>

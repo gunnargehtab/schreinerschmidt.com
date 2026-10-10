@@ -1,21 +1,267 @@
 ---
+// /ueber-uns/ (docs/design-system.md §8): PageHero with Ulf's portrait, 4 values with sketches, the
+// team photo, Jahresringe with the milestones, stats, careers teaser, CtaBand.
+// Copy: src/content/pages/ueber-uns.yaml. Photos of people need documented consent: Ulf's portrait
+// (own-unverified, card-only) and the group photo are rendered in the demo only, flagged for review,
+// until the owner's written consent is recorded (privacyCheck "done" in the asset manifest).
+import { PUBLIC_DEMO } from 'astro:env/client';
+import { getEntry } from 'astro:content';
 import PageLayout from '../../layouts/PageLayout.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Jahresringe, { type Milestone } from '../../components/sections/Jahresringe.astro';
+import StatCounter from '../../components/sections/StatCounter.astro';
+import Picture from '../../components/ui/Picture.astro';
+import ReviewMark from '../../components/ui/ReviewMark.astro';
+import Sketch from '../../components/ui/Sketch.astro';
+import { getAsset } from '../../lib/asset-manifest';
+import { getUeberUnsCopy } from '../../lib/page-copy/ueber-uns';
+import { isSketchName } from '../../lib/sketch';
 import { url } from '../../lib/url';
+import teamPhoto from '../../assets/team/team-gruppe.jpg';
+
+const [copy, ulf] = await Promise.all([getUeberUnsCopy(), getEntry('team', 'ulf-schmidt')]);
+if (!ulf) throw new Error('Über uns: team entry "ulf-schmidt" is missing');
+
+type Mark = 'needs-review' | 'placeholder';
+const marked = (status: 'confirmed' | 'needs-review' | 'placeholder' | undefined): Mark | undefined =>
+  status === 'needs-review' || status === 'placeholder' ? status : undefined;
+
+const teamAsset = getAsset('team-gruppe');
+const teamConsent = teamAsset.privacyCheck === 'done';
+const portraitConsent = ulf.data.publicationConsent === 'erteilt';
+// Never in production without consent; the demo shows them with a visible mark.
+const showTeamPhoto = teamConsent || PUBLIC_DEMO;
+const { portrait, portraitAlt } = ulf.data;
+const showPortrait = Boolean(portrait) && (portraitConsent || PUBLIC_DEMO);
+
+const heroMark = marked(copy.hero.review);
+const milestones: Milestone[] = copy.milestones.map((m) => ({
+  year: m.year,
+  title: m.title,
+  ...(m.text ? { text: m.text } : {}),
+  ...(m.review ? { status: m.review } : {}),
+}));
+const valuesMark = marked(copy.valuesReview);
+const teamMark = marked(copy.team.review);
+const careersMark = marked(copy.careersTeaser.review);
 ---
 
 <PageLayout
-  title="Über uns"
-  description="Über die Schreinerei Schmidt in Mannheim: Schreinermeister Ulf Schmidt und sein Team über ihre Arbeitsweise. Die Seite entsteht gerade."
+  title={copy.seo.title ?? 'Über uns'}
+  heading={copy.hero.h1}
+  crumbs={[{ label: 'Über uns' }]}
+  description={copy.seo.description}
 >
-  <p class="lead" slot="lead">
-    Schreinermeister Ulf Schmidt und sein Team.
-  </p>
-  <section class="section">
-    <div class="prose">
-      <p>Diese Seite entsteht gerade.</p>
-      <p>
-        <a href={url('karriere/')}>Karriere</a> · <a href={url('kontakt/')}>Kontakt</a>
-      </p>
+  <div class="about-lead" slot="lead">
+    <p class="lead">
+      {heroMark ? (
+        <ReviewMark status={heroMark} note={copy.hero.note}>
+          {copy.hero.lead}
+        </ReviewMark>
+      ) : (
+        copy.hero.lead
+      )}
+    </p>
+    {showPortrait && portrait && (
+      <figure class="about-lead__portrait" data-review={portraitConsent ? undefined : 'needs-review'}>
+        <Picture src={portrait} alt={portraitAlt ?? ''} sizes="(min-width: 48em) 14rem, 10rem" width={224} />
+        <figcaption>
+          {ulf.data.name}, {ulf.data.role}
+          {!portraitConsent && (
+            <>
+              {' '}
+              <ReviewMark status="needs-review" note={ulf.data.review.note}>
+                Einwilligung ausstehend
+              </ReviewMark>
+            </>
+          )}
+        </figcaption>
+      </figure>
+    )}
+  </div>
+
+  <section class="section section--alt" aria-labelledby="werte-title">
+    <div class="stack stack--m">
+      <h2 id="werte-title" class="visually-hidden">
+        Unsere Werte
+      </h2>
+      <ul class="values list-plain hairline-grid" aria-label="Unsere Werte" data-review={valuesMark}>
+        {copy.values.map((value) => (
+          <li class="values__item">
+            <div class="values__sketch" aria-hidden="true">
+              {isSketchName(value.sketch) && <Sketch name={value.sketch} draw="scroll" size="100%" />}
+            </div>
+            <h3>{value.title}</h3>
+            <p>
+              {valuesMark ? (
+                <ReviewMark status={valuesMark} note={copy.valuesNote}>
+                  {value.text}
+                </ReviewMark>
+              ) : (
+                value.text
+              )}
+            </p>
+          </li>
+        ))}
+      </ul>
     </div>
   </section>
+
+  <section class="section" aria-labelledby="team-title">
+    <div class="stack stack--m">
+      <div class="section-intro">
+        <h2 id="team-title">{copy.team.h2}</h2>
+        <p>
+          {teamMark ? (
+            <ReviewMark status={teamMark} note={copy.team.note}>
+              {copy.team.text}
+            </ReviewMark>
+          ) : (
+            copy.team.text
+          )}
+        </p>
+      </div>
+      {showTeamPhoto && (
+        <figure class="team-photo" data-team-photo data-review={teamConsent ? undefined : 'needs-review'}>
+          <Picture src={teamPhoto} alt={teamAsset.alt ?? ''} sizes="(min-width: 64rem) 56rem, 100vw" width={896} />
+          {!teamConsent && (
+            <figcaption>
+              <ReviewMark status="needs-review" note={teamAsset.notes}>
+                Einwilligung ausstehend
+              </ReviewMark>
+            </figcaption>
+          )}
+        </figure>
+      )}
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="meilensteine-title">
+    <div class="stack stack--m">
+      <h2 id="meilensteine-title" class="visually-hidden">
+        Meilensteine
+      </h2>
+      <Jahresringe milestones={milestones} />
+    </div>
+  </section>
+
+  <StatCounter />
+
+  <section class="section section--compact" aria-labelledby="karriere-title">
+    <div class="careers">
+      <div class="stack">
+        <h2 id="karriere-title">{copy.careersTeaser.h2}</h2>
+        <p>
+          {careersMark ? (
+            <ReviewMark status={careersMark} note={copy.careersTeaser.note}>
+              {copy.careersTeaser.text}
+            </ReviewMark>
+          ) : (
+            copy.careersTeaser.text
+          )}
+        </p>
+        <p>
+          <a class="btn btn--secondary" href={url('karriere/')}>
+            {copy.careersTeaser.cta}
+          </a>
+        </p>
+      </div>
+      <div class="careers__sketch" aria-hidden="true">
+        <Sketch name="montage" draw="scroll" size="100%" />
+      </div>
+    </div>
+  </section>
+
+  <CtaBand heading={copy.ctaBand.h2} lead={copy.ctaBand.text} buttonLabel={copy.ctaBand.ctaConfigurator} />
 </PageLayout>
+
+<style>
+  @layer components {
+    /* PageHero media: lead text left, the small portrait right (stacked on narrow screens). */
+    .about-lead {
+      display: grid;
+      gap: var(--space-m);
+      align-items: start;
+    }
+
+    .about-lead__portrait {
+      margin: 0;
+      inline-size: min(100%, 14rem);
+    }
+
+    .about-lead__portrait :global(img) {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+    }
+
+    .about-lead figcaption,
+    .team-photo figcaption {
+      margin-block-start: var(--space-2xs);
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+
+    @container section (inline-size >= 48rem) {
+      .about-lead {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-xl);
+      }
+    }
+
+    .values {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+      border-block-start: var(--rule);
+      border-inline-start: var(--rule);
+    }
+
+    .values__item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      padding: var(--space-m);
+    }
+
+    .values__sketch {
+      inline-size: 5rem;
+      aspect-ratio: 1;
+    }
+
+    .values__item p {
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+    }
+
+    .team-photo {
+      margin: 0;
+      max-inline-size: 56rem;
+    }
+
+    .team-photo :global(img) {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+    }
+
+    .careers {
+      display: grid;
+      gap: var(--space-l);
+      align-items: center;
+    }
+
+    .careers__sketch {
+      inline-size: min(100%, 12rem);
+    }
+
+    @container section (inline-size >= 48rem) {
+      .careers {
+        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      }
+
+      .careers__sketch {
+        justify-self: center;
+      }
+    }
+  }
+</style>
