@@ -38,7 +38,11 @@ const DEFAULT_BUDGET = { html: 30, css: 25, js: 15, fonts: 80, lcp: 120 };
  * Add the configurator budgets here (13 KB initial JS, docs/configurator.md).
  * @type {{ match: RegExp, budget: Partial<Budget> }[]}
  */
-const ROUTE_BUDGETS = [];
+const ROUTE_BUDGETS = [
+  // Demo-only, noindex internal sheets (style guide, component and sketch catalogues) render many
+  // components at once; they are never part of the public site.
+  { match: /^intern\//, budget: { html: 45 } },
+];
 
 /** Pages that may load three.js. */
 const THREE_ALLOWED = /^konfigurator\//;
