@@ -22,7 +22,7 @@
 //   and three.js: the page JS plus every chunk reachable from it through import() (validation +
 //   messages, summary, submit + mailto, payload), found by walking the core's import() graph without
 //   entering the preview world, the photos chunk (`image/jpeg`) or three.js: FLOW.limit, and flow +
-//   Möbel preview ≤ FLOW.withPreview (target 18 / 26 KB gz, see FLOW).
+//   Möbel preview ≤ FLOW.withPreview (18.75 / 27.25 KB gz, see FLOW).
 //
 // Usage: node scripts/check-budgets.mjs  (reads BASE_PATH, falls back to env/pages.env)
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -63,10 +63,9 @@ const ROUTE_BUDGETS = [
 const PREVIEW = { match: /^konfigurator\//, signature: /data-preview-drawing/, limit: 8.75, withCore: 20 };
 /**
  * Full flow (core + validation + summary + submit + payload), KB gz; `withPreview` adds the Möbel
- * preview. Decided on 2026-10-10 as 18 / 26; measured 18.6 / 27.1 after the Phase 3 fixes, of which
- * about 1 KB is Vite's module-preload helper plus the hashed dependency maps that Astro's client
- * build adds to every chunk with an import() (not switchable from astro.config in Astro 7.3). Enforced
- * at the next quarter KB above the measurement until that is settled (docs/configurator.md §3).
+ * preview. Set with the user on 2026-10-10 from the measurement after Phase 3 (18.6 / 27.1); about
+ * 1 KB is Vite's module-preload helper plus the hashed dependency maps that Astro's client build adds
+ * to every chunk with an import() (not switchable from astro.config in Astro 7.3; docs/configurator.md §3).
  */
 const FLOW = { limit: 18.75, withPreview: 27.25 };
 /** The photos chunk (on file selection) re-encodes to JPEG; nothing else in the flow does. */

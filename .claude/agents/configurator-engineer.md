@@ -24,6 +24,7 @@ JS budgets, gzipped:
 |---|---|---|
 | Core | ≤ 11.25 KB | ≤ 20 KB together with the preview |
 | Möbel preview | ≤ 8.75 KB | re-split from 13 + 7 KB on 2026-10-10 |
+| Full flow (core + validate + summary + submit + payload) | ≤ 18.75 KB | ≤ 27.25 KB with the Möbel preview |
 | three.js chunk | ≤ 160 KB | Never loaded on other pages |
 
 Rules:

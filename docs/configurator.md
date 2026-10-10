@@ -400,7 +400,7 @@ export function swapStep(update: () => void, dir: 'fwd'|'back'): Promise<void> {
 ### JS budget (gz)
 - Core ≤ 11.25 KB.
 - Möbel preview ≤ 8.75 KB (loaded when Möbel is chosen). Re-split from 13 + 7 KB with the user on 2026-10-10: the full carcass rules + screen elevation measure 8.5 KB gz; the 20 KB total is unchanged.
-- **Full flow:** everything a completed demo or live enquiry downloads besides the preview, photos and three.js (core + validation/messages + summary + submit/mailto + payload). Decided 2026-10-10: ≤ 18 KB, and with the Möbel preview ≤ 26 KB. Measured after Phase 3: 18.6 / 27.1 KB, of which about 1 KB is Vite's module-preload helper plus the hashed dependency maps Astro's client build adds to every chunk with an `import()`; `scripts/check-budgets.mjs` therefore enforces 18.75 / 27.25 KB (`FLOW`) until that overhead is settled, and prints the chunk list.
+- **Full flow:** everything a completed demo or live enquiry downloads besides the preview, photos and three.js (core + validation/messages + summary + submit/mailto + payload). ≤ 18.75 KB, and with the Möbel preview ≤ 27.25 KB (set with the user on 2026-10-10 from the measurement after Phase 3: 18.6 / 27.1 KB). About 1 KB of that is Vite's module-preload helper plus the hashed dependency maps Astro's client build adds to every chunk with an `import()`; Astro 7.3 does not let the config switch it off. `scripts/check-budgets.mjs` enforces it (`FLOW`) and prints the chunk list.
 - Photos ≈ 1.5 KB (on file select).
 - three.js chunk: on request only.
 - `scripts/check-budgets.mjs` enforces these.
@@ -805,7 +805,7 @@ Focus moves to the heading; the session and draft are cleared.
 | `a11y` | axe with `wcag22aa` on every step, in the error state, both schemes, and the success view (`konfigurator.a11y.spec.ts`); the no-JS long form in both schemes (`konfigurator-nojs.a11y.spec.ts`: axe needs script execution, so it runs in the `a11y` project with the wizard script blocked by `page.route`, which yields the no-JS DOM; states: no choice, `konfigurator/moebel/` with Regal, Boden with conditions revealed) |
 | `motion-print` | Reduced motion: no `startViewTransition`; print shows summary + drawing + title block |
 
-**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, core + Möbel ≤ 20 KB; full flow (core + validation + summary + submit + payload) target 18 KB, with the Möbel preview 26 KB (enforced at 18.75 / 27.25 KB for now, see §3 "JS budget"); three.js chunk ≤ 160 KB.
+**Budgets:** content pages ≤ 15 KB gz; configurator initial ≤ 11.25 KB, Möbel preview ≤ 8.75 KB, core + Möbel ≤ 20 KB; full flow (core + validation + summary + submit + payload) ≤ 18.75 KB, with the Möbel preview ≤ 27.25 KB (§3 "JS budget"); three.js chunk ≤ 160 KB.
 
 **Manual:** NVDA + Firefox, VoiceOver + Safari, TalkBack, keyboard-only, 400% zoom, forced colours.
 

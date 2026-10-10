@@ -29,6 +29,7 @@ This repository holds an Astro 7 static site for a carpentry business in Mannhei
 - **Budgets (gz):**
   - JS ≤ 15 KB per content page.
   - Configurator ≤ 11.25 KB initial + ≤ 8.75 KB for the Möbel preview (≤ 20 KB together; re-split 2026-10-10).
+  - Configurator full flow (core + validation + summary + submit + payload, loaded on request) ≤ 18.75 KB; ≤ 27.25 KB with the Möbel preview.
   - three.js chunk ≤ 160 KB, loaded only on request.
 - **Toolchain:** Node 24, npm, TypeScript pinned to 6.0.3 (`@astrojs/check` does not support TS 7).
 
