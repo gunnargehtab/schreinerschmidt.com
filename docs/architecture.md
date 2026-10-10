@@ -207,6 +207,13 @@ const Seo = z.object({ title: z.string().max(38), description: z.string().min(11
 - **Demo builds** generate `/intern/pruefliste/` (noindex): every `needs-review`/`placeholder` item, plus the green-claim words.
 - **Production builds** throw if placeholders remain in legal, contact, hours or salary data.
 - **`ReviewMark`** highlights unconfirmed text when the URL has `?pruefen`.
+  - Its styles are global (`src/styles/components/review.css`). Scoped styles of an import-free component can sort ahead of `global.css` and flip the layer order; `tests/dist/layers.test.ts` guards this.
+  - The `?pruefen` script and legend live in `ReviewView.astro`, rendered once per page by `BaseLayout`. This keeps scripts and comments out of links such as `tel:`.
+- **`[[Platzhalter: …]]` markers** are notes for the owner, never public copy:
+  - Markdown: the `placeholder-marks` hast plugin renders them as marks that only the `?pruefen` view shows.
+  - Page copy: `getPageCopy()` strips them.
+  - Legal templates: unconfirmed tokens render as marked placeholders in the demo.
+  - The Prüfliste lists every marker, and production builds are blocked while any exist.
 
 ## 6. Asset migration (`scripts/migrate-assets.mjs` + the `scripts/asset-sources.mjs` allow-list)
 For each publishable source:

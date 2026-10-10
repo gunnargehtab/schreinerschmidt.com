@@ -281,7 +281,8 @@ function walkStrings(value: unknown, path: string, visit: (text: string, path: s
   }
   if (!isRecord(value) || value instanceof Date || isOpaque(value)) return;
   for (const [k, v] of Object.entries(value)) {
-    if (NON_COPY_KEYS.has(k)) continue;
+    // Metadata keys, incl. the copywriter's sibling marks like `valuesNote` / `valuesReview`.
+    if (NON_COPY_KEYS.has(k) || /(?:Note|Review)$/.test(k)) continue;
     walkStrings(v, joinPath(path, k), visit);
   }
 }
@@ -551,8 +552,20 @@ export function collectReviewItems({ entries, copy = [], assets = [], sources = 
     items.push(...markerItems(entry, page));
   }
 
-  // 5c. Markers in the page copy and the legal templates.
-  for (const entry of copy) items.push(...markerItems(entry, copyPage(entry)));
+  // 5c. Markers and green claims in the page copy and the legal templates.
+  for (const entry of copy) {
+    const page = copyPage(entry);
+    items.push(...markerItems(entry, page));
+    const prefix = `${entry.collection}.${entry.id}`;
+    walkStrings(entry.data, prefix, (text, path) => {
+      for (const hit of findGreenClaims(text)) items.push(greenItem(entry.collection, entry.id, path, hit, page));
+    });
+    if (entry.body) {
+      for (const hit of findGreenClaims(entry.body)) {
+        items.push(greenItem(entry.collection, entry.id, `${prefix}.body`, hit, page));
+      }
+    }
+  }
 
   // 6. The asset manifest.
   for (const asset of assets) {
