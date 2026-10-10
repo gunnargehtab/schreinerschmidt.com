@@ -19,10 +19,21 @@ review:
   note: Einziges verfügbares Eigenfoto ist die Balkontür (Altfoto 2010–2012, Zuordnung bestätigen); PaX-AG-Fotos ausgeschlossen. Neue Fensterfotos beim Inhaber anfragen. Aussagen zu nachhaltigen Holzressourcen und Naturprodukten entfernt.
 ---
 
-## Maßgefertigte Fenster für die beste Sicht
+## Leistung im Überblick
 
-Lassen Sie Ihren Wohnraum mit Fenstern aus Holz hell erstrahlen. Handgemachte Fenster aus Holz machen Ihr Zuhause zu einem unverwechselbaren Einzelstück.
+Holzfenster und Balkontüren nach Maß für Wohnräume. Wir beraten Sie bei Planung und Auswahl, bauen die Fenster ein und übernehmen auf Wunsch alle anfallenden Arbeiten an Rollladen, Fensterbänken und Gurten. Schallschutz, Wärmedämmung und Sicherheit planen wir von Anfang an mit.
 
-Mit der Schreinerei Schmidt können Sie Ihre individuellen Vorstellungen maßgeschneidert realisieren. Wir verbinden Design und Funktionalität für das beste Ergebnis in den Bereichen Schallschutz, Isolierung und Sicherheit. Lassen Sie sich von uns bei der Planung und Auswahl Ihrer Fenster beraten. Auf Wunsch übernehmen wir alle anfallenden Leistungen zu Rollladenarbeiten, Fensterbänken und Gurten.
+[[Platzhalter: Fertigung in eigener Werkstatt oder Fenster eines Herstellers, vom Inhaber klären]]
 
-Für größere Projekte arbeiten wir mit Netzwerk-Partnern zusammen, dazu gehören viele Fachhandwerker und Handwerksbetriebe. Verwirklichen Sie Ihr individuelles Projekt und betrachten Sie die Außenwelt durch unsere zeitlos schönen Fenster aus Holz.
+## Holz & Oberflächen
+
+Welche Holzart und welche Oberfläche für Ihre Fenster infrage kommen, hängt von Lage, Wetterseite und Pflegeaufwand ab. Ein Fenster nach Süden braucht einen anderen Anstrich als eines im Schatten. [[Platzhalter: Holzarten und Beschichtungen für Fenster vom Inhaber ergänzen]]
+
+## Ablauf
+
+Beim Aufmaß prüfen wir Öffnung, Anschlüsse und Rollladenkasten. Den Ausbau der alten Fenster und den Einbau der neuen übernehmen wir, ebenso Fensterbänke innen und außen. Für größere Projekte arbeiten wir mit Partnerbetrieben aus dem Handwerk zusammen.
+
+## Gut zu wissen
+
+- Im Altbau gehört zur Fensterarbeit oft mehr: Fensterbänke, Rollladen, Gurte. Das übernehmen wir auf Wunsch gleich mit.
+- Auch einzelne Fenster oder eine Balkontür sind ein Auftrag. Melden Sie sich, auch wenn es nur um ein Teil geht.

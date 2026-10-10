@@ -1,0 +1,83 @@
+# Über uns (docs/design-system.md §8). Ulf's intro keeps the "ich" voice of the old /team-karriera hero; everything
+# else uses "wir". Milestones only where a dated source exists (photo dates in docs/architecture.md §6).
+seo:
+  title: 'Über uns: Meisterbetrieb seit 2010'
+  description: 'Ulf Schmidt ist Schreinermeister seit 2010. Mit seinem Team plant, fertigt und montiert er in Mannheim Möbel, Böden, Treppen und Türen – nach Maß.'
+
+hero:
+  h1: 'Hallo, ich bin Ulf Schmidt'
+  lead: 'Schreiner aus Leidenschaft und Meister seit dem Jahr 2010. Gemeinsam mit meinem Team setze ich die Wünsche unserer Kunden in Holz um. Die Grundlage unserer Arbeit ist das Vertrauen, das unsere Kunden in uns und unser Handwerk setzen.'
+  review: needs-review
+  note: 'Text der Altseite ohne „umweltbewusstem“ (Slogan nach Rechtsprüfung klären). Porträt ulf_schmidt.jpg: Herkunft und Einwilligung ausstehend.'
+
+values:
+  - title: 'Zuhören zuerst'
+    text: 'Wir fangen nicht mit dem Katalog an, sondern mit Ihren Fragen. Was soll das Stück können, wer nutzt es, wie viel Platz ist da?'
+    sketch: beratung
+  - title: 'Zeichnen, bevor wir sägen'
+    text: 'Jedes Möbel und jede Treppe wird gezeichnet und mit Ihnen abgestimmt. Was auf dem Papier nicht aufgeht, geht in der Werkstatt auch nicht auf.'
+    sketch: entwurf
+  - title: 'Handwerk, das man anfassen kann'
+    text: 'Holz, saubere Verbindungen und Oberflächen, die sich auch nach Jahren noch nacharbeiten lassen. So bauen wir.'
+    sketch: fertigung
+  - title: 'Da sein, wenn es fertig ist'
+    text: 'Montage, Pflegehinweise, kleine Reparaturen: Wir sind auch nach der Abnahme erreichbar. Unsere Kunden sagen, dass wir sofort zur Stelle sind. Daran messen wir uns.'
+    sketch: pflege
+valuesReview: needs-review
+valuesNote: 'Die vier Werte beschreiben die Arbeitsweise, wie sie Altseite und Kundenstimmen nahelegen; vom Inhaber bestätigen.'
+
+team:
+  h2: 'Das Team'
+  text: 'Wir sind ein kleines Team aus Schreinern und Parkettlegern um Ulf Schmidt. Wer bei uns arbeitet, fährt mit dem eigenen Montagebus zur Baustelle und hat eine 4-Tage-Woche.'
+  review: needs-review
+  note: 'Teamgröße laut join.com 1–10. Teamfoto (Team1.jpg) braucht die schriftliche Einwilligung aller Abgebildeten; bis dahin nicht veröffentlichen.'
+
+milestones:
+  - year: 2010
+    title: 'Meisterprüfung'
+    text: 'Ulf Schmidt wird Schreinermeister. [[Platzhalter: Gründungsjahr der Schreinerei Schmidt bestätigen]]'
+    review: placeholder
+    note: 'Belegt ist nur „Meister seit 2010“. Ob die Schreinerei im selben Jahr gegründet wurde, ist offen.'
+  - year: 2011
+    title: 'Erste Referenzen (2010–2012)'
+    text: 'Die ältesten Fotos in unseren Referenzen: eine aufgearbeitete Haustür, ein Schreibtisch mit Klappe, eine Glasvitrine, ein Bett aus Kernbuche und ein Balkon mit Holzdielen.'
+    review: placeholder
+    note: 'Fujifilm-Fotos 2010–2012 (own-legacy). Der Inhaber muss bestätigen, dass es Projekte der Schreinerei Schmidt sind.'
+  - year: 2018
+    title: 'Kleiderschrank mit Shoji-Schiebetüren'
+    text: 'Ein Kleiderschrank mit Shoji-Schiebetüren, geschlossen und offen fotografiert. Eines der Projekte, die wir bis heute gern zeigen.'
+    review: needs-review
+    note: 'Datum aus den Fotodaten (November 2018).'
+  - year: 2020
+    title: 'Eichendielen im Altbau'
+    text: 'Neue Eichendielen in einem Altbauzimmer. Der Boden passt sich dem Bestand an, nicht umgekehrt.'
+    review: needs-review
+    note: 'Datum aus den Fotodaten (Mai 2020). Holzart Eiche vom Inhaber bestätigen.'
+  - year: 2022
+    title: 'Fischgrätparkett in Eiche'
+    text: 'Fischgrätparkett in einem Altbauzimmer mit roter Wand. Ein Muster, das Ruhe braucht beim Verlegen.'
+    review: needs-review
+    note: 'Datum aus den Fotodaten (2022).'
+  - year: 2023
+    title: 'Haustür, Treppe, Schrankwand'
+    text: 'Eine neue Haustür im Gründerzeithaus, eine gerade Treppe mit massiven Eichenstufen und eine raumhohe Einbauschrankwand mit integriertem Fernseher.'
+    review: needs-review
+    note: 'Daten aus den Fotodaten (Januar, Februar und September 2023).'
+  - year: 2026
+    title: '5,0 bei 115 Google-Bewertungen'
+    text: 'Stand 30.09.2026. Wir lesen jede Bewertung, und wir rufen zurück, wenn etwas nicht gepasst hat.'
+    review: needs-review
+    note: 'Bewertung über ein Drittportal erfasst; Google-Profil-URL fehlt. Der zweite Satz ist ein Versprechen des Inhabers und muss von ihm bestätigt werden.'
+
+careersTeaser:
+  h2: 'Lust, mitzubauen?'
+  text: 'Wir suchen Schreiner:innen und Parkettleger:innen, mit 4-Tage-Woche und eigenem Montagebus.'
+  cta: 'Zu den Stellen'
+  review: needs-review
+  note: 'Ob die Stellen noch offen sind, vom Inhaber bestätigen.'
+
+ctaBand:
+  h2: 'Sprechen wir über Ihr Projekt'
+  text: 'Rufen Sie an oder beschreiben Sie Ihr Vorhaben im Konfigurator. Wir melden uns.'
+  ctaConfigurator: 'Angebot konfigurieren'
+  ctaPhone: 'Anrufen'

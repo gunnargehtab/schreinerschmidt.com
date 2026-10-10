@@ -1,0 +1,29 @@
+# Leistungen overview (docs/design-system.md §8). The old intro was the Fenster text and is rewritten here
+# (docs/content-inventory.md, corrections list).
+seo:
+  title: 'Leistungen: Möbel, Böden, Treppen'
+  description: 'Leistungen der Schreinerei Schmidt in Mannheim: Möbel, Böden, Treppen, Fenster, Türen, Altbau und Terrassen. Beratung, Aufmaß und Montage aus einer Hand.'
+
+hero:
+  h1: 'Unsere Leistungen'
+  lead: 'Sieben Bereiche, ein Anspruch: Holz, das zu Ihrem Haus passt und lange hält. Hier sehen Sie, was wir bauen, und wie wir dabei vorgehen.'
+
+intro:
+  text: 'Die Schreinerei Schmidt ist ein Meisterbetrieb in Mannheim. Wir fertigen Möbel nach Maß, verlegen Parkett und Dielen, bauen Treppen, Türen und Fenster ein, arbeiten Holz im Altbau auf und legen Terrassen. Planung, Aufmaß und Montage machen wir selbst. Für größere Projekte arbeiten wir mit Partnerbetrieben aus dem Handwerk zusammen.'
+  review: needs-review
+  note: 'Neu geschrieben, weil die Altseite hier den Fenster-Text zeigte. Treppen als eigene Leistung und der Umfang bei Fenstern und Türen (Eigenfertigung oder Einbau von Herstellerprodukten) sind unbestätigt.'
+
+sustainabilityTeaser:
+  h2: 'Holz mit Herkunft'
+  text: 'Statt Schlagworten nennen wir Ihnen Fakten: woher das Holz kommt, ob es zertifiziert ist und womit wir die Oberfläche behandeln. Auf Wunsch verarbeiten wir Holz aus FSC- oder PEFC-zertifizierter Forstwirtschaft, und Kork und Linoleum verkleben wir mit Klebstoffen von Auro.'
+  review: needs-review
+  note: 'Belegbare Umweltaussagen (UWG / EU 2024/825): Zertifikate und Auro-Produkte vom Inhaber nachweisen, sonst Satz streichen.'
+
+faq:
+  h2: 'Häufige Fragen'
+
+ctaBand:
+  h2: 'Welche Leistung passt zu Ihrem Projekt?'
+  text: 'Im Konfigurator wählen Sie den Bereich und beschreiben Ihr Vorhaben. Oder Sie rufen an, und wir sagen Ihnen, ob und wie wir helfen können.'
+  ctaConfigurator: 'Angebot konfigurieren'
+  ctaPhone: 'Anrufen'

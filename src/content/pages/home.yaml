@@ -1,0 +1,122 @@
+# Home copy (docs/design-system.md §8 "Home"). Facts come from docs/content-inventory.md and src/content/**.
+# The <title> is fixed in the page ("Schreinerei Schmidt Mannheim | Möbel, Böden, Treppen"), so seo.title is omitted.
+# Review keys: `review: needs-review | placeholder` with an optional `note`. " " is the narrow no-break space.
+seo:
+  description: 'Schreinerei Schmidt, Meisterbetrieb in Mannheim seit 2010: Möbel nach Maß, Parkett und Dielen, Treppen, Türen, Fenster, Altbau, Terrassen. Jetzt anfragen.'
+  review: needs-review
+  note: 'Treppen als eigene Leistung ist unbestätigt (docs/owner-checklist.md).'
+
+hero:
+  eyebrow: 'Meisterbetrieb in Mannheim · seit 2010'
+  h1Before: 'Ihr Experte für'
+  h1Em: 'umwelt­bewusstes'
+  h1After: 'Holzhandwerk'
+  review: needs-review
+  note: 'Slogan der Altseite. „Umweltbewusst“ ist eine allgemeine Umweltaussage (UWG / EU 2024/825, seit 27.09.2026) und braucht Belege oder eine Umformulierung. Bis zur Rechtsprüfung bleibt er als Demo-Standard; Alternative ohne Umweltaussage siehe alternativeH1.'
+  alternativeH1:
+    h1Before: 'Ihr Schreinermeister für'
+    h1Em: 'Holz nach Maß'
+    h1After: 'in Mannheim'
+    note: 'Vorschlag ohne Umweltaussage, falls der Slogan nach der Rechtsprüfung nicht bleibt. Belegt durch Meisterbrief 2010 und Standort.'
+  lead: 'Möbel, Böden, Treppen, Türen und Fenster: mit Ihnen geplant, in unserer Werkstatt gefertigt und von uns montiert. Seit 2010 als Meisterbetrieb.'
+  ctaPrimary: 'In 3 Minuten zum Angebot'
+  ctaSecondary: 'Referenzen ansehen'
+
+stats:
+  h2: 'Die Schreinerei Schmidt in Zahlen'
+  items:
+    - key: years
+      label: 'Jahre Meisterbetrieb'
+      note: 'Wert wird aus 2010 berechnet (Build-Zeit).'
+    - key: reviews
+      label: 'Google-Bewertungen'
+      note: '115, Stand 30.09.2026, aggregiert über werkenntdenbesten.'
+    - key: rating
+      label: 'von 5 Sternen'
+      note: '5,0 bleibt statischer Text (Zähler sind ganzzahlig).'
+  review: needs-review
+  note: 'Bewertung und Anzahl stammen von einem Drittportal (Stand 30.09.2026); Google-Profil-URL fehlt.'
+
+services:
+  h2: 'Was wir für Sie bauen'
+  lead: 'Sieben Bereiche, eine Werkstatt. Von der Einbauschrankwand bis zur Haustür: Jede Arbeit beginnt mit einem Gespräch darüber, was Sie brauchen.'
+  review: needs-review
+  note: 'Treppen als eigene Leistung vom Inhaber bestätigen.'
+
+sketchPhoto:
+  h2: 'Vom Entwurf zum Werkstück'
+  text: 'Jedes Stück beginnt als Zeichnung: Maße, Proportionen, Holzart. Was auf dem Papier stimmt, bauen wir in der Werkstatt und montieren es bei Ihnen so, wie es gezeichnet war.'
+
+process:
+  h2: 'Ablauf'
+  lead: 'So arbeiten wir, vom ersten Gespräch bis zur fertigen Montage. Jeden Schritt stimmen wir mit Ihnen ab.'
+  steps:
+    - key: beratung
+      title: 'Beratung'
+      text: 'Sie erzählen uns, was Sie vorhaben: per Telefon, per E-Mail oder über den Konfigurator. Wir hören zu, fragen nach und sagen Ihnen offen, was sich umsetzen lässt.'
+    - key: entwurf
+      title: 'Entwurf und Angebot'
+      text: 'Wir nehmen Maß, zeichnen und schlagen Holzart und Oberfläche vor. Sie erhalten ein Angebot, in dem steht, was genau gebaut wird.'
+    - key: fertigung
+      title: 'Fertigung'
+      text: 'In unserer Werkstatt entsteht Ihr Stück aus dem Holz, das wir gemeinsam ausgesucht haben. Bei größeren Projekten ziehen wir Partnerbetriebe aus dem Handwerk hinzu.'
+    - key: montage
+      title: 'Montage'
+      text: 'Wir liefern und montieren selbst: passgenau, sauber und mit Rücksicht auf Ihre Wohnung.'
+    - key: pflege
+      title: 'Pflege'
+      text: 'Holz lebt weiter. Wir sagen Ihnen, wie Sie geölte Oberflächen pflegen, und sind auch für kleine Reparaturen da.'
+  review: needs-review
+  note: 'Ob und was Aufmaß und Anfahrt kosten und wie schnell wir antworten, ist unbestätigt; deshalb ohne Zusagen formuliert. „Kleine Reparaturen“ stützt sich auf die Kundenstimme von Biggi N.'
+
+projects:
+  h2: 'Ausgewählte Referenzen'
+  lead: 'Drei Arbeiten aus den letzten Jahren und eine Haustür im Vorher-Nachher-Vergleich.'
+  cta: 'Alle Referenzen'
+  review: needs-review
+  note: 'Zuordnung der Altfotos (2010–2012) und der Titel „aufgearbeitet statt ersetzt“ sind unbestätigt.'
+
+herkunft:
+  h2: 'Holz mit Herkunft'
+  lead: 'Wir sagen Ihnen, woher das Holz kommt und was auf die Oberfläche kommt. Konkret, nicht als Schlagwort.'
+  claims:
+    - text: 'Auf Wunsch verarbeiten wir Holz aus FSC- oder PEFC-zertifizierter Forstwirtschaft. Herkunft und Zertifikat nennen wir Ihnen im Angebot.'
+      review: needs-review
+      note: 'Ersetzt „nachhaltige Waldwirtschaft“ der Altseite. Zertifikatsnummern oder Lieferantennachweise vom Inhaber (docs/owner-checklist.md, Sustainability claims).'
+    - text: 'Kork und Linoleum verkleben wir auf Wunsch mit Klebstoffen von Auro.'
+      review: needs-review
+      note: 'Auro nennt die Altseite. Produktnamen und Belege vom Inhaber; die alte Aussage „natürlicher Kleber zum Schutz Ihrer Gesundheit“ entfällt.'
+    - text: 'Treppenstufen, Handläufe und Dielen haben wir in unseren Referenzen geölt und gewachst. Solche Oberflächen lassen sich stellenweise nacharbeiten, ohne alles abzuschleifen.'
+      review: needs-review
+      note: 'Quelle sind die Dateinamen der Altfotos („geölt gewachst“, „naturgeölt“). Ob das die Standardoberfläche ist, vom Inhaber bestätigen.'
+    - text: 'Alte Treppen, Vertäfelungen und Dielen arbeiten wir auf, wo es geht. Erst wenn ein Bauteil nicht zu retten ist, ersetzen wir es.'
+      review: needs-review
+      note: 'Aus dem Altbau-Text der Altseite (Sanierung, Äquivalent nur bei Bedarf).'
+  review: needs-review
+  note: 'Alle Aussagen sind Kandidaten für belegbare Umweltaussagen (UWG / EU 2024/825). Ohne Beleg streichen.'
+
+testimonials:
+  h2: 'Was Kunden sagen'
+  ratingLine: '5,0 bei 115 Google-Bewertungen (Stand 30.09.2026)'
+  review: needs-review
+  note: 'Zitate wörtlich aus der Altseite, Erlaubnis zum Zitieren ausstehend. Bewertung aus Drittquelle; Google-Profil-URL fehlt.'
+
+configurator:
+  h2: 'In 3 Minuten zu Ihrem individuellen Angebot'
+  text: 'Beschreiben Sie Ihr Projekt Schritt für Schritt: Möbel, Boden, Treppe, Tür, Fenster, Terrasse oder Altbau. Möbel sehen Sie dabei als Zeichnung und in 3D. Wir melden uns mit Rückfragen oder einem Angebot.'
+  cta: 'Projekt konfigurieren'
+  review: needs-review
+  note: 'Überschrift aus dem versteckten Teaser der Altseite. „3 Minuten“ beschreibt die Formulardauer, nicht die Angebotszeit; Antwortzeit ist unbestätigt.'
+
+careers:
+  h2: 'Arbeiten bei der Schreinerei Schmidt'
+  text: 'Wir suchen Schreiner:innen und Parkettleger:innen. Bei uns gilt die 4-Tage-Woche, und zur Baustelle geht es im eigenen Montagebus.'
+  cta: 'Zu den Stellen'
+  review: needs-review
+  note: '4-Tage-Woche und persönlicher Montagebus laut Altseite und join.com. Ob die Stellen noch offen sind, vom Inhaber bestätigen.'
+
+ctaBand:
+  h2: 'Lassen Sie uns über Ihr Projekt sprechen'
+  text: 'Konfigurieren Sie Ihr Vorhaben online oder rufen Sie direkt an. Ulf Schmidt ist Ihr Ansprechpartner, vom ersten Gespräch bis zur Montage.'
+  ctaConfigurator: 'Angebot konfigurieren'
+  ctaPhone: 'Anrufen'

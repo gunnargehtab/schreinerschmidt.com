@@ -19,10 +19,21 @@ review:
   note: Text mit Korrekturliste übernommen. Leistungsumfang (Einbruchschutz, Brandschutz, Dämmung, Schallschutz) vom Inhaber bestätigen. Aussagen zu nachhaltigen Holzressourcen und Naturprodukten entfernt.
 ---
 
-## Robuste Türen für Innen und Außen
+## Leistung im Überblick
 
-Öffnen Sie Ihren Wohnraum mit Türen aus Holz. Handgemachte Türen aus Holz machen Ihr Zuhause zu einem unverwechselbaren Einzelstück. Mit der Schreinerei Schmidt können Sie Ihre individuellen Vorstellungen maßgeschneidert realisieren.
+Haustüren und Innentüren aus Holz, nach Maß. Wir planen mit Ihnen Einbruchschutz, Brandschutz, Dämmung und Schallschutz und bauen die Tür ein. Unsere Referenzen reichen von der aufgearbeiteten Haustür über eine neue Haustür im Gründerzeithaus und einen Eingang mit Holzlamellen bis zu zwei Innentüren aus Fichte für ein kleines Bad.
 
-Wir verbinden Design und Funktionalität für das beste Ergebnis in den Bereichen Einbruchschutz, Brandschutz, Dämmung sowie Schallschutz. Lassen Sie sich von uns bei der Planung und Auswahl Ihrer Türen beraten.
+[[Platzhalter: Eigenfertigung oder Türen von Herstellern, vom Inhaber klären]]
 
-Wir bieten Ihnen passende Haustüren und Türen für den Innenbereich. Für größere Projekte arbeiten wir mit Netzwerk-Partnern zusammen, dazu gehören viele Fachhandwerker und Handwerksbetriebe. Verwirklichen Sie Ihr individuelles Projekt und betreten Sie die Außenwelt durch unsere zeitlos schönen Türen aus Holz.
+## Holz & Oberflächen
+
+Für Haustüren zählt die Wetterseite: Holzart, Aufbau und Anstrich müssen zusammenpassen. Eine Haustür darf Farbe haben; die dunkelblaue Tür in unseren Referenzen zeigt es. Innentüren bauen wir in Eiche oder in hellem Nadelholz wie Fichte, passend zu Boden und Zargen. [[Platzhalter: Holzarten und Oberflächen für Türen vom Inhaber bestätigen]]
+
+## Ablauf
+
+Beim Aufmaß prüfen wir Zarge, Laibung und Bodenanschluss. Bei alten Türen schauen wir zuerst, ob sich die Substanz aufarbeiten lässt. Erst wenn das nicht geht, ersetzen wir die Tür. Für größere Projekte arbeiten wir mit Partnerbetrieben aus dem Handwerk zusammen.
+
+## Gut zu wissen
+
+- Eine alte Haustür muss nicht raus. Oft reicht es, sie aufzuarbeiten, wie die Haustür in unserem Vorher-Nachher-Vergleich. [[Platzhalter: aufgearbeitet oder neu gebaut, vom Inhaber bestätigen]]
+- Auch auf engstem Raum lassen sich Türen nach Maß einbauen. Die beiden Fichtentüren im Bad aus unseren Referenzen beweisen es.

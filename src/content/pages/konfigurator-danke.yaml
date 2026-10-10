@@ -1,0 +1,13 @@
+# /konfigurator/danke/ (production submissions without JS; docs/plan.md §6.1 "Afterwards").
+danke:
+  title: 'Danke, Ihre Anfrage ist unterwegs'
+  text: 'Wir haben Ihre Konfiguration erhalten und sehen sie uns an. Sie bekommen von uns eine Rückmeldung mit Fragen oder einem Angebot. Wenn Sie etwas ergänzen möchten, schreiben Sie uns eine E-Mail oder rufen Sie an.'
+
+next:
+  h2: 'Was passiert jetzt?'
+  steps:
+    - 'Wir prüfen Ihre Angaben und die Zeichnung.'
+    - 'Bei offenen Fragen rufen wir an oder schreiben Ihnen.'
+    - 'Sie erhalten ein Angebot. [[Platzhalter: Zeitraum bis zum Angebot]]'
+  review: placeholder
+  note: 'Antwortzeit („innerhalb von 2 Werktagen“?) ist unbestätigt (docs/owner-checklist.md).'

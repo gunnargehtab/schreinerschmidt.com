@@ -1,0 +1,86 @@
+# Karriere (docs/design-system.md §8). The existing job ads use "Du" (src/content/jobs/*.md), so this page does too.
+# Benefits come from the old /team-karriere page and join.com; all of them need the owner's confirmation.
+seo:
+  title: 'Jobs in Mannheim: 4-Tage-Woche'
+  description: 'Schreiner:in oder Parkettleger:in in Mannheim gesucht: 4-Tage-Woche, eigener Montagebus, überdurchschnittlicher Lohn. Jetzt direkt online bewerben.'
+  review: needs-review
+  note: 'Ob die Stellen noch offen sind, vom Inhaber bestätigen.'
+
+hero:
+  h1: 'Arbeiten bei der Schreinerei Schmidt'
+  lead: 'Wir sind ein kleines Team in Mannheim und bauen Möbel, Böden, Treppen und Türen, vom Aufmaß bis zur Montage. Wenn Du Dein Handwerk ernst nimmst und trotzdem Zeit fürs Leben haben willst, passt das vielleicht.'
+  review: needs-review
+  note: 'Du-Ansprache wie in den bestehenden Stellenanzeigen.'
+
+benefits:
+  - title: '4-Tage-Woche'
+    text: 'Vier Tage arbeiten, drei Tage frei. Wie die Stunden verteilt sind und wie wir Montagetage planen, besprechen wir im Gespräch. [[Platzhalter: Details der 4-Tage-Woche]]'
+    review: needs-review
+    note: '4-Tage-Woche laut Altseite und join.com; Stundenverteilung unbekannt.'
+  - title: 'Überdurchschnittlicher Lohn'
+    text: 'Gute Arbeit soll sich lohnen. Als Orientierung: 36.000 bis 42.000 € im Jahr, je nach Erfahrung. [[Platzhalter: Gehaltsspanne vom Inhaber bestätigen]]'
+    review: needs-review
+    note: 'Spanne laut join.com (Drittquelle). „Überdurchschnittlich“ ist die Formulierung der Altseite.'
+  - title: 'Eigener Montagebus'
+    text: 'Du bekommst einen eigenen Montagebus mit Ausrüstung und fährst damit direkt zur Baustelle.'
+    review: needs-review
+    note: '„Persönlicher Montagebus“ und „cooles Equipment“ laut Altseite. Private Nutzung ungeklärt.'
+  - title: 'Kleines Team, kurze Wege'
+    text: 'Gutes Werkzeug, gute Maschinen und ein Team, in dem Du Entscheidungen im Projekt mit triffst.'
+    review: needs-review
+    note: 'Aus „Cooles Team & Equipment“ und „Eigenverantwortung und Mitbestimmung im Projektwesen“ (Parkettleger-Anzeige).'
+
+jobs:
+  h2: 'Offene Stellen'
+  lead: 'Zwei Stellen sind offen, Initiativbewerbungen sind willkommen. Klick auf eine Stelle für die Details.'
+  review: needs-review
+  note: 'Ob beide Stellen noch offen sind, vom Inhaber bestätigen. Anforderungen, Arbeitszeiten und Ansprechperson fehlen in den Anzeigen.'
+
+application:
+  h2: 'Jetzt bewerben!'
+  lead: 'Schreib uns kurz, wer Du bist und was Du bisher gemacht hast. Ein Lebenslauf reicht, ein Anschreiben brauchen wir nicht. Oder ruf direkt an.'
+  review: needs-review
+  note: '„Ein Anschreiben brauchen wir nicht“ ist ein Vorschlag, vom Inhaber bestätigen.'
+  callCta: 'Direkt anrufen'
+  privacyNote: 'Deine Angaben nutzen wir nur für dieses Bewerbungsverfahren. Nach einer Absage löschen wir sie spätestens nach sechs Monaten. Mehr dazu steht in der Datenschutzerklärung.'
+  privacyLinkLabel: 'Datenschutzerklärung'
+  demoNotice: 'Demo: Es werden keine Daten übertragen.'
+  fields:
+    name: 'Name'
+    email: 'E-Mail'
+    phone: 'Telefon'
+    position: 'Stelle'
+    message: 'Nachricht'
+    cv: 'Lebenslauf (nur im Livebetrieb)'
+    cvHint: 'PDF, Word oder Bild, bis 10 MB.'
+  positions:
+    - value: schreiner
+      label: 'Schreiner:in'
+    - value: parkettleger
+      label: 'Parkettleger:in'
+    - value: initiativ
+      label: 'Initiativbewerbung'
+  submit: 'Bewerbung senden'
+  success: 'Danke für Deine Bewerbung. Wir melden uns bei Dir.'
+
+faq:
+  - question: 'Muss ich eine abgeschlossene Ausbildung haben?'
+    answer: '[[Platzhalter: Anforderungen an Ausbildung und Erfahrung vom Inhaber]] Sag uns, was Du kannst und was Du schon gebaut hast. Darüber sprechen wir.'
+    review: placeholder
+    note: 'Die Altseite nennt keine Anforderungen.'
+  - question: 'Wie funktioniert die 4-Tage-Woche bei euch?'
+    answer: 'Vier Arbeitstage pro Woche. Wie die Stunden verteilt sind und wie wir Montagetage planen, erklären wir Dir im Gespräch. [[Platzhalter: Details der 4-Tage-Woche]]'
+    review: needs-review
+    note: 'Stundenverteilung unbekannt.'
+  - question: 'Wo seid ihr unterwegs?'
+    answer: 'Unser Sitz ist in Mannheim, die Baustellen liegen in der Region. [[Platzhalter: Einzugsgebiet]]'
+    review: placeholder
+    note: 'Einzugsgebiet steht noch nicht fest (docs/owner-checklist.md).'
+  - question: 'Wer ist mein Ansprechpartner?'
+    answer: 'Ulf Schmidt, Inhaber und Schreinermeister. Du erreichst ihn direkt unter der Nummer oben.'
+    review: needs-review
+    note: 'Ansprechperson für Bewerbungen vom Inhaber bestätigen.'
+
+danke:
+  title: 'Danke für Deine Bewerbung'
+  text: 'Deine Nachricht ist bei uns angekommen, und wir melden uns bei Dir. Wenn Du vorher Fragen hast: Ruf einfach an.'

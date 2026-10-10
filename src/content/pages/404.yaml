@@ -1,0 +1,15 @@
+# 404 copy (docs/design-system.md §8). The h1 stays "Hier fehlt ein Brett."; hrefs are relative and go through url().
+eyebrow: 'Fehler 404'
+h1: 'Hier fehlt ein Brett.'
+text: 'Die Seite, die Sie suchen, gibt es nicht oder nicht mehr. Vielleicht ist sie beim Umbau der Website verrutscht. Hier geht es weiter:'
+home: 'Zur Startseite'
+sectionLinks:
+  - label: 'Leistungen'
+    href: 'leistungen/'
+  - label: 'Referenzen'
+    href: 'referenzen/'
+  - label: 'Über uns'
+    href: 'ueber-uns/'
+  - label: 'Kontakt'
+    href: 'kontakt/'
+figcaption: 'Skizze eines Regals mit drei Böden; der dritte Boden fehlt, und eine Maßlinie fragt nach seiner Länge.'

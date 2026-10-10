@@ -1,0 +1,66 @@
+# Kontakt (docs/design-system.md §8, docs/architecture.md §8). NAP comes from settings.yaml; this file holds copy only.
+# "Interessiert in" (old form) is corrected to "Interessiert an" (docs/content-inventory.md, corrections list).
+seo:
+  title: 'Kontakt und Anfahrt in Mannheim'
+  description: 'Kontakt zur Schreinerei Schmidt in Mannheim: Telefon, E-Mail oder Anfrageformular. Andreas-Hofer-Str. 33, 68259 Mannheim. Wir antworten persönlich.'
+  review: needs-review
+  note: 'Anschrift laut Altseite, vom Inhaber noch nicht bestätigt.'
+
+hero:
+  h1: 'Kontakt'
+  lead: 'Rufen Sie an, schreiben Sie eine E-Mail oder nutzen Sie das Formular. Am schnellsten erreichen Sie uns telefonisch; Ulf Schmidt ist mobil auf der Baustelle.'
+
+actions:
+  call: 'Anrufen'
+  mail: 'E-Mail schreiben'
+  route: 'Route planen'
+
+form:
+  h2: 'Anfrage senden'
+  lead: 'Beschreiben Sie kurz Ihr Vorhaben. Für Möbel, Böden und andere Projekte mit Maßen und Fotos nutzen Sie am besten den Konfigurator.'
+  privacyNote: 'Ihre Angaben nutzen wir, um Ihre Anfrage zu beantworten. Mehr dazu steht in der Datenschutzerklärung.'
+  privacyLinkLabel: 'Datenschutzerklärung'
+  demoNotice: 'Demo: Es werden keine Daten übertragen.'
+  fields:
+    name: 'Name'
+    email: 'E-Mail'
+    phone: 'Telefon'
+    plz: 'PLZ'
+    ort: 'Ort'
+    message: 'Nachricht'
+    topic: 'Interessiert an'
+  topicOptions:
+    - value: beratung
+      label: 'Beratungsgespräch'
+    - value: angebot
+      label: 'Angebot'
+    - value: leistung
+      label: 'Frage zu einer Leistung'
+    - value: sonstiges
+      label: 'Sonstige Anfrage'
+  submit: 'Anfrage senden'
+  success: 'Vielen Dank für Ihre Anfrage. Wir setzen uns schnellstmöglich mit Ihnen in Verbindung.'
+  errors:
+    required: 'Bitte füllen Sie dieses Feld aus.'
+    email: 'Bitte geben Sie eine gültige E-Mail-Adresse ein, z. B. name@beispiel.de.'
+    plz: 'Bitte geben Sie eine fünfstellige Postleitzahl ein.'
+    summary: 'Bitte prüfen Sie die markierten Felder.'
+    network: 'Leider ist ein Fehler aufgetreten. Versuchen Sie es erneut oder rufen Sie uns an.'
+
+address:
+  h2: 'Adresse'
+
+hours:
+  h2: 'Erreichbarkeit'
+  text: 'Montag bis Freitag, 7 bis 17 Uhr. Auf der Baustelle gehen wir nicht immer ans Telefon; wir rufen zurück.'
+  review: needs-review
+  note: 'Öffnungszeiten laut werkenntdenbesten (Drittquelle), vom Inhaber bestätigen. „Wir rufen zurück“ ist ein Versprechen des Inhabers.'
+
+map:
+  alt: 'Kartenausschnitt mit der Andreas-Hofer-Straße 33 in Mannheim'
+  attribution: '© OpenStreetMap-Mitwirkende'
+  linkLabel: 'Karte bei OpenStreetMap öffnen'
+
+danke:
+  title: 'Danke für Ihre Anfrage'
+  text: 'Ihre Nachricht ist bei uns angekommen. Wir setzen uns schnellstmöglich mit Ihnen in Verbindung. Wenn es eilt, rufen Sie gern an.'

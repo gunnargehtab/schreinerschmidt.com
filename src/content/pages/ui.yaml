@@ -1,0 +1,97 @@
+# Site-wide microcopy. Placeholders in braces ({n}, {total}) are replaced by the components.
+# " " is the narrow no-break space between number and unit.
+ctaBand:
+  h2: 'Sprechen wir über Ihr Projekt'
+  text: 'Online konfigurieren oder direkt anrufen. Wir melden uns.'
+  ctaConfigurator: 'Angebot konfigurieren'
+  ctaPhone: 'Anrufen'
+  hoursLabel: 'Erreichbar'
+
+links:
+  more: 'Mehr erfahren'
+  moreProjects: 'Weitere Projekte'
+  allProjects: 'Alle Referenzen'
+  prevProject: 'Vorheriges Projekt'
+  nextProject: 'Nächstes Projekt'
+  home: 'Zur Startseite'
+  configurator: 'Zum Konfigurator'
+  top: 'Nach oben'
+  external: '(öffnet eine externe Website)'
+
+breadcrumbs:
+  label: 'Brotkrumen'
+  home: 'Start'
+
+skipLink: 'Zum Inhalt springen'
+
+demoBanner:
+  label: 'Hinweis'
+  text: 'Entwurf – nicht die offizielle Website'
+  link: 'Zur aktuellen Website'
+  legalPending: 'Rechtliche Prüfung ausstehend'
+
+lightbox:
+  label: 'Bildansicht'
+  counter: 'Bild {n} von {total}'
+  prev: 'Vorheriges Bild'
+  next: 'Nächstes Bild'
+  close: 'Schließen'
+  open: 'Bild vergrößern'
+
+beforeAfter:
+  before: 'Vorher'
+  both: 'Beide'
+  after: 'Nachher'
+  sliderLabel: 'Vorher-Nachher-Vergleich, Anteil Vorher-Bild'
+  valueText: '{n} % Vorher-Bild'
+
+filter:
+  label: 'Referenzen filtern'
+  all: 'Alle'
+  statusOne: '1 Projekt'
+  statusMany: '{n} Projekte'
+  statusNone: 'Keine Projekte in dieser Kategorie.'
+
+rating:
+  line: '5,0 bei 115 Google-Bewertungen (Stand 30.09.2026)'
+  ofFive: 'von 5 Sternen'
+  profileLink: 'Bewertungen bei Google ansehen'
+
+theme:
+  label: 'Darstellung'
+  system: 'Wie System'
+  light: 'Hell'
+  dark: 'Werkstatt bei Nacht'
+
+nav:
+  menu: 'Menü'
+  closeMenu: 'Menü schließen'
+  mainLabel: 'Hauptmenü'
+  footerLabel: 'Seiten'
+  configuratorCta: 'Angebot konfigurieren'
+
+form:
+  required: '(Pflichtfeld)'
+  optional: '(optional)'
+  demoNotice: 'Demo: Es werden keine Daten übertragen.'
+  demoSuccess: 'Demo – nichts übertragen.'
+  sending: 'Wird gesendet …'
+  errorSummaryTitle: 'Bitte prüfen Sie Ihre Eingaben'
+  errorSummaryOne: 'Ein Feld braucht noch eine Korrektur.'
+  errorSummaryMany: '{n} Felder brauchen noch eine Korrektur.'
+  errors:
+    required: 'Bitte füllen Sie dieses Feld aus.'
+    email: 'Bitte geben Sie eine gültige E-Mail-Adresse ein, z. B. name@beispiel.de.'
+    phone: 'Bitte geben Sie eine Telefonnummer ein, z. B. 0179 1234567.'
+    plz: 'Bitte geben Sie eine fünfstellige Postleitzahl ein.'
+    number: 'Bitte geben Sie eine Zahl ein.'
+    range: 'Bitte geben Sie einen Wert zwischen {min} und {max} ein.'
+    fileSize: 'Die Datei ist zu groß. Erlaubt sind bis zu 10 MB.'
+    fileType: 'Dieses Dateiformat können wir nicht annehmen. Erlaubt sind PDF, Word und Bilder.'
+    network: 'Leider ist ein Fehler aufgetreten. Versuchen Sie es erneut oder rufen Sie uns an.'
+    tooFast: 'Das ging schnell. Bitte prüfen Sie Ihre Angaben und senden Sie noch einmal.'
+
+review:
+  markLabel: 'Noch zu prüfen'
+  needsReview: 'Prüfung ausstehend'
+  placeholder: 'Platzhalter'
