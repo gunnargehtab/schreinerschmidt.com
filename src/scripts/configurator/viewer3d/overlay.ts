@@ -56,6 +56,7 @@ export interface Overlay {
   el: SVGSVGElement;
   /** Draws the 3D dimensions for the camera at the given size (CSS px). */
   draw(dims: DimSpec[], camera: Camera, w: number, h: number): void;
+  /** Removes the dimensions (no-op when already empty): while a front is open or the view exploded. */
   clear(): void;
   dispose(): void;
 }
@@ -106,6 +107,7 @@ export function createOverlay(host: HTMLElement): Overlay {
     el,
     draw,
     clear() {
+      if (!last) return;
       el.innerHTML = '';
       last = '';
     },

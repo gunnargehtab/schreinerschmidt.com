@@ -3,8 +3,13 @@
 // required by WCAG 2.5.7 and the keyboard path (OrbitControls gets no key events). Native buttons,
 // ≥ 44 px (configurator.css), in a `role="group"` named „Ansicht“. Hidden until the viewer is ready
 // (preview/load3d.ts); „Draufsicht“ only shows for tables (viewer3d/index.ts).
+// The two toggles (§4.6 "Phase C additions") are `aria-pressed` buttons the viewer drives: „Türen
+// öffnen“ (label by what the build has: Türen, Schubkästen or both, from the data-label-* attributes;
+// hidden for builds without fronts) and „Aufbau zeigen“ (exploded view). The viewer resets them when
+// the furniture kind changes and keeps them off while it is not mounted.
 // DOM contract: [data-view-controls] > button[data-view=vorne|seite|dreiviertel|oben],
-// button[data-rotate=-1|1], button[data-zoom=1|-1], button[data-action=reset-view].
+// button[data-rotate=-1|1], button[data-zoom=1|-1], button[data-action=reset-view],
+// button[data-toggle=open|explode][aria-pressed].
 import type { KonfiguratorCopy } from '../../../lib/page-copy/konfigurator';
 
 interface Props {
@@ -44,5 +49,20 @@ const btn = 'btn btn--secondary btn--small';
   </button>
   <button class={btn} type="button" data-action="reset-view">
     {copy.reset}
+  </button>
+  <button
+    class={btn}
+    type="button"
+    data-toggle="open"
+    aria-pressed="false"
+    data-label-tueren={copy.open.tueren}
+    data-label-schubkaesten={copy.open.schubkaesten}
+    data-label-beide={copy.open.beide}
+    hidden
+  >
+    {copy.open.tueren}
+  </button>
+  <button class={btn} type="button" data-toggle="explode" aria-pressed="false">
+    {copy.explode}
   </button>
 </div>

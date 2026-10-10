@@ -11,7 +11,12 @@
 //   Viewer.update(build)   diffed by part id (rig.ts); the contact shadow and the label follow;
 //                          a refit is checked 250 ms after the last change (hysteresis, camera.ts).
 //   Viewer.view/rotate/zoom/reset   the view buttons (also wired to `init.controls` clicks).
-//   Viewer.snapshot()      §4.12, see snapshot.ts.
+//   Viewer.toggle(which, on)   „Türen öffnen“ / „Aufbau zeigen“ (§4.6 Phase C): doors swing 100°,
+//                          drawers slide 0.7 × depth, parts explode by 15 % of the largest size
+//                          (rig.ts, furniture/assembly.ts), tweened over 600 ms (a jump under reduced
+//                          motion). The dimension overlay hides while either is on. Both go off when
+//                          the furniture kind changes; `open` also when the build has no fronts.
+//   Viewer.snapshot()      §4.12, see snapshot.ts: always the closed, assembled 3/4 state.
 //   Viewer.dispose()       cancels the frame, aborts every listener, disconnects the observers,
 //                          disposes controls, geometries, materials, textures, PMREM and the shadow,
 //                          then renderer.dispose() + forceContextLoss() and removes the canvas.
@@ -22,6 +27,11 @@
 //   <svg class="preview__overlay" aria-hidden="true"> dimension overlay (overlay.ts).
 //   `[data-viewer-note]` (init.note) is unhidden for Kernbuche („Holzbild beispielhaft“).
 //   `[data-view="oben"]` in the controls is unhidden for tables only.
+//   `[data-toggle="open"|"explode"]` in the controls carry aria-pressed; `open` is unhidden when
+//                                                     the build has doors or drawers and labelled by
+//                                                     them (its data-label-tueren/-schubkaesten/-beide).
+//   `[data-viewer]` gets data-viewer-pose: "open,explode" in whole percent, written with the azimuth
+//   on the settled frame: the test hook for the motion (instant under reduced motion, 0 rAF after).
 //   `[data-viewer]` gets data-viewer-az: the camera azimuth in whole degrees, written on the frame in
 //   which the camera settled (never per drag frame): the test hook for the per-kind orbit limits.
 //
@@ -49,13 +59,15 @@ import { createScene } from './scene';
 import { takeSnapshot } from './snapshot';
 import { createTextureStore } from './textures';
 import { createTween } from './tween';
-import type { ViewPreset, Viewer, ViewerInit } from './types';
+import type { ToggleKind, ViewPreset, Viewer, ViewerInit } from './types';
 
 /** aria-label debounce (§4.11). */
 const LABEL_DELAY = 500;
 /** Refit check after the last change (§4.6). */
 const REFIT_DELAY = 250;
 const TWEEN_MS = 350;
+/** Door, drawer and explode animation (§4.6 Phase C). */
+const MOTION_MS = 600;
 /** Rotate button step in degrees (§4.6). */
 const STEP = 15;
 const ZOOM_IN = 0.8;
@@ -131,6 +143,7 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
     cleanup.push(overlay.dispose);
     const reduce = matchMedia('(prefers-reduced-motion: reduce)');
     const ms = () => (reduce.matches ? 0 : TWEEN_MS);
+    const motionMs = () => (reduce.matches ? 0 : MOTION_MS);
 
     const controls = new OrbitControls(camera, canvas);
     controls.enablePan = false;
@@ -177,21 +190,29 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
     function frame(now: number) {
       raf = 0;
       inFrame = true;
-      const animating = tween.tick(now);
+      const camMoving = tween.tick(now);
+      const rigMoving = rig.tick(now);
+      const animating = camMoving || rigMoving;
       const moving = controls.update();
-      if (dirty || moving || animating) {
+      const rendered = dirty || moving || animating;
+      if (rendered) {
         backend.render(scene, camera);
-        overlay.draw(build.dims, camera, host.clientWidth, host.clientHeight);
+        // Dimensions make no sense on an open or exploded piece (§4.6).
+        if (toggles.open || toggles.explode) overlay.clear();
+        else overlay.draw(build.dims, camera, host.clientWidth, host.clientHeight);
         dirty = false;
       }
       inFrame = false;
       if (moving || animating) {
         settle = true;
         raf = requestAnimationFrame(frame);
-      } else if (settle) {
-        // Test hook: the azimuth (whole degrees) on the first quiet frame after a move (or the first frame).
+      } else if (settle || rendered) {
+        // Test hooks: the azimuth (whole degrees) and the pose (whole percent) on the first quiet
+        // frame after a move, and on any quiet frame that rendered (a reduced-motion jump).
         settle = false;
         host.dataset['viewerAz'] = String(Math.round(spherical().az));
+        const s = rig.state();
+        host.dataset['viewerPose'] = `${Math.round(s.open * 100)},${Math.round(s.explode * 100)}`;
       }
     }
     // OrbitControls dispatches 'change' from its own update() too; a frame never queues another.
@@ -257,6 +278,20 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
     };
 
     const oben = init.controls?.querySelector<HTMLElement>('[data-view="oben"]') ?? null;
+
+    // Toggles (§4.6 Phase C). The buttons outlive the viewer, so their state is reset here.
+    const toggleBtn = (k: ToggleKind) => init.controls?.querySelector<HTMLElement>(`[data-toggle="${k}"]`) ?? null;
+    const btns: Record<ToggleKind, HTMLElement | null> = { open: toggleBtn('open'), explode: toggleBtn('explode') };
+    const toggles: Record<ToggleKind, boolean> = { open: false, explode: false };
+    const toggle = (k: ToggleKind, on: boolean) => {
+      if (toggles[k] === on) return;
+      toggles[k] = on;
+      btns[k]?.setAttribute('aria-pressed', String(on));
+      rig.animate(toggles.open ? 1 : 0, toggles.explode ? 1 : 0, motionMs());
+      invalidate();
+    };
+    for (const k of ['open', 'explode'] as const) btns[k]?.setAttribute('aria-pressed', 'false');
+
     const update = (b: Build) => {
       build = b;
       const changed = rig.apply(b);
@@ -267,6 +302,18 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
         azLimit = azimuthLimit(kind);
         applyAzimuth();
         if (Math.abs(spherical().az) > azLimit) rotate(0);
+        toggle('open', false);
+        toggle('explode', false);
+      }
+      const movable = rig.movable();
+      if (!movable) toggle('open', false);
+      const openBtn = btns.open;
+      if (openBtn) {
+        openBtn.hidden = !movable;
+        const d = b.derived;
+        const label =
+          openBtn.dataset[d.doors && d.drawers ? 'labelBeide' : d.drawers ? 'labelSchubkaesten' : 'labelTueren'];
+        if (label && openBtn.textContent !== label) openBtn.textContent = label;
       }
       textures.request(b.params.species, b.params.finish);
       if (init.note) init.note.hidden = b.params.species !== 'kernbuche';
@@ -306,6 +353,10 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
         else if (b.dataset['rotate']) rotate(Number(b.dataset['rotate']));
         else if (b.dataset['zoom']) zoom(Number(b.dataset['zoom']) > 0 ? ZOOM_IN : ZOOM_OUT);
         else if (b.dataset['action'] === 'reset-view') reset();
+        else if (b.dataset['toggle']) {
+          const k = b.dataset['toggle'] as ToggleKind;
+          toggle(k, !toggles[k]);
+        }
       },
       { signal },
     );
@@ -335,9 +386,11 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
       rotate,
       zoom,
       reset,
+      toggle,
       snapshot() {
         const savedPos = camera.position.clone();
         const savedTarget = controls.target.clone();
+        const savedPose = rig.state();
         const paper = getComputedStyle(host.parentElement ?? host).backgroundColor;
         const render = () => {
           inFrame = true;
@@ -356,11 +409,13 @@ export async function createViewer(init: ViewerInit): Promise<Viewer> {
             const d = fitDistance(box, pos.copy(dir).negate(), camera);
             camera.position.copy(centre).addScaledVector(dir, d);
             controls.target.copy(centre);
+            rig.pose(0, 0); // closed and assembled, whatever the toggles say
             render();
           },
           restore() {
             camera.position.copy(savedPos);
             controls.target.copy(savedTarget);
+            rig.pose(savedPose.open, savedPose.explode);
             render();
             invalidate();
           },
