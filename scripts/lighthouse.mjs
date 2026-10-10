@@ -47,7 +47,12 @@ const DEFAULT_TARGETS = {
 };
 /** Per-route overrides; the first match on the path below the base wins. */
 /** @type {{ match: RegExp, targets: Partial<Targets> }[]} */
-const ROUTE_TARGETS = [{ match: /^konfigurator\//, targets: { performance: 85 } }];
+const ROUTE_TARGETS = [
+  // Danke pages are noindex by design (seo.ts isAlwaysNoindex); Lighthouse's SEO score drops to ~60
+  // for exactly that, so the SEO target doesn't apply. Listed first: /konfigurator/danke/ too.
+  { match: /(?:^|\/)danke\/$/, targets: { seo: 0 } },
+  { match: /^konfigurator\//, targets: { performance: 85 } },
+];
 
 const CATEGORIES = /** @type {const} */ (['performance', 'accessibility', 'best-practices', 'seo']);
 const METRICS = /** @type {const} */ ({
