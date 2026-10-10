@@ -1,0 +1,24 @@
+---
+// Alert box at the top of a form (design-system §5), hidden until enhance.ts shows it; it then gets
+// focus and, as role="alert", is announced.
+// - kind "invalid": the error summary; enhance.ts fills the list with one link per invalid field.
+// - kind "failed": shown when sending failed; the slot holds the text and the tel/mailto fallback.
+interface Props {
+  id: string;
+  kind?: 'invalid' | 'failed';
+  title?: string;
+  headingLevel?: 2 | 3 | 4;
+}
+
+const { id, kind = 'invalid', headingLevel = 2 } = Astro.props;
+const title =
+  Astro.props.title ?? (kind === 'invalid' ? 'Bitte prüfen Sie Ihre Angaben.' : 'Das Senden hat nicht geklappt.');
+const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
+const hook = kind === 'invalid' ? { 'data-error-summary': '' } : { 'data-form-failed': '' };
+---
+
+<div class="error-summary" id={id} role="alert" tabindex="-1" hidden {...hook}>
+  <Heading class="error-summary__title">{title}</Heading>
+  {kind === 'invalid' && <ul class="error-summary__list" data-error-list />}
+  <slot />
+</div>

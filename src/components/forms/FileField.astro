@@ -1,0 +1,69 @@
+---
+// File upload (CV) inside a <Field>, production forms only (docs/architecture.md §8). The demo
+// transmits nothing, so it shows the label and a note instead of an input. The 10 MB limit is
+// checked in enhance.ts (setCustomValidity) and stated in the hint. FormShell switches to
+// multipart/form-data when it finds a file input.
+import Field from './Field.astro';
+import { describedBy, formMode, type FormMode } from './mode';
+import { MAX_FILE_MB, MESSAGES } from '../../scripts/forms/messages.de';
+
+interface Props {
+  name: string;
+  label: string;
+  id?: string;
+  required?: boolean;
+  hint?: string;
+  error?: string;
+  accept?: string;
+  multiple?: boolean;
+  /** Shown in demo mode instead of the input. */
+  demoText?: string;
+  /** Defaults to the build mode (PUBLIC_DEMO); FormShell and FileField must agree. */
+  mode?: FormMode;
+  requiredText?: string;
+  class?: string;
+}
+
+const {
+  name,
+  label,
+  id = `f-${name}`,
+  required = false,
+  hint = `PDF, Word oder Bild, höchstens ${MAX_FILE_MB} MB.`,
+  error = MESSAGES.file,
+  accept = '.pdf,.doc,.docx,image/*',
+  multiple = false,
+  demoText = 'Im Entwurf ist kein Datei-Upload möglich. Auf der fertigen Website können Sie hier Unterlagen anhängen.',
+  requiredText,
+  class: className,
+} = Astro.props;
+const live = formMode(Astro.props.mode) === 'live';
+---
+
+{live ? (
+  <Field
+    id={id}
+    label={label}
+    required={required}
+    hint={hint}
+    error={error}
+    requiredText={requiredText}
+    class={className}
+  >
+    <input
+      class="input input--file"
+      type="file"
+      id={id}
+      name={name}
+      accept={accept}
+      multiple={multiple || undefined}
+      required={required}
+      aria-describedby={describedBy(`${id}-hint`)}
+    />
+  </Field>
+) : (
+  <div class:list={['field', className]}>
+    <p class="field__label">{label}</p>
+    <p class="field__hint">{demoText}</p>
+  </div>
+)}

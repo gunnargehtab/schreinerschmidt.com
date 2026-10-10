@@ -1,0 +1,62 @@
+---
+// Multi-line text inside a <Field>. Grows with its content (`field-sizing: content`, 6–20 lines,
+// forms.css); `rows` is the fallback height where field-sizing is unsupported.
+import Field from './Field.astro';
+import { describedBy } from './mode';
+import { defaultMessage } from '../../scripts/forms/messages.de';
+
+interface Props {
+  name: string;
+  label: string;
+  id?: string;
+  required?: boolean;
+  hint?: string;
+  error?: string;
+  rows?: number;
+  minlength?: number;
+  maxlength?: number;
+  placeholder?: string;
+  value?: string;
+  requiredText?: string;
+  class?: string;
+}
+
+const {
+  name,
+  label,
+  id = `f-${name}`,
+  required = false,
+  hint,
+  error,
+  rows = 6,
+  minlength,
+  maxlength,
+  placeholder,
+  value,
+  requiredText,
+  class: className,
+} = Astro.props;
+const message = error ?? defaultMessage({ type: 'textarea', minLength: minlength });
+---
+
+<Field
+  id={id}
+  label={label}
+  required={required}
+  hint={hint}
+  error={message}
+  requiredText={requiredText}
+  class={className}
+>
+  <textarea
+    class="textarea"
+    id={id}
+    name={name}
+    rows={rows}
+    required={required}
+    minlength={minlength}
+    maxlength={maxlength}
+    placeholder={placeholder}
+    aria-describedby={describedBy(hint && `${id}-hint`)}
+  >{value}</textarea>
+</Field>

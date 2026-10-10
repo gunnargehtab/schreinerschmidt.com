@@ -1,0 +1,146 @@
+---
+// Shared form wrapper (docs/architecture.md §8, plan §7). Fields go into the default slot.
+// - demo (PUBLIC_DEMO): <form method="dialog"> validates natively and sends nothing; a visible
+//   notice says so. With JS: inline success "Demo – nichts übertragen", zero network.
+// - live: method="post" to the form endpoint (form.taxi; CSP form-action/connect-src allow its
+//   origin), multipart when the slot has a file input, hidden _next (absolute danke URL), _lang, _subject.
+//   With JS: fetch() POST with Accept: application/json, then the danke page, or the error summary
+//   with a tel/mailto fallback.
+// Never GET with personal data, never POST to Pages (405).
+import { getEntry } from 'astro:content';
+import { absolute, url } from '../../lib/url';
+import { nbsp } from '../layout/nav-data';
+import ErrorSummary from './ErrorSummary.astro';
+import FormStatus from './FormStatus.astro';
+import Honeypot from './Honeypot.astro';
+import { FORM_ENDPOINT, formMode, type FormMode } from './mode';
+
+interface Props {
+  /** Form id; also prefixes the ids of the summary, status and honeypot. */
+  id: string;
+  /** Internal path of the thank-you page, e.g. `kontakt/danke/`. */
+  danke: string;
+  /** E-mail subject at the form service (`_subject`). */
+  subject?: string;
+  /** Accessible name of the form (usually the visible heading above it). */
+  label?: string;
+  /** id of a visible heading that names the form; preferred over `label`. */
+  labelledby?: string;
+  submitLabel?: string;
+  demoNotice?: string;
+  demoSuccess?: string;
+  sendingText?: string;
+  summaryTitle?: string;
+  failedTitle?: string;
+  failedText?: string;
+  /** Privacy note under the fields (instead of a consent checkbox); `false` hides it. */
+  privacyNote?: string | false;
+  privacyLinkText?: string;
+  /** Heading level of the error summary title. */
+  headingLevel?: 2 | 3 | 4;
+  /** Defaults to the build mode (PUBLIC_DEMO). Only the test fixture overrides it. */
+  mode?: FormMode;
+  /** Defaults to PUBLIC_FORM_ENDPOINT. */
+  endpoint?: string;
+  class?: string;
+}
+
+const {
+  id,
+  danke,
+  subject = 'Anfrage über die Website',
+  label,
+  labelledby,
+  submitLabel = 'Absenden',
+  demoNotice = 'Demo: Es werden keine Daten übertragen.',
+  demoSuccess = 'Demo – nichts übertragen. Ihre Angaben sind vollständig; in diesem Entwurf wird nichts gesendet.',
+  sendingText = 'Wird gesendet …',
+  summaryTitle,
+  failedTitle,
+  failedText = 'Bitte versuchen Sie es später noch einmal oder melden Sie sich direkt:',
+  privacyNote = 'Wir verwenden Ihre Angaben nur, um Ihre Anfrage zu bearbeiten. Mehr dazu in der',
+  privacyLinkText = 'Datenschutzerklärung',
+  headingLevel = 2,
+  endpoint = FORM_ENDPOINT,
+  class: className,
+} = Astro.props;
+
+const mode = formMode(Astro.props.mode);
+const live = mode === 'live';
+if (live && !endpoint) throw new Error(`FormShell "${id}": production forms need PUBLIC_FORM_ENDPOINT`);
+if (live && !endpoint?.startsWith('https://')) throw new Error(`FormShell "${id}": the endpoint must be https`);
+if (!Astro.site) throw new Error('FormShell: `site` is not configured');
+
+const next = url(danke);
+const fields = await Astro.slots.render('default');
+const multipart = /<input\b[^>]*\btype="file"/i.test(fields);
+
+const site = (await getEntry('settings', 'site'))?.data;
+if (!site) throw new Error('FormShell: settings entry "site" is missing');
+
+const formAttrs = live
+  ? {
+      method: 'post',
+      action: endpoint,
+      ...(multipart ? { enctype: 'multipart/form-data' } : {}),
+      'data-next': next,
+      'data-sending': sendingText,
+    }
+  : { method: 'dialog', 'data-success': demoSuccess };
+const nameAttrs = labelledby ? { 'aria-labelledby': labelledby } : label ? { 'aria-label': label } : {};
+---
+
+<form
+  class:list={['form', 'stack', 'stack--m', className]}
+  id={id}
+  data-form
+  data-mode={mode}
+  {...nameAttrs}
+  {...formAttrs}
+>
+  {!live && <p class="form__notice">{demoNotice}</p>}
+  <ErrorSummary id={`${id}-summary`} headingLevel={headingLevel} {...(summaryTitle ? { title: summaryTitle } : {})} />
+  {live && (
+    <ErrorSummary
+      id={`${id}-failed`}
+      kind="failed"
+      headingLevel={headingLevel}
+      {...(failedTitle ? { title: failedTitle } : {})}
+    >
+      <p>{failedText}</p>
+      <ul class="error-summary__contact">
+        <li>
+          Telefon: <a href={`tel:${site.phone.e164}`}>{nbsp(site.phone.display)}</a>
+        </li>
+        <li>
+          E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a>
+        </li>
+      </ul>
+    </ErrorSummary>
+  )}
+  <Fragment set:html={fields} />
+  <Honeypot id={`${id}-hp`} />
+  {live && (
+    <>
+      <input type="hidden" name="_next" value={absolute(next, Astro.site)} />
+      <input type="hidden" name="_lang" value="de" />
+      <input type="hidden" name="_subject" value={subject} />
+    </>
+  )}
+  {privacyNote && (
+    <p class="form__privacy text-small" data-review="needs-review">
+      {privacyNote} <a href={url('datenschutz/')}>{privacyLinkText}</a>.
+    </p>
+  )}
+  <div class="form__actions">
+    <button class="btn" type="submit">
+      {submitLabel}
+    </button>
+  </div>
+  <FormStatus id={`${id}-status`} />
+</form>
+
+<script>
+  import { init } from '../../scripts/forms/enhance';
+  init();
+</script>
