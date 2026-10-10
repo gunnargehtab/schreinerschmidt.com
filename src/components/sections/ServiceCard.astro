@@ -1,0 +1,176 @@
+---
+// Service card (docs/design-system.md §5 Cards). Whole card is one stretched link on the title;
+// the "Mehr erfahren" hint is decorative. Layout (vertical or horizontal) follows the `services`
+// container of ServiceGrid, because the card's own width cannot tell one column from two.
+import Sketch from '../ui/Sketch.astro';
+import { isSketchName } from '../../lib/sketch';
+import { shy } from '../../lib/shy';
+import { url } from '../../lib/url';
+import { vtStyle } from '../../lib/vt';
+import type { Service } from '../../lib/content';
+
+interface Props {
+  service: Service;
+  /** `large` is the /leistungen/ overview: bigger drawing, text beside it on wide grids. */
+  variant?: 'default' | 'large';
+  /** Heading level of the title; pick the one below the section heading. */
+  level?: 2 | 3;
+  /** Draw the sketch on scroll (default) or not at all. */
+  draw?: 'scroll';
+  /** Register the view-transition name `hero-media-<key>`; only one card per service may do so on a page. */
+  vt?: boolean;
+}
+
+const { service, variant = 'default', level = 3, draw = 'scroll', vt = true } = Astro.props;
+const { key, title, teaser } = service.data;
+const Heading = `h${level}` as 'h2' | 'h3';
+const sketch = isSketchName(key) ? key : undefined;
+---
+
+<article class="service-card card" data-variant={variant}>
+  <div
+    class:list={['service-card__media', vt && 'vt-media']}
+    style={vt ? vtStyle(Astro.locals, 'hero-media', key) : undefined}
+  >
+    {sketch && <Sketch name={sketch} draw={draw} size="100%" />}
+  </div>
+  <div class="service-card__body">
+    <Heading class="service-card__title">
+      <a class="service-card__link" href={url(`leistungen/${key}/`)}>
+        {shy(title)}
+      </a>
+    </Heading>
+    <p class="service-card__teaser">{teaser}</p>
+    <span class="service-card__more" aria-hidden="true">
+      Mehr erfahren
+      <svg class="icon" viewBox="0 0 24 24" focusable="false">
+        <path d="M4 12h15M13 6l6 6-6 6"></path>
+      </svg>
+    </span>
+  </div>
+</article>
+
+<style>
+  @layer components {
+    .service-card {
+      container: card / inline-size;
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: var(--space-s);
+      padding: var(--space-m);
+      block-size: 100%;
+      transition: background-color var(--dur-2) var(--ease-out);
+    }
+
+    .service-card__media {
+      inline-size: min(100%, 8rem);
+      aspect-ratio: 1;
+      align-self: start;
+    }
+
+    .service-card[data-variant='large'] .service-card__media {
+      inline-size: min(100%, 12rem);
+    }
+
+    .service-card__body {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2xs);
+      min-inline-size: 0;
+    }
+
+    .service-card__title {
+      font-size: clamp(var(--step-1), 6.5cqi, var(--step-2));
+    }
+
+    .service-card__link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Stretched link: the whole card is the target. */
+    .service-card__link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    .service-card__link:focus-visible {
+      outline: none;
+    }
+
+    .service-card:has(a:focus-visible) {
+      outline: var(--focus-width) solid var(--focus);
+      outline-offset: calc(-1 * var(--focus-width));
+    }
+
+    .service-card__teaser {
+      max-inline-size: var(--measure-card);
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+      line-height: 1.5;
+    }
+
+    .service-card__more {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3xs);
+      margin-block-start: auto;
+      padding-block-start: var(--space-2xs);
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+      color: var(--accent);
+    }
+
+    .service-card__more .icon {
+      inline-size: 1.25rem;
+      block-size: 1.25rem;
+      transition: translate var(--dur-2) var(--ease-out);
+    }
+
+    @media (hover: hover) {
+      .service-card:hover {
+        background-color: var(--accent-tint);
+      }
+
+      .service-card:hover .service-card__more .icon {
+        translate: 0.25rem 0;
+      }
+    }
+
+    /* One column (mobile): horizontal card, drawing left, text right. */
+    @container services (inline-size < 36rem) {
+      .service-card {
+        grid-template-rows: none;
+        grid-template-columns: 5.5rem 1fr;
+        align-items: start;
+        padding: var(--space-s);
+      }
+
+      .service-card__media,
+      .service-card[data-variant='large'] .service-card__media {
+        inline-size: 100%;
+      }
+    }
+
+    /* Large cards (one column up to 64rem, then two): drawing beside the text. */
+    @container services (inline-size >= 36rem) {
+      .service-card[data-variant='large'] {
+        grid-template-rows: none;
+        grid-template-columns: minmax(8rem, 12rem) 1fr;
+        gap: var(--space-m);
+      }
+
+      .service-card[data-variant='large'] .service-card__media {
+        inline-size: 100%;
+      }
+    }
+
+    @media (forced-colors: active) {
+      .service-card:has(a:focus-visible) {
+        outline-color: Highlight;
+      }
+    }
+  }
+</style>

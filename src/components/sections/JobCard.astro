@@ -1,0 +1,147 @@
+---
+// Job posting as a native disclosure (docs/design-system.md §5). All JobCards share name="jobs", so
+// opening one closes the others, with zero JS (Chrome, Safari, Firefox). The summary is the title
+// plus a meta line; the body holds the intro, lists, salary and the application link.
+import { render } from 'astro:content';
+import ReviewMark from '../ui/ReviewMark.astro';
+import type { Job } from '../../lib/content';
+import { formatCurrencyRange } from '../../lib/format';
+import { shy } from '../../lib/shy';
+
+interface Props {
+  job: Job;
+  open?: boolean;
+  /** Target of the application button; the form section on the same page by default. */
+  applyHref?: string;
+  /** Heading level of the title inside the summary. */
+  level?: 2 | 3;
+}
+
+const { job, open = false, applyHref = '#bewerbung', level = 3 } = Astro.props;
+const { title, employmentType, workHours, baseSalary, responsibilities, qualifications, benefits } = job.data;
+const Heading = `h${level}` as 'h2' | 'h3';
+const { Content } = await render(job);
+
+const TYPES: Record<string, string> = {
+  FULL_TIME: 'Vollzeit',
+  PART_TIME: 'Teilzeit',
+  CONTRACTOR: 'Freie Mitarbeit',
+  TEMPORARY: 'befristet',
+  INTERN: 'Praktikum',
+};
+const UNITS: Record<string, string> = { HOUR: 'pro Stunde', MONTH: 'pro Monat', YEAR: 'pro Jahr' };
+const meta = [...employmentType.map((t) => TYPES[t] ?? t), workHours].filter(Boolean).join(' · ');
+const salary = baseSalary
+  ? `${formatCurrencyRange(baseSalary.value.min, baseSalary.value.max)} ${UNITS[baseSalary.value.unit]}`
+  : undefined;
+const lists = [
+  { heading: 'Aufgaben', items: responsibilities },
+  { heading: 'Voraussetzungen', items: qualifications },
+  { heading: 'Das bieten wir', items: benefits },
+].filter((l) => l.items.length > 0);
+---
+
+<details class="job-card" name="jobs" open={open}>
+  <summary class="job-card__summary">
+    <Heading class="job-card__title">{shy(title)}</Heading>
+    {meta && <span class="job-card__meta">{meta}</span>}
+    <svg class="icon job-card__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M6 9l6 6 6-6"></path>
+    </svg>
+  </summary>
+  <div class="job-card__body prose">
+    <Content />
+    {lists.map((list) => (
+      <>
+        <h4>{list.heading}</h4>
+        <ul>
+          {list.items.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </>
+    ))}
+    {salary && baseSalary && (
+      <p>
+        <strong>Gehalt:</strong>{' '}
+        {baseSalary.status === 'confirmed' ? (
+          salary
+        ) : (
+          <ReviewMark status={baseSalary.status} note={baseSalary.note}>
+            {salary}
+          </ReviewMark>
+        )}
+      </p>
+    )}
+    <p>
+      <a class="btn" href={applyHref}>
+        Jetzt bewerben
+      </a>
+    </p>
+  </div>
+</details>
+
+<style>
+  @layer components {
+    .job-card {
+      border-block-end: var(--rule);
+    }
+
+    .job-card:first-of-type {
+      border-block-start: var(--rule);
+    }
+
+    .job-card__summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--space-3xs) var(--space-s);
+      min-block-size: var(--target-min);
+      padding-block: var(--space-s);
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .job-card__summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .job-card__title {
+      grid-column: 1;
+      font-size: var(--step-1);
+    }
+
+    .job-card__meta {
+      grid-column: 1;
+      color: var(--ink-muted);
+      font-size: var(--step--1);
+    }
+
+    .job-card__icon {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+
+    .job-card__summary:hover .job-card__title {
+      color: var(--accent);
+    }
+
+    .job-card__icon {
+      transition: rotate var(--dur-2) var(--ease-out);
+    }
+
+    .job-card[open] .job-card__icon {
+      rotate: 180deg;
+    }
+
+    .job-card__body {
+      padding-block-end: var(--space-m);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .job-card__icon {
+        transition: none;
+      }
+    }
+  }
+</style>

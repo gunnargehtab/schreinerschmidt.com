@@ -1,0 +1,161 @@
+---
+// Customer quotes in a hairline grid, not a carousel (docs/design-system.md §0.7, §5 Testimonials).
+// Production renders only quotes with permission "erteilt"; the demo renders all and marks the
+// unconfirmed ones (data-review + ReviewMark) for the owner review view.
+import { PUBLIC_DEMO } from 'astro:env/client';
+import ReviewMark from '../ui/ReviewMark.astro';
+import { getProjectsByRefs, getSite, type Testimonial } from '../../lib/content';
+import { visibleTestimonials } from '../../lib/content-select';
+import { formatDate, formatNumber } from '../../lib/format';
+
+interface Props {
+  items: readonly Testimonial[];
+  /** Rating line above the quotes ("5,0 … aus 115 Google-Bewertungen"). */
+  rating?: boolean;
+  label?: string;
+}
+
+const { items, rating = true, label = 'Kundenstimmen' } = Astro.props;
+const shown = visibleTestimonials(items, PUBLIC_DEMO);
+const site = await getSite();
+const { value, count, snapshotDate, profileUrl } = site.rating;
+const ratingStatus = site.review.status === 'confirmed' ? undefined : site.review.status;
+// Link to the Google profile only once the owner confirmed the URL.
+const profileHref = profileUrl?.status === 'confirmed' ? profileUrl.value : undefined;
+const countText = `aus ${count} Google-Bewertungen`;
+const standText = `(Stand ${formatDate(snapshotDate, 'short')})`;
+const quote = (t: Testimonial) => `„${t.data.quote}“`;
+
+const projects = await getProjectsByRefs(shown.flatMap((t) => (t.data.project ? [t.data.project] : [])));
+const projectTitle = (t: Testimonial) => projects.find((p) => p.id === t.data.project?.id)?.data.title;
+const pending = (t: Testimonial) => t.data.permission !== 'erteilt' || t.data.review.status !== 'confirmed';
+---
+
+{shown.length > 0 && (
+  <div class="testimonials">
+    {rating && (
+      <p class="testimonials__rating">
+        {ratingStatus ? (
+          <ReviewMark status={ratingStatus}>
+            <strong class="testimonials__value">{formatNumber(value, { minimumFractionDigits: 1 })}</strong>
+          </ReviewMark>
+        ) : (
+          <strong class="testimonials__value">{formatNumber(value, { minimumFractionDigits: 1 })}</strong>
+        )}
+        <span class="testimonials__stars" aria-hidden="true">
+          {Array.from({ length: 5 }, () => (
+            <svg class="testimonials__star" viewBox="0 0 24 24" focusable="false">
+              <path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.3 1.3-6.6L2.5 9.5l6.6-.8z" />
+            </svg>
+          ))}
+        </span>
+        <span class="visually-hidden">von 5 Sternen</span>
+        <!-- prettier-ignore -->
+        <span>{profileHref ? <a href={profileHref} rel="noopener">{countText}</a> : countText} {standText}</span>
+      </p>
+    )}
+    <ul class="testimonials__list list-plain hairline-grid" aria-label={label}>
+      {shown.map((t) => (
+        <li class="testimonials__item">
+          <figure class="testimonials__figure" data-review={pending(t) ? t.data.review.status : undefined}>
+            <blockquote class="testimonials__quote">
+              <p>
+                {pending(t) ? (
+                  <ReviewMark status={t.data.review.status === 'placeholder' ? 'placeholder' : 'needs-review'}>
+                    {quote(t)}
+                  </ReviewMark>
+                ) : (
+                  quote(t)
+                )}
+              </p>
+            </blockquote>
+            <figcaption>
+              <cite class="testimonials__author">{t.data.author}</cite>
+              {projectTitle(t) && <>, {projectTitle(t)}</>}
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
+
+<style>
+  @layer components {
+    .testimonials {
+      container: testimonials / inline-size;
+    }
+
+    .testimonials__rating {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2xs) var(--space-xs);
+      margin-block-end: var(--space-m);
+      font-size: var(--step--1);
+      color: var(--ink-muted);
+    }
+
+    .testimonials__value {
+      font-size: var(--step-2);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+    }
+
+    .testimonials__stars {
+      display: inline-flex;
+      gap: 2px;
+      color: var(--accent);
+    }
+
+    .testimonials__star {
+      inline-size: 1.125rem;
+      block-size: 1.125rem;
+      fill: currentColor;
+    }
+
+    .testimonials__list {
+      --cols: 1;
+      display: grid;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    }
+
+    .testimonials__item {
+      display: grid;
+      grid-row: span 2;
+      grid-template-rows: subgrid;
+      min-inline-size: 0;
+    }
+
+    .testimonials__figure {
+      display: grid;
+      grid-row: span 2;
+      grid-template-rows: subgrid;
+      gap: var(--space-s);
+      padding: var(--space-m);
+      margin: 0;
+    }
+
+    .testimonials__quote {
+      font-size: var(--step-0);
+      line-height: 1.5;
+      hyphens: auto;
+      hyphenate-limit-chars: 8 3 3;
+    }
+
+    .testimonials__author {
+      font-style: normal;
+      font-family: var(--font-sans);
+      font-size: var(--step--1);
+      font-weight: var(--weight-ui);
+      color: var(--ink);
+    }
+
+    @container testimonials (inline-size >= 52rem) {
+      .testimonials__list {
+        --cols: 3;
+      }
+    }
+  }
+</style>
