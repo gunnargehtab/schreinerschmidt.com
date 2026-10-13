@@ -863,6 +863,7 @@ None of these block the demo; placeholders are flagged.
 8. Configurator: furniture types, woods, finishes, handles, maximum part sizes, prices (later).
 9. New photos and a vector logo.
 10. Production host, domain and DNS; form.taxi account and DPA (AVV).
+11. AI assistant for enquiries and chat: proposed in `docs/assistant.md` (not part of this plan until approved).
 
 ---
 
