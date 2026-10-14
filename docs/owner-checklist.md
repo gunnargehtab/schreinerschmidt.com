@@ -58,5 +58,12 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Wording of the budget ranges. Pricing rules (later; prices stay off in the demo).
 - [ ] Shelf span values (E-modulus table in `docs/configurator.md` §4.2).
 
+## AI assistant (proposal, `docs/assistant.md`)
+- [ ] Does he want AI help with enquiries at all (triage note and reply draft by email; he always sends the reply himself)?
+- [ ] Later: a chat widget on the site that answers from confirmed site content only?
+- [ ] Which route for Claude: Claude API (Anthropic, US) or Claude on Google Vertex AI (EU)? Data processing agreement (AVV) for the chosen one.
+- [ ] May applications (CVs) be processed by the AI step? Default: no.
+- [ ] Monthly spending limit he is comfortable with (estimate: about 10 € a month).
+
 ## Production
 - [ ] Hosting and domain (EU host recommended), DNS access, Search Console.
