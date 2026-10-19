@@ -14,6 +14,7 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Vector logo, if one exists (sign makers usually have it).
 - [ ] Favicon and app icons are a placeholder (a drawn blocky "S", `scripts/make-icons.mjs`) until a vector logo exists. Replace them with the real mark, or approve the placeholder.
 - [ ] New photos: windows, terraces, Altbau, workshop, team.
+- [ ] Optional workshop clip for the home hero (`docs/design-system.md` §5 „Video hero“): about 10 s of his own hands at work (planing, oiling oak, a dovetail), landscape, phone on a tripod, daylight, no faces. Stock footage is excluded. Without the clip the photo hero stays as it is.
 
 ## Legal and company details (Impressum)
 - [ ] Legal form: Einzelunternehmen or e.K. (with register court and HRA number).
@@ -40,7 +41,7 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Treppen scope: new stairs, treads on concrete, handrails, restoration?
 - [ ] Terrace wood species (Lärche, Douglasie, Robinie?). Steel bases: made in-house or by a partner?
 - [ ] Are „Kein Anschreiben nötig“ (applications) and „wir rufen zurück“ (contact) acceptable promises?
-- [ ] Home h1: keep „Ihr Experte für umweltbewusstes Holzhandwerk“ (green claim, legal review), or switch to the alternative „Ihr Schreinermeister für Holz nach Maß in Mannheim“?
+- [ ] Home h1: the demo now shows „Ihr Schreinermeister für Holz nach Maß in Mannheim“ (no green claim, decided 2026-10-19). Keep it, or restore the old slogan „Ihr Experte für umweltbewusstes Holzhandwerk“ after the legal review (kept as `legacyH1` in `src/content/pages/home.yaml`)?
 - [ ] form.taxi: legal entity and address, AVV retention period. Is he exempt from appointing a data protection officer (headcount)?
 
 ## Sustainability claims (UWG / EU 2024/825, since 27.09.2026)

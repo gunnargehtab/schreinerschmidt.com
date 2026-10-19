@@ -60,7 +60,7 @@ Red Hat Display is the main font. Corners are square and lines are 1 px hairline
 - Deployed as a noindexed demo for the owner; moving to the real domain later needs no code changes.
 
 ## Goals and success criteria
-- **Page weight:** homepage first load **≈ 150–250 KB**, about 600 KB after a full scroll (today 13–14 MB).
+- **Page weight:** homepage first load **≈ 150–250 KB**, about 600 KB after a full scroll (today 13–14 MB). With the optional workshop clip (design-system §5 „Video hero“, proposal, needs the owner's footage): desktop full scroll ≤ 1.5 MB, one encode ≤ 900 KB, loaded only after `load` and never on mobile, reduced motion or save-data; first load and mobile unchanged.
 - **Lighthouse (mobile, audit build):**
   - Performance ≥ 95 (configurator ≥ 85), Accessibility 100, Best Practices ≥ 95, SEO ≥ 95.
   - LCP ≤ 2.0 s, CLS ≤ 0.02, TBT ≤ 100 ms.
@@ -458,7 +458,7 @@ No framework; custom elements and event delegation.
 ### Page compositions
 - **Home:**
   1. Demo banner and header.
-  2. Hero: "Meisterbetrieb in Mannheim · seit 2010" with the h1 "Ihr Experte für *umwelt­bewusstes* Holzhandwerk"; CTAs "In 3 Minuten zum Angebot" and "Referenzen ansehen"; rating badge; framed panorama that opens to full-bleed on scroll, with Masslinien drawing over it.
+  2. Hero: "Meisterbetrieb in Mannheim · seit 2010" with the h1 "Ihr Schreinermeister für *Holz nach Maß* in Mannheim" (the old green-claim slogan is kept as `legacyH1` until the owner decides); CTAs "In 3 Minuten zum Angebot" and "Referenzen ansehen"; rating badge; framed panorama that opens to full-bleed on scroll, with Masslinien drawing over it.
   3. Stats (counters).
   4. 7 service cards in a hairline grid; their sketches draw on view.
   5. "Vom Entwurf zum Werkstück" (sketch → photo).
@@ -864,6 +864,7 @@ None of these block the demo; placeholders are flagged.
 9. New photos and a vector logo.
 10. Production host, domain and DNS; form.taxi account and DPA (AVV).
 11. AI assistant for enquiries and chat: proposed in `docs/assistant.md` (not part of this plan until approved).
+12. Workshop clip for the home hero: does he want to shoot one (about 10 s, hands at work, no faces)? Spec and budget in `docs/design-system.md` §5 „Video hero“; not built until the footage exists.
 
 ---
 

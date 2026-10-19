@@ -30,7 +30,7 @@ interface Props {
   titleBefore?: string;
   titleAccent?: string;
   titleAfter?: string;
-  /** Review flag on the accent word (green claim, docs/owner-checklist.md). */
+  /** Review flag on the accent word (the h1 wording is the owner's decision, docs/owner-checklist.md). */
   accentStatus?: 'confirmed' | 'needs-review' | 'placeholder';
   lead?: string;
   primary?: Cta;
@@ -52,11 +52,11 @@ const { owner, address, areaServed } = settings.data;
 
 const {
   eyebrow = `Meisterbetrieb in ${address.city} · seit ${owner.masterSince}`,
-  titleBefore = 'Ihr Experte für',
-  titleAccent = 'umweltbewusstes',
-  titleAfter = 'Holzhandwerk',
+  titleBefore = 'Ihr Schreinermeister für',
+  titleAccent = 'Holz nach Maß',
+  titleAfter = `in ${address.city}`,
   accentStatus = 'needs-review',
-  lead = `Möbel nach Maß, Böden, Treppen, Fenster und Türen: geplant, gefertigt und montiert von der Schreinerei Schmidt in ${address.city}.`,
+  lead = `Möbel, Böden, Treppen, Türen und Fenster: mit Ihnen geplant, in unserer Werkstatt gefertigt und von uns montiert. Seit ${owner.masterSince} als Meisterbetrieb in ${address.city}.`,
   primary = { label: 'In 3 Minuten zum Angebot', href: url('konfigurator/') },
   secondary = { label: 'Referenzen ansehen', href: url('referenzen/') },
   alt = 'Geöffnete raumhohe Schrankwand mit Eichenregalen, Schubladen und eingebautem Fernseher',
