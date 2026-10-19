@@ -9,7 +9,8 @@ seo:
 hero:
   eyebrow: 'Meisterbetrieb in Mannheim · seit 2010'
   h1Before: 'Ihr Schreinermeister für'
-  h1Em: 'Holz nach Maß'
+  # U+00A0 keeps the accent on one line: 'Ihr Schreinermeister / für Holz nach Maß / in Mannheim'.
+  h1Em: 'Holz nach Maß'
   h1After: 'in Mannheim'
   review: needs-review
   note: 'Neuer Vorschlag ohne Umweltaussage (Entscheidung 2026-10-19, docs/owner-checklist.md). Belegt durch Meisterbrief 2010 und Standort. Der Slogan der Altseite steht unter legacyH1 bereit, falls der Inhaber ihn nach der Rechtsprüfung behalten will.'
