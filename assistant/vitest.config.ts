@@ -2,6 +2,9 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // The shared src/ files would otherwise pick up the root tsconfig, which extends Astro's and fails
+  // when only assistant/ is installed (CI).
+  tsconfig: './tsconfig.json',
   test: {
     include: ['test/**/*.test.ts'],
     environment: 'node',
