@@ -9,3 +9,5 @@ lighthouse-reports
 docs
 CLAUDE.md
 .claude
+assistant/data
+assistant/dist

@@ -1,0 +1,47 @@
+// Wires the backend from a Config: store, mailer, job runner and rate limiter. server.ts and the
+// tests use the same wiring; tests override single parts (clock, transports, steps, logger).
+import type { AppDeps } from './app';
+import type { Config } from './config';
+import { JobRunner, type StepRegistry } from './jobs';
+import { createLogger, type Logger } from './log';
+import { createMailer, type Mailer, type TransportFactory } from './mail/index';
+import { RateLimiter, type RateLimitOptions } from './ratelimit';
+import { ANFRAGE_MAIL, anfrageMail } from './steps/anfrage-mail';
+import { preis } from './steps/preis';
+import { openSqliteStore, type Store } from './store';
+import { systemClock, type Clock } from './types';
+
+/** Every step the runner knows; the pipeline order lives in jobs.ts (PIPELINE). */
+export const STEPS: StepRegistry = { [ANFRAGE_MAIL]: anfrageMail, preis };
+
+export interface ServiceOverrides {
+  store?: Store;
+  mailer?: Mailer;
+  clock?: Clock;
+  log?: Logger;
+  transports?: TransportFactory;
+  steps?: StepRegistry;
+  pipeline?: readonly string[];
+  /** Let the runner schedule itself (server: true; tests: false and runDue()). */
+  auto?: boolean;
+  rateLimit?: RateLimitOptions;
+}
+
+export function createServices(config: Config, o: ServiceOverrides = {}): AppDeps {
+  const clock = o.clock ?? systemClock;
+  const log = o.log ?? createLogger(undefined, () => clock.now());
+  const store = o.store ?? openSqliteStore(config.dataDir);
+  const mailer =
+    o.mailer ?? createMailer(config, { ...(o.transports ? { transports: o.transports } : {}), now: () => clock.now() });
+  const runner = new JobRunner({
+    store,
+    clock,
+    log,
+    mailer,
+    config,
+    steps: o.steps ?? STEPS,
+    ...(o.pipeline ? { pipeline: o.pipeline } : {}),
+    auto: o.auto ?? true,
+  });
+  return { config, store, mailer, clock, log, runner, limiter: new RateLimiter(clock, o.rateLimit) };
+}
