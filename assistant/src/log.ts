@@ -25,6 +25,13 @@ export interface LogFields {
   redirected?: boolean;
   /** Config flags at start (describeConfig()). */
   config?: Record<string, string | number | boolean>;
+  /** Claude calls (claude/client.ts): model id, stop_reason and token counts; never content. */
+  model?: string;
+  stop?: string;
+  tokensIn?: number;
+  tokensOut?: number;
+  cacheRead?: number;
+  cacheWrite?: number;
 }
 
 export type Level = 'info' | 'warn' | 'error';

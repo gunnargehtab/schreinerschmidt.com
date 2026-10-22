@@ -1,6 +1,7 @@
 name: Assistant backend
 # Type check, tests and bundle of the assistant/ package (docs/angebot.md §2, §11). It imports the
-# shared configurator code from src/, so changes there run it too. Never deploys.
+# shared configurator code from src/ and generates its shop brief from src/content, so changes
+# there run it too. Never deploys.
 on:
   push:
     branches: [main]
@@ -8,12 +9,14 @@ on:
       - 'assistant/**'
       - 'src/lib/configurator/**'
       - 'src/scripts/configurator/preview/params.ts'
+      - 'src/content/**'
       - '.github/workflows/assistant.yml'
   pull_request:
     paths:
       - 'assistant/**'
       - 'src/lib/configurator/**'
       - 'src/scripts/configurator/preview/params.ts'
+      - 'src/content/**'
       - '.github/workflows/assistant.yml'
   workflow_dispatch:
 permissions:

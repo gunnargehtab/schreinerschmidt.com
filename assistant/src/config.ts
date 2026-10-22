@@ -1,8 +1,9 @@
 // Backend configuration (docs/angebot.md §10, §8.3). Parsed once from the environment with zod.
 // Development gets safe defaults (SEND_MODE=dry-run, DATA_DIR=./data, .invalid addresses); in
 // NODE_ENV=production, and whenever SEND_MODE is `allowlist` or `live`, every required value must
-// be set, or the process fails at start. Errors name
-// the variables, never their values, and nothing here is ever logged except `describeConfig()`.
+// be set, or the process fails at start; allowlist and live also need SMTP and ANTHROPIC_API_KEY.
+// Errors name the variables, never their values, and nothing here is ever logged except
+// `describeConfig()`.
 import { resolve } from 'node:path';
 import { z } from 'zod';
 
@@ -39,7 +40,10 @@ export interface Config {
    * but only when the socket peer is loopback or a private address (the proxy).
    */
   trustProxy: boolean;
+  /** Claude (7c). Required whenever SEND_MODE is allowlist or live; without it the AI step is skipped. */
   anthropicApiKey: string | null;
+  /** Optional monthly cap of the estimated Claude spend in USD; null: no cap (claude/kosten.ts). */
+  claudeMonthlyLimitUsd: number | null;
   ownerPin: string | null;
 }
 
@@ -78,6 +82,7 @@ const Env = z.object({
   TOKEN_TTL_DAYS: opt(z.coerce.number().int().min(1).max(90)),
   TRUST_PROXY: opt(z.enum(['0', '1', 'true', 'false'])),
   ANTHROPIC_API_KEY: opt(z.string().max(512)),
+  CLAUDE_MONTHLY_LIMIT_USD: opt(z.coerce.number().positive().max(100_000)),
 });
 
 /**
@@ -92,8 +97,8 @@ const REQUIRED_IN_PRODUCTION = [
   'SEND_MODE',
   'DATA_DIR',
 ] as const;
-/** Real SMTP (allowlist and live). */
-const REQUIRED_FOR_SMTP = ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'] as const;
+/** Real mail (allowlist and live): SMTP, and Claude, since a pilot without the AI step is no pilot. */
+const REQUIRED_FOR_REAL_MAIL = ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'ANTHROPIC_API_KEY'] as const;
 
 /**
  * Parses the environment. Throws ConfigError listing the offending variable names (never values).
@@ -112,7 +117,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (nodeEnv === 'production' || sendMode !== 'dry-run') {
     for (const k of REQUIRED_IN_PRODUCTION) if (e[k] === undefined) missing.push(k);
   }
-  if (sendMode !== 'dry-run') for (const k of REQUIRED_FOR_SMTP) if (e[k] === undefined) missing.push(k);
+  if (sendMode !== 'dry-run') for (const k of REQUIRED_FOR_REAL_MAIL) if (e[k] === undefined) missing.push(k);
   const allowlist = (e.SEND_ALLOWLIST ?? '')
     .split(',')
     .map((s) => s.trim().toLowerCase())
@@ -140,6 +145,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     tokenTtlDays: e.TOKEN_TTL_DAYS ?? 14,
     trustProxy: e.TRUST_PROXY === '1' || e.TRUST_PROXY === 'true',
     anthropicApiKey: e.ANTHROPIC_API_KEY ?? null,
+    claudeMonthlyLimitUsd: e.CLAUDE_MONTHLY_LIMIT_USD ?? null,
     ownerPin: e.OWNER_PIN ?? null,
   };
 }
@@ -152,6 +158,7 @@ export const describeConfig = (c: Config) => ({
   smtp: c.smtp !== null,
   allowlist: c.sendAllowlist.length,
   claude: c.anthropicApiKey !== null,
+  claudeLimit: c.claudeMonthlyLimitUsd !== null,
   pin: c.ownerPin !== null,
   trustProxy: c.trustProxy,
 });

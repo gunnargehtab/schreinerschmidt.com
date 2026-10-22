@@ -4,8 +4,10 @@
 // after 30 s and 2 min); a step may bring its own, longer schedule (the enquiry mail). While it
 // runs by itself, the runner never sleeps longer than MAX_SLEEP_MS, so a `pending` row written by
 // another code path (a late inline mail) is picked up without an external trigger. A pipeline step that fails for good moves the case to `bewertung_fehlgeschlagen` with
-// a content-free event; the steps run in PIPELINE order (`preis` now; 7c adds `bewertung`, 7d
-// `tldr`). Side jobs (the enquiry-mail retry) are registered steps outside the pipeline.
+// a content-free event; the steps run in PIPELINE order (`preis`, then `bewertung` (7c); 7d adds
+// `tldr`). Side jobs (the enquiry-mail retry) are registered steps outside the pipeline. An error
+// with `permanent: true` (PermanentStepError, a non-retryable KiFehler) skips the remaining attempts.
+import type { ClaudeClient } from './claude/client';
 import type { Config } from './config';
 import type { Logger } from './log';
 import { errorCode } from './log';
@@ -33,7 +35,21 @@ export interface StepContext {
   log: Logger;
   mailer: Mailer;
   config: Config;
+  /** Claude, or null without ANTHROPIC_API_KEY (the `bewertung` step then runs without AI). */
+  claude: ClaudeClient | null;
 }
+
+/** A failure that another attempt cannot fix (e.g. a 400 from the API): the step fails at once. */
+export class PermanentStepError extends Error {
+  readonly permanent = true;
+  constructor(readonly code: string) {
+    super(code);
+    this.name = 'PermanentStepError';
+  }
+}
+
+/** True for errors that mark themselves permanent (PermanentStepError, a non-retryable KiFehler). */
+export const isPermanent = (e: unknown): boolean => (e as { permanent?: unknown } | null)?.permanent === true;
 
 export interface StepDef {
   run(ctx: StepContext): Promise<void>;
@@ -46,7 +62,7 @@ export interface StepDef {
 export type StepRegistry = Readonly<Record<string, StepDef>>;
 
 /** Pipeline steps in order; each one is enqueued when the previous one is done. */
-export const PIPELINE: readonly string[] = ['preis'];
+export const PIPELINE: readonly string[] = ['preis', 'bewertung'];
 
 export interface RunnerDeps {
   store: Store;
@@ -55,6 +71,8 @@ export interface RunnerDeps {
   mailer: Mailer;
   config: Config;
   steps: StepRegistry;
+  /** Claude for the `bewertung` step; null or absent: no AI. */
+  claude?: ClaudeClient | null;
   pipeline?: readonly string[];
   /** Schedule runs by itself (server). Tests turn it off and call runDue(). */
   auto?: boolean;
@@ -142,7 +160,7 @@ export class JobRunner {
       log.error('job_failed', { fall: job.fallId, step: job.step, code: fall ? 'unknown_step' : 'no_case' });
       return true;
     }
-    const ctx: StepContext = { ...this.d, fall };
+    const ctx: StepContext = { ...this.d, claude: this.d.claude ?? null, fall };
     const t0 = clock.now();
     let failure: unknown = null;
     try {
@@ -163,7 +181,7 @@ export class JobRunner {
       }
     } else {
       const code = errorCode(failure);
-      const delay = backoff(attempt, step.backoff);
+      const delay = isPermanent(failure) ? null : backoff(attempt, step.backoff);
       if (delay !== null) {
         await store.retry(job.fallId, job.step, clock.now() + delay, code, clock.now());
         log.warn('job_retry', { fall: fall.id, step: job.step, attempt, code, ms: clock.now() - t0 });

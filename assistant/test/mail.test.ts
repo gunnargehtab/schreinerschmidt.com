@@ -16,7 +16,7 @@ afterEach(async () => {
   cleanupDirs();
 });
 
-const SMTP_ENV = { SMTP_HOST: 'smtp.example.test', SMTP_USER: 'u', SMTP_PASS: 'p' };
+const SMTP_ENV = { SMTP_HOST: 'smtp.example.test', SMTP_USER: 'u', SMTP_PASS: 'p', ANTHROPIC_API_KEY: 'k' };
 
 /** A fake "SMTP" transport (nodemailer's JSON transport) with a spy on sendMail. */
 function fakeSmtp() {

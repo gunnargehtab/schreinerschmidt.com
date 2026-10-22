@@ -1,18 +1,20 @@
 // Wires the backend from a Config: store, mailer, job runner and rate limiter. server.ts and the
 // tests use the same wiring; tests override single parts (clock, transports, steps, logger).
 import type { AppDeps } from './app';
+import { createSdkClient, type ClaudeClient } from './claude/client';
 import type { Config } from './config';
 import { JobRunner, type StepRegistry } from './jobs';
 import { createLogger, type Logger } from './log';
 import { createMailer, type Mailer, type TransportFactory } from './mail/index';
 import { RateLimiter, type RateLimitOptions } from './ratelimit';
 import { ANFRAGE_MAIL, anfrageMail } from './steps/anfrage-mail';
+import { BEWERTUNG, bewertung } from './steps/bewertung';
 import { preis } from './steps/preis';
 import { openSqliteStore, type Store } from './store';
 import { systemClock, type Clock } from './types';
 
 /** Every step the runner knows; the pipeline order lives in jobs.ts (PIPELINE). */
-export const STEPS: StepRegistry = { [ANFRAGE_MAIL]: anfrageMail, preis };
+export const STEPS: StepRegistry = { [ANFRAGE_MAIL]: anfrageMail, preis, [BEWERTUNG]: bewertung };
 
 export interface ServiceOverrides {
   store?: Store;
@@ -21,6 +23,8 @@ export interface ServiceOverrides {
   log?: Logger;
   transports?: TransportFactory;
   steps?: StepRegistry;
+  /** Claude client; `null` forces the no-AI path. Default: the SDK client when a key is set. */
+  claude?: ClaudeClient | null;
   pipeline?: readonly string[];
   /** Let the runner schedule itself (server: true; tests: false and runDue()). */
   auto?: boolean;
@@ -33,6 +37,12 @@ export function createServices(config: Config, o: ServiceOverrides = {}): AppDep
   const store = o.store ?? openSqliteStore(config.dataDir);
   const mailer =
     o.mailer ?? createMailer(config, { ...(o.transports ? { transports: o.transports } : {}), now: () => clock.now() });
+  const claude =
+    o.claude !== undefined
+      ? o.claude
+      : config.anthropicApiKey
+        ? createSdkClient({ apiKey: config.anthropicApiKey, log, now: () => clock.now() })
+        : null;
   const runner = new JobRunner({
     store,
     clock,
@@ -40,6 +50,7 @@ export function createServices(config: Config, o: ServiceOverrides = {}): AppDep
     mailer,
     config,
     steps: o.steps ?? STEPS,
+    claude,
     ...(o.pipeline ? { pipeline: o.pipeline } : {}),
     auto: o.auto ?? true,
   });
