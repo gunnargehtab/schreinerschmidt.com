@@ -10,6 +10,7 @@ coverage
 *.log
 .env
 .env.*
+!assistant/.env.example
 Thumbs.db
 .DS_Store
 .claude/worktrees/
@@ -20,3 +21,7 @@ Thumbs.db
 # Raw texture downloads (provenance in textures-src/SOURCES.md)
 textures-src/*
 !textures-src/SOURCES.md
+
+# Assistant backend: SQLite data, dry-run outbox and the production bundle
+assistant/data/
+assistant/dist/

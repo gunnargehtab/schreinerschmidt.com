@@ -55,6 +55,14 @@ Konfigurator ──POST /anfrage──► store ──► 1. enquiry mail to own
 
 **Mail scanners follow links**, so a `GET` never changes state. Every action is a `POST` from the review page carrying the token (§7).
 
+### 2.2 `POST /anfrage` details (fixed in 7b)
+- **Guards in order:** `Origin` must equal `SITE_ORIGIN` (403; a missing Origin counts as wrong), `multipart/form-data` only (415), 10 per hour per salted IP hash (429), body ≤ 70 MB (413). The allowed origin gets `Access-Control-Allow-Origin` (the site's `fetch` is a simple cross-origin request and must read the JSON). The time-trap stays client-side: no timing field travels.
+- **Which path:** a post with `typ` or `anfrage_json` is a configurator post (a no-JS wizard post has `typ` but no `anfrage_json`, `anfrage_id` or `zusammenfassung`: the server makes the id and a „Label: Wert“ summary from `labels.ts`, and has no idempotency). Everything else is a contact or application post: mail only, no case.
+- **Validation:** unknown names, repeated single fields, enum values outside the list, numbers outside `fieldRange`, missing visible required fields (`html` and `js`), lengths and the PLZ/Tel/E-Mail patterns answer 422. Fields that are not visible per `conditions.ts` are dropped, not validated (the no-JS form submits them). `error` is the site's reason key (`rejected` for 4xx, `network` for 5xx, as `reasonOf()`); `error_msg` is English and never echoes input; the precise code goes to the log.
+- **Files:** `fotos[]` ≤ 6 × 10 MB (JPEG/PNG/WebP), `zeichnung` ≤ 2 MB (SVG, always as attachment), `ansicht_3d` ≤ 5 MB (WebP/PNG), `lebenslauf` ≤ 10 MB (PDF/Word/image). Types are checked by magic bytes and names sanitized; a file of a wrong type is dropped and the mail says so, an oversize file answers 413, more than 6 photos 422.
+- **Mail failure:** the case and its `anfrage_mail` job are stored first, so a failed inline mail still answers success; the job retries after 30 s and 2 min from the stored payload, without the attachments (the mail names them). A client retry with the same `anfrage_id` sends the owed mail with its attachments instead. If the store fails, the mail is still sent (no case); only if both fail does the client get a 5xx. Contact posts store nothing, so a failed mail answers 502. The inline mail waits at most 12 s, inside the client's 20 s timeout.
+- **Jobs:** three attempts per step (now, + 30 s, + 2 min); rows left `running` by a crash go back to `pending` at start.
+
 ## 3. Lifecycle
 ```ts
 type Status =
@@ -177,6 +185,7 @@ interface Kalkulation {
 
 ## 5. Storage
 SQLite `assistant/data/angebote.sqlite` behind a small `Store` interface (`get`, `put`, `transition`, `due`). One table `faelle` (id, status, created_at, decided_at, payload JSON, kalkulation JSON, bewertung JSON, angebot JSON, token hash, version) and one `ereignisse` log (id, fall_id, at, kind; **no content**).
+- 7b adds to `faelle` the client's `anfrage_id` (unique, the idempotency key), `kurz` (the Vorgangsnummer) and the enquiry mail's `message_id` (threading); to `ereignisse` a machine `code` (e.g. an SMTP error code, never text); and a `jobs` table (fall_id, step, status, attempts, next_at, last_error_code). The payload keeps the validated values and of `anfrage_json` only `source`, `moebel.derived`/`beschreibung` and the ids; the rest is re-derived. Migrations run by `PRAGMA user_version`.
 - **Retention (placeholder, `needs-review`):** content of `abgesagt`/`abgelaufen` cases is deleted after 90 days, of `gesendet`/`kontakt`/`manuell` cases after 12 months; the row keeps only id, dates, status and range. A daily job enforces it.
 - Attachments (photos, drawing) are not stored; they travel only in the enquiry email.
 
@@ -269,6 +278,7 @@ All customer mails come **from the shop's address** (`MAIL_FROM`, `Reply-To` the
 
 ## 9. Site changes
 - **Endpoint:** the configurator posts to `PUBLIC_ASSISTANT_ENDPOINT` + `/anfrage` (`docs/assistant.md` §3, CSP origin added only when set). Demo builds unchanged.
+- **Multipart everywhere:** the backend accepts `multipart/form-data` only, so every form that posts to it needs `enctype="multipart/form-data"`, also without a file input (today `FormShell` sets it only with one; a no-JS contact post would get 415).
 - **Success view, „Was passiert jetzt?“** (copywriter, `needs-review`), replacing steps 2–4 of `docs/configurator.md` §5 in live mode only:
   1. Heute – Anfrage eingegangen (Vorgangsnummer).
   2. Innerhalb von 2 Werktagen – Ihr Preisrahmen per E-Mail, persönlich geprüft von Schreinermeister Ulf Schmidt (oder unsere Rückfragen).
@@ -281,6 +291,7 @@ All customer mails come **from the shop's address** (`MAIL_FROM`, `Reply-To` the
 
 ## 10. Configuration (env, backend only)
 `ANTHROPIC_API_KEY`, `PUBLIC_BASE_URL` (backend origin, for links), `SITE_ORIGIN` (allowed `Origin`), `OWNER_EMAIL`, `MAIL_FROM`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`, `SEND_MODE`, `SEND_ALLOWLIST`, `OWNER_PIN` (optional), `DATA_DIR`, `TOKEN_TTL_DAYS=14`. Secrets only in the host's secret store or a local, git-ignored `assistant/.env`; `assistant/.env.example` lists the names with no values.
+- Added in 7b: `HOST`/`PORT` (default `127.0.0.1:8787`), `SITE_BASE` (the site's base path, default `/`; the redirect fallback), `TRUST_PROXY` (rate limit on the last `X-Forwarded-For` hop behind a proxy). In `NODE_ENV=production` the start fails unless `PUBLIC_BASE_URL`, `SITE_ORIGIN`, `OWNER_EMAIL`, `MAIL_FROM`, `SEND_MODE` and `DATA_DIR` are set (a silent `dry-run` would lose mail); `allowlist` and `live` also need `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` (port 465 implicit TLS, else STARTTLS required).
 
 ## 11. Tests and acceptance
 **Pricing (site repo, Vitest `unit`, ≥ 95 % statement coverage of `pricing/`):**

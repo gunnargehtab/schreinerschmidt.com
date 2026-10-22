@@ -1,0 +1,47 @@
+name: Assistant backend
+# Type check, tests and bundle of the assistant/ package (docs/angebot.md §2, §11). It imports the
+# shared configurator code from src/, so changes there run it too. Never deploys.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assistant/**'
+      - 'src/lib/configurator/**'
+      - 'src/scripts/configurator/preview/params.ts'
+      - '.github/workflows/assistant.yml'
+  pull_request:
+    paths:
+      - 'assistant/**'
+      - 'src/lib/configurator/**'
+      - 'src/scripts/configurator/preview/params.ts'
+      - '.github/workflows/assistant.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: 'assistant-${{ github.ref }}'
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: assistant
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: assistant/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Type check
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
