@@ -96,6 +96,25 @@ All prices **net in €**, the customer sees **gross incl. 19 % MwSt.** Rates li
 
 `moebel_holz=beratung` prices as eiche with the ± 25 % width. `moebel_art=andere` (free text) goes to §4.4.
 
+**Bett** (`moebel_art=bett`, no generator; `src/lib/configurator/pricing/moebel.ts`, table `BETT`). Net per bed in eiche, material and Werkstatt included:
+
+| `bett_liegeflaeche` | 90x200 | 140x200 | 160x200 | 180x200 | 200x200 | 180x220 | 200x220 | sondermass |
+|---|---|---|---|---|---|---|---|---|
+| € net | 1 350 | 1 750 | 1 900 | 2 050 | 2 250 | 2 200 | 2 400 | 2 100 (± 25 %, assumption line) |
+
+Species factor on the base price: eiche 1.0 · esche 0.95 · kernbuche 0.9 · kirsche 1.2 · nussbaum 1.35 (`beratung` = eiche, ± 25 %). `bett_hoehe=komfort` + 8 %, `moebel_oberflaeche=lack-matt` + 10 %; both are separate positions computed on the species-adjusted base price (additive, not compounded). Montage 2 h, 1 trip.
+
+Interpretation in code (`moebel()`):
+- The Build is priced with the `estimate()` formula as four owner positions: Plattenmaterial (area × board rate; a part's area is its volume over its thinnest side, the rate is the next thickness at or below it, so the 8 mm Rückwand counts as 19 mm), Oberfläche (2 × area × finish rate), Werkstatt (1.2 h per part × 68 €), Beschläge (left out when the Build has none). Walls and handles are not priced, as in `estimate()`.
+- Montage 4 h, `einbauschrank` 8 h, `bett` 2 h; always 1 trip (§4.1).
+- Steel parts (`tisch_gestell=kufen-stahl`: Kufen and Traverse) have no board, finish or workshop rate and are left out of all three positions. The calculator adds the assumption „Das Stahlgestell ist im Preis nicht enthalten und wird nach Rücksprache ergänzt.“ and sets ± 25 %.
+- A `moebel_holz` outside the list (not `beratung`) is priced as eiche with an assumption line and ± 25 %, for
+  every `moebel_art` (not only the Bett). A `moebel_oberflaeche` outside the list is priced as natur-geölt (no
+  Lack surcharge on the Bett), also with an assumption line and ± 25 %. An empty value is the default, no line.
+- A missing or unparsable dimension (`moebel_breite`/`_hoehe`/`_tiefe`, `tisch_laenge`/`_breite`/`_hoehe`) uses the registry default of `fields.ts` (the "documented default" of §4.3), adds an assumption line and sets ± 25 %. A missing `bett_liegeflaeche` is priced as `sondermass` with its own assumption line.
+- A missing `moebel_art` returns null (no rule), like `andere`. So does any other value outside the list,
+  including prototype keys such as `constructor` from a tampered POST.
+
 ### 4.3 Other branches (new calculators, one pure function per branch)
 | Branch | Basis (net, incl. material) |
 |---|---|
@@ -119,8 +138,29 @@ Montage hours for the trip count come from a per-branch default (boden 1 h/4 m²
 
 **Missing quantities** (e.g. `fenster_anzahl` empty): the calculator assumes 1, sets the ± 25 % width and lists the assumption. The assumption list is shown to the owner and in the customer's Angebot (§6.3).
 
+Interpretation in code:
+- Montage defaults the table does not name: treppe renovieren/belegen 1,5 h per Stufe, Geländer 1 h per lfm; Rollladen 1,5 h, Fensterbank 0,5 h each; Zaun 0,5 h per lfm. They also set the trip count (`tripsFor`).
+- The Zaun Hang surcharge (+ 15 %) applies to the lfm position only, not to the Tore.
+- An unknown or unexpected tier is priced as `aussen` and listed as an assumption. Möbel dimensions outside the per-type range and option values outside their list are priced with the clamped or default value, ± 25 %, with an assumption line.
+- Documented defaults instead of 1: a missing `treppe_stufen` assumes 14 Stufen (one storey); missing `fenster_breite`/`fenster_hoehe` assume 1,2 m² per window. Both set ± 25 % and list the assumption.
+- A number of 1 000 000 or more counts as missing (no `Infinity`, no absurd ranges before the §1 field check).
+- Count fields (`tuer_anzahl`, `treppe_stufen`, `fenster_anzahl`, `rolllaeden_anzahl`, `boden_raeume`,
+  `zaun_tore`) take whole numbers only. A fraction counts as missing (default, assumption line, ± 25 %).
+  `zaun_tore` is optional: empty or 0 means no Tor; any other unusable value means no Tor with an assumption.
+- `tuer` Seitenteil + 900 applies to every door type (the field has no `when` gate); Sicherheit only to the Haustür (`when: tuer-haustuer`).
+- Fields without a `when` gate (`boden_untergrund`, `boden_holz`, `boden_fbh`, `treppe_form`, `treppe_holz`, `fenster_verglasung`, `fenster_denkmal`) widen to ± 25 % on `unbekannt`/`beratung`/`offen` in every sub-branch, even where they do not change the price.
+
 ### 4.4 Claude-quantified projects
 For `moebel_art=andere`, `boden_leistung=reparatur`, `altbau` and `sonstiges`, Claude returns quantities in the `Mengen` schema (§6.2): Werkstatt hours, Montage hours, and material lines from a closed catalogue (board m² by species and thickness, finish m², Beschläge pieces, a `material_pauschal` only with a written justification). Code prices them with §4.1–4.2 rates and the ± 30 % width. These cases are **never recommended as „Freigeben“**; the best they get is „Prüfen“.
+
+Interpretation in code (`src/lib/configurator/pricing/mengen.ts`):
+- A Beschlag line names its kind (`beschlag: 'tuer' | 'schubkasten' | 'scharnier'`, an addition to the §6.2 schema) and is priced with the §4.2 rate 45 / 85 / 12 €. A line without a known kind is rejected.
+- A `material_pauschal` has no rate, and Claude names no amounts (§1). The line is listed for the owner at 0 € and marked „nicht bewertet“. The customer's assumptions say „Pauschales Material ist im Preis nicht enthalten und wird nach dem Aufmaß ergänzt.“ The owner prices it at review.
+- Hard upper bounds: Werkstatt 400 h, Montage 160 h, 30 material lines, board 200 m², finish 400 m², Beschläge 500 pieces. Higher values are clamped, with an assumption line.
+- The material bounds hold for the case total of each kind (all board lines together, all finish lines, all
+  Beschlag lines), not per line. Lines are taken in order; the line that crosses the bound is cut, later lines
+  of that kind are kept at 0, and one assumption line per kind says so.
+- A material line that is not an object is rejected (`MengenFehler`), like a line without a known kind.
 
 ### 4.5 Output
 ```ts
@@ -168,7 +208,7 @@ const Angebotstext = z.object({
   naechster_schritt: z.string(),                // Aufmaß appointment
 });
 ```
-`Mengen`: `{ werkstatt_h, montage_h, material: { art: 'platte'|'oberflaeche'|'beschlag'|'pauschal', holz?, staerke?, menge, einheit, begruendung }[] }` with hard upper bounds (e.g. ≤ 400 h) enforced in code.
+`Mengen`: `{ werkstatt_h, montage_h, material: { art: 'platte'|'oberflaeche'|'beschlag'|'pauschal', holz?, staerke?, oberflaeche?, beschlag?, menge, einheit, begruendung }[] }` (`oberflaeche` is required on finish lines, `beschlag` on Beschlag lines, §4.4) with hard upper bounds (e.g. ≤ 400 h) enforced in code.
 
 ### 6.3 Prompt rules
 - The enquiry is **untrusted data**; the system prompt says so. Unlike `docs/assistant.md` A, the text **can reach the customer** after approval, so §6.4 guards apply.
