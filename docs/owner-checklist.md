@@ -55,7 +55,7 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Furniture types offered, wood species (Eiche, Nussbaum, Esche, Kernbuche, Kirsche?), finishes, handles.
 - [ ] Steel bases: made in-house or by a partner? Maximum part sizes in the workshop.
 - [ ] Sample photos of real surfaces, to calibrate the textures.
-- [ ] Wording of the budget ranges. Pricing rules (later; prices stay off in the demo).
+- [ ] Wording of the budget ranges. Pricing rules: the pilot assumes rates (`docs/angebot.md` §4); prices stay off on the site.
 - [ ] Shelf span values (E-modulus table in `docs/configurator.md` §4.2).
 
 ## AI assistant (proposal, `docs/assistant.md`)
@@ -64,6 +64,14 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Which route for Claude: Claude API (Anthropic, US) or Claude on Google Vertex AI (EU)? Data processing agreement (AVV) for the chosen one.
 - [ ] May applications (CVs) be processed by the AI step? Default: no.
 - [ ] Monthly spending limit he is comfortable with (estimate: about 10 € a month).
+
+## Angebot pilot (`docs/angebot.md`)
+- [ ] Does he want the configurator follow-up: a price range evaluated by code and Claude, approved by him in one click, then sent as a non-binding Angebot?
+- [ ] Confirm or replace the assumed rates (`docs/angebot.md` §4): hourly rates, board and finish prices, per-branch prices, Anfahrt, Mindestauftrag (500 € assumed).
+- [ ] Range widths (± 15 / 25 / 30 %) and the recommendation thresholds (§7.1).
+- [ ] Wording of the non-binding clause, validity (30 days assumed), the Absage text (legal review).
+- [ ] The sending mailbox for Angebote (depends on the Strato / Microsoft 365 decision).
+- [ ] Retention periods (90 days / 12 months assumed).
 
 ## Production
 - [ ] Hosting and domain (EU host recommended), DNS access, Search Console.

@@ -2,6 +2,8 @@
 
 **Status: proposal (2026-10-13), not part of the approved `docs/plan.md`.** Nothing here ships until the user approves it and the owner has answered the open items (§10, mirrored in `docs/owner-checklist.md`). The demo on GitHub Pages stays as it is: no network for forms, no assistant.
 
+**Configurator enquiries:** `docs/angebot.md` (2026-10-22) replaces part A for them with a priced, owner-approved Angebot flow. Part A below still applies to the contact form.
+
 This spec adds two Claude-powered features to the production site:
 - **A. Inquiry automation.** Every enquiry (contact, configurator, application) is still delivered by email, and also gets an AI triage note and a reply draft for the owner. A person always decides and sends.
 - **B. Chat ("Frage stellen").** An opt-in widget that answers questions about the workshop and its services, from confirmed site content only, and hands off to the enquiry form.
@@ -23,7 +25,7 @@ A comes first: it is lower risk, needs no new UI, and pays off with every enquir
 - German microcopy for the widget, the AI disclosure and the Datenschutz section.
 
 **Out of scope (non-goals)**
-- Claude never replies to a customer by email, never promises prices, dates or availability, and never books appointments.
+- Claude never replies to a customer by email on its own, never promises prices, dates or availability, and never books appointments. (The configurator flow in `docs/angebot.md` sends a price range calculated by code, and only after the owner approves it.)
 - No tools for the chat model (no web search, no database, no calendar). It only answers from the knowledge text.
 - No accounts, no cookies, no analytics, no chat history across visits.
 - No voice, no file upload in the chat.
