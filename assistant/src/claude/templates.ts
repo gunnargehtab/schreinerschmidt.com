@@ -30,15 +30,27 @@ export const VORLAGE = {
 /** Position texts that never go to the customer: travel, surcharges and lines our own code marks as unpriced. */
 const INTERN = /^(?:Anfahrt|Material pauschal|Zuschlag|Aufschlag)/;
 
+/**
+ * A Beschlag line of Claude's quantities (pricing/mengen.ts): „Scharniere, 4 Stk. (begruendung)“.
+ * The parenthesised reason is Claude's text, so the template keeps only our part before it.
+ */
+const KI_BESCHLAG = /^((?:Türbeschläge|Schubkastenbeschläge|Scharniere), [\d.,]+\sStk\.)\s*\(.*\)$/su;
+
+/** Our own words of a position text: Claude's reason cut off a Mengen Beschlag line. */
+const eigenerText = (s: string): string => s.replace(KI_BESCHLAG, '$1');
+
 /** U+202F between a number and its unit (docs/plan.md §3.4). */
 const withNarrowSpace = (s: string): string => s.replace(/(\d) (m²|m|cm|mm|h|lfm|Stk\.)(?![\p{L}])/gu, '$1\u202f$2');
 
-/** Customer lines from the Kalkulation positions: own code only, deduplicated, guard-clean. */
+/**
+ * Customer lines from the Kalkulation positions: own code only (no Claude-authored words),
+ * deduplicated, guard-clean.
+ */
 export function leistungAusPositionen(positionen: Kalkulation['positionen'] | null | undefined): string[] {
   const out: string[] = [];
   for (const p of positionen ?? []) {
     if (typeof p?.text !== 'string' || INTERN.test(p.text)) continue;
-    const line = withNarrowSpace(p.text.trim());
+    const line = withNarrowSpace(eigenerText(p.text.trim()));
     if (!line || line.length > TEXT_LIMITS.item || pruefeText(line).length || out.includes(line)) continue;
     out.push(line);
     if (out.length === LIST_LIMITS.leistung) break;

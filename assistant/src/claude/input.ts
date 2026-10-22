@@ -5,9 +5,12 @@
 // Never sent: name, email, telefon, erreichbarkeit, kontaktweg, ort (the PLZ and the tier are
 // enough), the client's zusammenfassung (it repeats the contact block; the values are re-rendered
 // here instead), the subject, Reply-To, the config link, attachment names and the photos
-// themselves. The free-text fields are needed for the assessment and are sent, after redaction:
-// e-mail addresses, phone-like numbers and the customer's own name, address and phone are replaced
-// by a marker, and angle brackets are neutralised so the text cannot close the <anfrage> block.
+// themselves. The free-text fields are needed for the assessment and are sent, after redaction
+// (freitext()): the text is NFKC-normalised and format characters go; then e-mail addresses (also
+// obfuscated: „name (at) firma (punkt) de“, „name[at]firma.de“), phone-like numbers and street
+// addresses („Hauptstraße 5a“) are replaced first, the customer's own name, e-mail, phone and Ort
+// after them (so no „[entfernt]@firma.de“ is left); angle brackets, full-width ones included, are
+// neutralised so the text cannot close the <anfrage> block.
 //
 // For Möbel the Build is regenerated from the values (the client's derived/stueckliste are not
 // trusted, §2): outer dimensions, derived counts, the generator's hints and the cut list.
@@ -50,8 +53,14 @@ export const typLabel = (typ: unknown): string =>
 const label = (name: string): string => LABELS[name]?.label ?? name;
 const option = (name: string, v: string): string => LABELS[name]?.options?.[v] ?? v;
 
-const EMAIL = /[^\s@<>()[\]]+@[^\s@<>()[\]]+/gu;
+const EMAIL = /[^\s@<>()[\]{}]+@[^\s@<>()[\]{}]+/gu;
+/** „name (at) firma (punkt) de“, „name[at]firma.de“, „name{at}firma.de“, „name [at] firma [dot] de“. */
+const EMAIL_OBFUSCATED =
+  /[\p{L}\p{Nd}._%+-]+\s*(?:\(\s*at\s*\)|\[\s*at\s*\]|\{\s*at\s*\})\s*[\p{L}\p{Nd}-]+(?:\s*(?:\.|\(\s*(?:punkt|dot|\.)\s*\)|\[\s*(?:punkt|dot|\.)\s*\]|\s(?:punkt|dot)\s)\s*[\p{L}\p{Nd}-]+)*/giu;
 const PHONE = /\+?\p{Nd}[\p{Nd} ()/.-]{4,}\p{Nd}/gu;
+/** A street with its house number: „Hauptstraße 5a“, „Andreas-Hofer-Str. 33“, „Im Lindenweg 7“. */
+const STREET =
+  /(?<![\p{L}\p{Nd}])[\p{L}][\p{L}-]*(?:straße|strasse|str\.|weg|gasse|platz|allee|ring|damm|ufer)\s*\p{Nd}+\s*[a-z]?(?![\p{L}\p{Nd}])/giu;
 const escapeRx = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** The customer's own contact strings: the full values and every name part of 3+ letters. */
@@ -68,10 +77,16 @@ function piiStrings(v: Values): string[] {
 
 /** Free text for Claude: controls removed, contact data redacted, no way to close the block. */
 export function freitext(s: string, pii: readonly string[]): string {
-  let t = bodyText(s, 2000).normalize('NFC');
-  for (const p of pii) t = t.replace(new RegExp(escapeRx(p), 'giu'), '[entfernt]');
+  // NFKC folds full-width and small forms („＜“, „﹤“, „＠“) to ASCII before any pattern runs.
+  let t = bodyText(s, 2000)
+    .normalize('NFKC')
+    .replace(/\p{Cf}/gu, '');
+  // Patterns first, then the customer's own strings: a name inside an address must not break it up.
+  t = t.replace(EMAIL_OBFUSCATED, '[E-Mail entfernt]');
   t = t.replace(EMAIL, '[E-Mail entfernt]');
+  t = t.replace(STREET, '[Adresse entfernt]');
   t = t.replace(PHONE, (m) => ((m.match(/\p{Nd}/gu)?.length ?? 0) >= 6 ? '[Nummer entfernt]' : m));
+  for (const p of pii) t = t.replace(new RegExp(escapeRx(p.normalize('NFKC')), 'giu'), '[entfernt]');
   return t.replace(/</g, '‹').replace(/>/g, '›').trim();
 }
 
