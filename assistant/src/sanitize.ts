@@ -10,6 +10,9 @@ export function headerText(s: string, max = 200): string {
   return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
 }
 
+/** A single-line form value: controls removed, line breaks and tabs become one space, trimmed. */
+export const lineText = (s: string): string => s.replace(BODY_CONTROLS, '').replace(/\s+/g, ' ').trim();
+
 /** Body text: line breaks and tabs stay (normalised to \n), other controls go, capped. */
 export function bodyText(s: string, max = 20000): string {
   const t = s.replace(/\r\n?/g, '\n').replace(BODY_CONTROLS, '');
@@ -17,12 +20,14 @@ export function bodyText(s: string, max = 20000): string {
 }
 
 /**
- * A customer e-mail address that is safe for a Reply-To header: one addr-spec, no display name,
- * no spaces, no CR/LF, no list separators, a dot in the domain, ≤ 254 characters.
+ * A customer e-mail address as the browser's `<input type=email>` accepts it (the WHATWG
+ * valid-e-mail-address grammar: `a@b` is valid, a dot in the domain is not required). The grammar
+ * has no spaces, CR/LF, angle brackets, commas or semicolons, so the address is safe for a
+ * Reply-To header. Callers trim first, as the browser does.
  */
 const EMAIL =
-  /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
-export const isEmail = (s: string): boolean => s.length <= 254 && EMAIL.test(s);
+  /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/;
+export const isEmail = (s: string, max = 254): boolean => s.length <= max && EMAIL.test(s);
 
 /**
  * A file name for an attachment: the base name without any path, only letters (incl. umlauts),

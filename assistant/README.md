@@ -25,15 +25,21 @@ Run them in `assistant/`:
 | `npm run build`     | esbuild bundle `dist/server.mjs` (npm packages stay external) |
 | `npm start`         | Run the bundle (`npm ci --omit=dev` is enough on the host)    |
 
-`GET /health` answers `204`. Outside production, `GET /dev/outbox` lists the dry-run mails.
+`GET /health` answers `204`. Outside production and in `dry-run`, `GET /dev/outbox` lists the outbox.
 
 ## Configuration
 
 All names are in `.env.example` (no values). Locally, copy it to `.env` (git-ignored); on a host,
-use its secret store. Without `NODE_ENV=production` everything has a safe default
-(`SEND_MODE=dry-run`, `DATA_DIR=./data`, `.invalid` addresses). In production the process
-refuses to start until `PUBLIC_BASE_URL`, `SITE_ORIGIN`, `OWNER_EMAIL`, `MAIL_FROM`, `SEND_MODE`
-and `DATA_DIR` are set; errors name the variables, never their values.
+use its secret store. **On a host, `NODE_ENV=production` is mandatory**: it removes the
+development tools (`/dev/outbox`). Without it everything has a safe default (`SEND_MODE=dry-run`,
+`DATA_DIR=./data`, `.invalid` addresses). In production, and whenever `SEND_MODE` is `allowlist`
+or `live`, the process refuses to start until `PUBLIC_BASE_URL`, `SITE_ORIGIN`, `OWNER_EMAIL`,
+`MAIL_FROM`, `SEND_MODE` and `DATA_DIR` are set; errors name the variables, never their values.
+`GET /dev/outbox` exists only outside production and only in `dry-run`.
+
+Behind a reverse proxy set `TRUST_PROXY=1`: the rate limit then keys on the last
+`X-Forwarded-For` hop, but only for connections from loopback or a private address (127/8, ::1,
+10/8, 172.16/12, 192.168/16, fc00::/7), i.e. the proxy itself. Any other peer's header is ignored.
 
 ## SEND_MODE
 

@@ -85,8 +85,8 @@ describe('rate limit', () => {
     expect((await send()).status).toBe(200);
   });
 
-  it('keys by the last X-Forwarded-For hop only with TRUST_PROXY', async () => {
-    h = harness({ rateLimit: { limit: 1 }, env: { TRUST_PROXY: '1' } });
+  it('keys by the last X-Forwarded-For hop only with TRUST_PROXY (behind a local proxy)', async () => {
+    h = harness({ rateLimit: { limit: 1 }, env: { TRUST_PROXY: '1' }, peer: '127.0.0.1' });
     const send = (ip: string) =>
       h!.post(configuratorForm(BODEN, { extra: { homepage: 'bot' } }), {
         headers: { 'X-Forwarded-For': `1.1.1.1, ${ip}` },

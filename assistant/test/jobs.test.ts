@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { KalkulierenResult } from '../../src/lib/configurator/pricing/kalkulieren';
 import { BACKOFF_MS } from '../src/jobs';
+import { MAIL_BACKOFF_MS } from '../src/steps/anfrage-mail';
 import { BODEN, REGAL, SONSTIGES, anfrageJson, configuratorForm, jpeg, newId } from './fixtures';
 import { cleanupDirs, harness, type Harness } from './helpers';
 
@@ -128,16 +129,16 @@ describe('failures and retries', () => {
     expect((await h.deps.store.get(fall.id))?.messageId).toBeTruthy();
   });
 
-  it('gives up on the enquiry mail after three attempts without touching the case status', async () => {
+  it('gives up on the enquiry mail after six attempts without touching the case status', async () => {
     const h = make();
-    h.ctl.fail = 3;
+    h.ctl.fail = 6;
     const fall = await submit(h, REGAL);
     await h.deps.runner.runDue();
-    for (const ms of BACKOFF_MS) {
+    for (const ms of MAIL_BACKOFF_MS) {
       h.clock.advance(ms);
       await h.deps.runner.runDue();
     }
-    expect(await h.deps.store.job(fall.id, 'anfrage_mail')).toMatchObject({ status: 'failed', attempts: 3 });
+    expect(await h.deps.store.job(fall.id, 'anfrage_mail')).toMatchObject({ status: 'failed', attempts: 6 });
     expect(await kinds(h, fall.id)).toContain('anfrage_mail_failed');
     expect((await h.deps.store.get(fall.id))?.status).toBe('eingegangen');
     expect(h.logs.some((l) => l.includes('"event":"anfrage_mail_failed"'))).toBe(true);

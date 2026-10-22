@@ -1,6 +1,7 @@
 // Hono app factory (docs/angebot.md §2.1). Every dependency is injected (config, store, mailer,
 // clock, logger, job runner, rate limiter), so tests run the app in-process with app.request().
 // Security headers on every response; `Cache-Control: no-store` on everything but /health.
+import { isIP } from 'node:net';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { Hono, type Context, type MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
@@ -22,8 +23,13 @@ export interface AppDeps {
   log: Logger;
   runner: JobRunner;
   limiter: RateLimiter;
-  /** Client address for the rate limit; default: the socket, or the last X-Forwarded-For hop with TRUST_PROXY. */
+  /**
+   * Client address for the rate limit; default: the socket peer, or with TRUST_PROXY the last
+   * X-Forwarded-For hop when the peer is loopback or private (defaultClientIp).
+   */
   clientIp?: (c: Context) => string;
+  /** The socket peer address (default: getConnInfo); tests inject it, app.request() has no socket. */
+  peerAddress?: (c: Context) => string | undefined;
   /** Override of INLINE_MAIL_MS (tests). */
   inlineMailMs?: number;
   /** Override of BODY_LIMIT (tests). */
@@ -33,24 +39,54 @@ export interface AppDeps {
 /** CSP for the backend's own responses; the review page (7d) sets its own. */
 const CSP = "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
-export function defaultClientIp(config: Config): (c: Context) => string {
+/** The socket peer, or undefined (no socket, e.g. app.request()). */
+const socketPeer = (c: Context): string | undefined => {
+  try {
+    return getConnInfo(c).remote.address;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Loopback or private: 127/8, ::1, 10/8, 172.16/12, 192.168/16, fc00::/7, also as IPv4-mapped
+ * IPv6 (`::ffff:10.0.0.1`). Only such a peer can be our own reverse proxy.
+ */
+export function isPrivateAddress(ip: string): boolean {
+  const a = ip.trim().toLowerCase();
+  const v4 = a.startsWith('::ffff:') && isIP(a.slice(7)) === 4 ? a.slice(7) : a;
+  if (isIP(v4) === 4) {
+    const [p, q] = v4.split('.').map(Number) as [number, number];
+    return p === 127 || p === 10 || (p === 172 && q >= 16 && q <= 31) || (p === 192 && q === 168);
+  }
+  if (isIP(a) !== 6) return false;
+  if (a === '::1' || a === '0:0:0:0:0:0:0:1') return true;
+  const first = a.startsWith('::') ? 0 : Number.parseInt(a.split(':')[0] ?? '', 16);
+  return (first & 0xfe00) === 0xfc00;
+}
+
+/**
+ * The rate-limit key: the socket peer; with TRUST_PROXY and a loopback/private peer (our proxy),
+ * the last X-Forwarded-For hop instead (the address that proxy saw). A public peer's
+ * X-Forwarded-For is ignored, so a client cannot pick its own key.
+ */
+export function defaultClientIp(
+  config: Config,
+  peerAddress: (c: Context) => string | undefined = socketPeer,
+): (c: Context) => string {
   return (c) => {
-    if (config.trustProxy) {
-      const hops = (c.req.header('x-forwarded-for') ?? '').split(',').map((s) => s.trim());
-      const last = hops.at(-1);
-      if (last) return last;
+    const peer = peerAddress(c) ?? 'unknown';
+    if (config.trustProxy && isPrivateAddress(peer)) {
+      const last = (c.req.header('x-forwarded-for') ?? '').split(',').at(-1)?.trim() ?? '';
+      if (isIP(last)) return last;
     }
-    try {
-      return getConnInfo(c).remote.address ?? 'unknown';
-    } catch {
-      return 'unknown';
-    }
+    return peer;
   };
 }
 
 export function createApp(d: AppDeps): Hono {
   const app = new Hono();
-  const clientIp = d.clientIp ?? defaultClientIp(d.config);
+  const clientIp = d.clientIp ?? defaultClientIp(d.config, d.peerAddress);
 
   app.use('*', async (c, next) => {
     await next();
@@ -97,7 +133,8 @@ export function createApp(d: AppDeps): Hono {
   });
   app.post('/anfrage', origin, multipart, rate, size, (c) => handleAnfrage(c, d));
 
-  if (d.config.nodeEnv !== 'production') {
+  // Development tool only: never in production, and only while nothing is really sent.
+  if (d.config.nodeEnv !== 'production' && d.config.sendMode === 'dry-run') {
     app.get('/dev/outbox', async (c) => c.json(await listOutbox(d.config.dataDir)));
   }
 

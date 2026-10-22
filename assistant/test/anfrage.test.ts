@@ -253,7 +253,7 @@ describe('validation (reason keys, no echo)', () => {
     await reject(h, configuratorForm(rest), 'missing_required');
     await reject(h, configuratorForm({ ...BODEN, plz: '6816' }), 'bad_pattern');
     await reject(h, configuratorForm({ ...BODEN, telefon: 'call me' }), 'bad_pattern');
-    await reject(h, configuratorForm({ ...BODEN, email: 'max@example' }), 'bad_pattern');
+    await reject(h, configuratorForm({ ...BODEN, email: 'max(at)example.com' }), 'bad_pattern');
   });
 
   it('rejects too-short and too-long free text', async () => {

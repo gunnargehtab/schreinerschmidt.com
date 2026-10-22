@@ -36,6 +36,13 @@ export class FakeClock implements Clock {
   }
 }
 
+/** Follows Date.now(), for tests with vi.useFakeTimers() (advance the timers, not the clock). */
+export class TimerClock extends FakeClock {
+  override now(): number {
+    return Date.now();
+  }
+}
+
 const dirs: string[] = [];
 export function tempDir(): string {
   const d = mkdtempSync(join(tmpdir(), 'assistant-test-'));
@@ -50,6 +57,7 @@ export function testConfig(dir: string, env: Record<string, string> = {}): Confi
   return loadConfig({
     NODE_ENV: 'test',
     SITE_ORIGIN: SITE,
+    PUBLIC_BASE_URL: 'https://anfrage.schreinerei.test',
     DATA_DIR: dir,
     OWNER_EMAIL: OWNER,
     MAIL_FROM: FROM,
@@ -61,17 +69,20 @@ export function testConfig(dir: string, env: Record<string, string> = {}): Confi
 export interface MailControl {
   fail: number;
   hang: boolean;
+  /** Wait this long (setTimeout) before succeeding or failing. */
+  delayMs: number;
   /** Error message for failures (the canary test puts content into it). */
   message: string;
   sent: OutgoingMail[];
 }
 
 export function controlled(inner: Mailer): { mailer: Mailer; ctl: MailControl } {
-  const ctl: MailControl = { fail: 0, hang: false, message: 'SMTP down', sent: [] };
+  const ctl: MailControl = { fail: 0, hang: false, delayMs: 0, message: 'SMTP down', sent: [] };
   const mailer: Mailer = {
     mode: inner.mode,
     async send(m) {
       if (ctl.hang) return new Promise(() => {});
+      if (ctl.delayMs) await new Promise((r) => setTimeout(r, ctl.delayMs));
       if (ctl.fail > 0) {
         ctl.fail--;
         throw Object.assign(new Error(ctl.message), { code: 'ECONNECTION' });
@@ -93,6 +104,10 @@ export interface HarnessOptions {
   rateLimit?: { limit?: number; windowMs?: number };
   inlineMailMs?: number;
   bodyLimit?: number;
+  /** Let the runner schedule itself (default false: tests call runDue()). */
+  auto?: boolean;
+  /** Socket peer address for the rate limit (app.request() has no socket). */
+  peer?: string;
 }
 
 export type Harness = ReturnType<typeof harness>;
@@ -120,13 +135,14 @@ export function harness(o: HarnessOptions = {}) {
     log,
     mailer,
     steps: { ...STEPS, ...o.steps },
-    auto: false,
+    auto: o.auto ?? false,
     rateLimit: o.rateLimit ?? { limit: 1000 },
   });
   const app = createApp({
     ...deps,
     ...(o.inlineMailMs !== undefined ? { inlineMailMs: o.inlineMailMs } : {}),
     ...(o.bodyLimit !== undefined ? { bodyLimit: o.bodyLimit } : {}),
+    ...(o.peer !== undefined ? { peerAddress: () => o.peer } : {}),
   });
 
   const post = (

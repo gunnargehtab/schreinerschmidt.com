@@ -6,7 +6,7 @@
 // first": validate → store the case (status `eingegangen`; the values, the kept anfrage_json, no
 // attachments) together with its jobs → send the enquiry mail inline → respond → run the jobs.
 // If the inline mail fails, the response is still a success: the case is stored and its
-// `anfrage_mail` job retries the mail (30 s, 2 min) from the stored payload. A repeated
+// `anfrage_mail` job retries the mail (+30 s … +6 h, MAIL_BACKOFF_MS) from the stored payload. A repeated
 // `anfrage_id` (the client retries once with the same id) never creates a second case or mail; if
 // the first mail has not gone out yet, the retry's attachments are used to send it now. If the
 // store itself fails, the mail is still sent (success without a case), and only when that fails
@@ -250,15 +250,21 @@ async function note(d: AppDeps, fallId: string, kind: string, code: string | nul
   }
 }
 
-/** The inline enquiry mail, bounded so the response beats the client's 20 s timeout. */
+/**
+ * The inline enquiry mail, bounded so the response beats the client's 20 s timeout. A send that
+ * outlives the deadline keeps running; when it settles (a late failure writes a retry), the runner
+ * is kicked so the retry is scheduled without waiting for another request.
+ */
 async function deliver(d: AppDeps, fall: Fall, attachments: readonly Attachment[], dropped: number): Promise<boolean> {
   let timer: NodeJS.Timeout | undefined;
   const deadline = new Promise<false>((resolve) => {
     timer = setTimeout(() => resolve(false), d.inlineMailMs ?? INLINE_MAIL_MS);
     timer.unref();
   });
+  const inflight = sendEnquiryInline(d, fall, attachments, dropped);
+  void inflight.finally(() => d.runner.kick());
   try {
-    return await Promise.race([sendEnquiryInline(d, fall, attachments, dropped), deadline]);
+    return await Promise.race([inflight, deadline]);
   } finally {
     clearTimeout(timer);
   }
@@ -277,6 +283,7 @@ async function duplicate(
   if (!fall.messageId && (await d.store.claim(fall.id, ANFRAGE_MAIL, d.clock.now()))) {
     await deliver(d, fall, attachments, dropped);
   }
+  d.runner.kick();
   return r.success(next, 'duplicate', { fall: fall.id, kurz: fall.kurz });
 }
 

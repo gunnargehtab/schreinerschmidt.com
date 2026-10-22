@@ -1,7 +1,9 @@
 // In-process job runner (docs/angebot.md §3). Jobs live in the `jobs` table, one row per (case,
 // step), so they survive a restart: start() turns rows left `running` by a crash back to `pending`
-// and runs whatever is due. Each step gets three attempts: the first run, then retries after 30 s
-// and 2 min. A pipeline step that fails for good moves the case to `bewertung_fehlgeschlagen` with
+// and runs whatever is due. A step gets three attempts by default (the first run, then retries
+// after 30 s and 2 min); a step may bring its own, longer schedule (the enquiry mail). While it
+// runs by itself, the runner never sleeps longer than MAX_SLEEP_MS, so a `pending` row written by
+// another code path (a late inline mail) is picked up without an external trigger. A pipeline step that fails for good moves the case to `bewertung_fehlgeschlagen` with
 // a content-free event; the steps run in PIPELINE order (`preis` now; 7c adds `bewertung`, 7d
 // `tldr`). Side jobs (the enquiry-mail retry) are registered steps outside the pipeline.
 import type { Config } from './config';
@@ -11,13 +13,18 @@ import type { Mailer } from './mail/index';
 import type { Fall, Job, Store } from './store';
 import type { Clock } from './types';
 
-/** Delays before the 2nd and 3rd attempt. */
+/** Default delays before the 2nd and 3rd attempt. */
 export const BACKOFF_MS: readonly number[] = [30_000, 120_000];
 export const MAX_ATTEMPTS = BACKOFF_MS.length + 1;
+/** Longest sleep of the self-scheduling runner. */
+export const MAX_SLEEP_MS = 60_000;
 
-/** Delay before the next attempt after `attempts` failed ones, or null when they are used up. */
-export const backoff = (attempts: number): number | null =>
-  attempts < MAX_ATTEMPTS ? (BACKOFF_MS[attempts - 1] ?? null) : null;
+/**
+ * Delay before the next attempt after `attempts` failed ones, or null when they are used up
+ * (`schedule.length + 1` attempts in all).
+ */
+export const backoff = (attempts: number, schedule: readonly number[] = BACKOFF_MS): number | null =>
+  attempts >= 1 && attempts <= schedule.length ? (schedule[attempts - 1] ?? null) : null;
 
 export interface StepContext {
   fall: Fall;
@@ -30,6 +37,8 @@ export interface StepContext {
 
 export interface StepDef {
   run(ctx: StepContext): Promise<void>;
+  /** Delays between attempts; default BACKOFF_MS. */
+  backoff?: readonly number[];
   /** Called once when the last attempt failed. */
   exhausted?(ctx: StepContext, code: string): Promise<void>;
 }
@@ -112,14 +121,12 @@ export class JobRunner {
     return n;
   }
 
-  /** One timer for the earliest pending job (retries after 30 s / 2 min). */
+  /** One timer for the earliest pending job, at most MAX_SLEEP_MS away (also when nothing is pending). */
   private async schedule(): Promise<void> {
     if (!this.d.auto || this.stopped) return;
     const next = await this.d.store.nextDue();
     if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    if (next === null) return;
-    const delay = Math.min(Math.max(0, next - this.d.clock.now()), 2_147_000_000);
+    const delay = next === null ? MAX_SLEEP_MS : Math.min(Math.max(0, next - this.d.clock.now()), MAX_SLEEP_MS);
     this.timer = setTimeout(() => void this.runDue(), delay);
     this.timer.unref();
   }
@@ -137,16 +144,26 @@ export class JobRunner {
     }
     const ctx: StepContext = { ...this.d, fall };
     const t0 = clock.now();
+    let failure: unknown = null;
     try {
       await step.run(ctx);
-      await store.complete(job.fallId, job.step, clock.now());
-      log.info('job_done', { fall: fall.id, step: job.step, attempt, ms: clock.now() - t0 });
-      const i = this.pipeline.indexOf(job.step);
-      const next = i >= 0 ? this.pipeline[i + 1] : undefined;
-      if (next) await store.enqueue(fall.id, next, clock.now(), clock.now());
     } catch (e) {
-      const code = errorCode(e);
-      const delay = backoff(attempt);
+      failure = e ?? new Error('step failed');
+    }
+    if (failure === null) {
+      // The work is done: a bookkeeping error here must not make the step run (and send) again.
+      try {
+        await store.complete(job.fallId, job.step, clock.now());
+        log.info('job_done', { fall: fall.id, step: job.step, attempt, ms: clock.now() - t0 });
+        const i = this.pipeline.indexOf(job.step);
+        const next = i >= 0 ? this.pipeline[i + 1] : undefined;
+        if (next) await store.enqueue(fall.id, next, clock.now(), clock.now());
+      } catch (e) {
+        log.error('bookkeeping_failed', { fall: fall.id, step: job.step, code: errorCode(e) });
+      }
+    } else {
+      const code = errorCode(failure);
+      const delay = backoff(attempt, step.backoff);
       if (delay !== null) {
         await store.retry(job.fallId, job.step, clock.now() + delay, code, clock.now());
         log.warn('job_retry', { fall: fall.id, step: job.step, attempt, code, ms: clock.now() - t0 });

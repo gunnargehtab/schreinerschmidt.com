@@ -1,6 +1,7 @@
 // Backend configuration (docs/angebot.md §10, §8.3). Parsed once from the environment with zod.
 // Development gets safe defaults (SEND_MODE=dry-run, DATA_DIR=./data, .invalid addresses); in
-// NODE_ENV=production every required value must be set, or the process fails at start. Errors name
+// NODE_ENV=production, and whenever SEND_MODE is `allowlist` or `live`, every required value must
+// be set, or the process fails at start. Errors name
 // the variables, never their values, and nothing here is ever logged except `describeConfig()`.
 import { resolve } from 'node:path';
 import { z } from 'zod';
@@ -33,7 +34,10 @@ export interface Config {
   smtp: SmtpConfig | null;
   dataDir: string;
   tokenTtlDays: number;
-  /** Take the client IP for the rate limit from the last X-Forwarded-For hop (behind a proxy). */
+  /**
+   * Behind a reverse proxy: take the client IP for the rate limit from the last X-Forwarded-For hop,
+   * but only when the socket peer is loopback or a private address (the proxy).
+   */
   trustProxy: boolean;
   anthropicApiKey: string | null;
   ownerPin: string | null;
@@ -76,7 +80,10 @@ const Env = z.object({
   ANTHROPIC_API_KEY: opt(z.string().max(512)),
 });
 
-/** Variables that production must set explicitly (SEND_MODE too: a silent dry-run would lose mail). */
+/**
+ * Variables that production (and any real-mail mode) must set explicitly; SEND_MODE too, as a
+ * silent dry-run would lose mail.
+ */
 const REQUIRED_IN_PRODUCTION = [
   'PUBLIC_BASE_URL',
   'SITE_ORIGIN',
@@ -101,7 +108,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   const nodeEnv: NodeEnv = e.NODE_ENV ?? 'development';
   const sendMode: SendMode = e.SEND_MODE ?? 'dry-run';
   const missing: string[] = [];
-  if (nodeEnv === 'production') for (const k of REQUIRED_IN_PRODUCTION) if (e[k] === undefined) missing.push(k);
+  // Real mail needs real addresses, whatever NODE_ENV says.
+  if (nodeEnv === 'production' || sendMode !== 'dry-run') {
+    for (const k of REQUIRED_IN_PRODUCTION) if (e[k] === undefined) missing.push(k);
+  }
   if (sendMode !== 'dry-run') for (const k of REQUIRED_FOR_SMTP) if (e[k] === undefined) missing.push(k);
   const allowlist = (e.SEND_ALLOWLIST ?? '')
     .split(',')

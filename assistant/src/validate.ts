@@ -4,13 +4,14 @@
 // 'html' and 'js') while visible (conditions.ts), lengths, patterns and checkbox groups. Hidden
 // fields (other branches, failed conditions) are dropped, not validated: the no-JS form submits
 // them and the customer cannot see or fix them. Contact and application posts have their own small
-// registry. Failures carry a code and, for known fields only, the registry name; input is never
-// echoed. Pure.
+// registry and are lenient on purpose: the backend never rejects what the site's own form accepts
+// (TextField.astro sets no pattern or maxlength there), so optional fields are cleaned and
+// truncated, never rejected; only a missing required field and an e-mail the browser's
+// `type=email` check would refuse are. Failures carry a code and, for known fields only, the
+// registry name; input is never echoed. Pure.
 import { visible } from '../../src/lib/configurator/conditions';
 import {
   FIELDS,
-  PLZ_PATTERN,
-  TEL_PATTERN,
   DECIMAL_PATTERN,
   effectiveValues,
   fieldRange,
@@ -18,7 +19,7 @@ import {
   type Values,
 } from '../../src/lib/configurator/fields';
 import { z } from 'zod';
-import { isEmail } from './sanitize';
+import { bodyText, isEmail, lineText } from './sanitize';
 import type { AnfrageJson } from './types';
 
 export type Reason =
@@ -89,17 +90,23 @@ export const CONTACT_FILES = ['lebenslauf'] as const;
 /** Length cap for enum and number values (they have no maxLength); a sanity cap only. */
 const ENUM_MAX = 64;
 
-/** Contact form (/kontakt/) and application (/karriere/), docs/architecture.md §8. */
-const CONTACT: Readonly<Record<string, { max: number; required?: true; pattern?: RegExp; multiline?: true }>> = {
-  name: { max: 100, required: true },
-  email: { max: 254, required: true },
-  telefon: { max: 30, pattern: new RegExp(`^(?:${TEL_PATTERN})$`) },
-  plz: { max: 5, pattern: new RegExp(`^(?:${PLZ_PATTERN})$`) },
-  ort: { max: 100 },
-  thema: { max: 100 },
-  stelle: { max: 100 },
-  nachricht: { max: 5000, multiline: true },
+/**
+ * Contact form (/kontakt/) and application (/karriere/), docs/architecture.md §8. `max` is where a
+ * value is truncated (never rejected); the e-mail is the exception: an address is not truncated, so
+ * one beyond `max` (no real mailbox has that) is refused.
+ */
+const CONTACT: Readonly<Record<string, { max: number; required?: true; multiline?: true }>> = {
+  name: { max: 200, required: true },
+  email: { max: 1000, required: true },
+  telefon: { max: 60 },
+  plz: { max: 20 },
+  ort: { max: 200 },
+  thema: { max: 200 },
+  stelle: { max: 200 },
+  nachricht: { max: 10000, multiline: true },
 };
+/** Raw size cap of a contact field before cleaning (a sanity bound on the multipart part). */
+const CONTACT_RAW_MAX = 100_000;
 
 const DECIMAL = new RegExp(`^(?:${DECIMAL_PATTERN})$`);
 const INT = /^\d{1,9}$/;
@@ -187,7 +194,13 @@ export function validateConfigurator(fields: TextFields): Checked<ConfiguratorIn
     }
     const err = checkField(name, f, x!, eff);
     if (err) return err;
-    values[name] = Array.isArray(x) ? x : f.kind === 'text' && (f.maxLength ?? 0) < 500 ? singleLine(x!) : x;
+    values[name] = Array.isArray(x)
+      ? x
+      : name === 'email'
+        ? x!.trim()
+        : f.kind === 'text' && (f.maxLength ?? 0) < 500
+          ? singleLine(x!)
+          : x;
   }
   return { ok: true, value: { values, meta } };
 }
@@ -216,7 +229,7 @@ function checkField(name: string, f: FieldDef, x: string | string[], v: Values):
     case 'text': {
       if (f.minLength !== undefined && x.trim().length < f.minLength) return invalid('too_short', name);
       if (f.pattern && !new RegExp(`^(?:${f.pattern})$`).test(x)) return invalid('bad_pattern', name);
-      if (name === 'email' && !isEmail(x)) return invalid('bad_pattern', name);
+      if (name === 'email' && !isEmail(x.trim())) return invalid('bad_pattern', name);
       return null;
     }
     default:
@@ -230,11 +243,20 @@ export interface ContactInput {
 }
 
 /** Contact form and application: name + e-mail required, everything else optional. */
+/** Cuts a cleaned value to `max` characters, marking the cut with „…“. */
+const truncate = (s: string, max: number): string => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
+
+/**
+ * Contact form and application. Lenient like the browser: name + e-mail required (a whitespace-only
+ * name counts as given, as for `required`), the e-mail checked like `type=email`, everything else
+ * cleaned (controls removed, single-line fields joined) and truncated, never rejected.
+ */
 export function validateContact(fields: TextFields): Checked<ContactInput> {
-  const bad = checkNames(fields, (name) => CONTACT[name]?.max ?? META[name] ?? null);
+  const bad = checkNames(fields, (name) => (CONTACT[name] ? CONTACT_RAW_MAX : (META[name] ?? null)));
   if (bad) return bad;
   const values: Record<string, string> = {};
   const meta: Record<string, string> = {};
+  const given = new Set<string>();
   for (const [name, list] of fields) {
     const v = list[0] ?? '';
     const def = CONTACT[name];
@@ -243,14 +265,21 @@ export function validateContact(fields: TextFields): Checked<ContactInput> {
       meta[name] = v;
       continue;
     }
-    if (v.length > def.max) return invalid('too_long', name);
-    if (v.trim() === '') continue;
-    if (def.pattern && !def.pattern.test(v)) return invalid('bad_pattern', name);
-    if (name === 'email' && !isEmail(v)) return invalid('bad_pattern', name);
-    values[name] = def.multiline ? v : singleLine(v);
+    if (v.length > CONTACT_RAW_MAX) return invalid('too_long', name);
+    // The browser drops CR/LF from <input> values; an empty value is what `required` refuses.
+    if ((def.multiline ? v : v.replace(/[\r\n]/g, '')) !== '') given.add(name);
+    if (name === 'email') {
+      const e = v.trim();
+      if (e === '') continue;
+      if (!isEmail(e, def.max)) return invalid('bad_pattern', name);
+      values[name] = e;
+      continue;
+    }
+    const clean = def.multiline ? bodyText(v, Infinity).trim() : lineText(v);
+    if (clean !== '') values[name] = truncate(clean, def.max);
   }
   for (const [name, def] of Object.entries(CONTACT))
-    if (def.required && !values[name]) return invalid('missing_required', name);
+    if (def.required && !given.has(name)) return invalid('missing_required', name);
   return { ok: true, value: { values, meta } };
 }
 
