@@ -11,3 +11,32 @@ next:
     - 'Sie erhalten ein Angebot. [[Platzhalter: Zeitraum bis zum Angebot]]'
   review: placeholder
   note: 'Antwortzeit („innerhalb von 2 Werktagen“?) ist unbestätigt (docs/owner-checklist.md).'
+
+# Live variant (docs/angebot.md §9): used instead of `next` when the build posts to the assistant
+# backend (PUBLIC_ASSISTANT_ENDPOINT). Every step is unconfirmed by the owner. No „Schreinermeister“
+# (title unconfirmed, docs/owner-checklist.md). Without JS the customer sees no Vorgangsnummer, so
+# the first step does not mention one. Titles carry no number (and so no U+202F): the dist test
+# compares them after folding whitespace (tests/dist/form-target.test.ts).
+nextLive:
+  h2: 'Was passiert jetzt?'
+  steps:
+    - when: 'Heute'
+      title: 'Ihre Anfrage ist bei uns eingegangen; wir sehen uns Ihre Angaben an.'
+      review: needs-review
+      note: 'Ablauf Phase 7e (docs/angebot.md §9), vom Inhaber unbestätigt.'
+    - when: 'Innerhalb von 2 Werktagen'
+      title: 'Sie erhalten per E-Mail einen ersten Preisrahmen, unverbindlich und vorbehaltlich Aufmaß, oder unsere Rückfragen. Ulf Schmidt sieht sich jede Anfrage persönlich an, bevor Sie eine Antwort bekommen.'
+      review: needs-review
+      note: 'Antwortzeit und Ablauf (Preisrahmen erst nach Freigabe durch den Inhaber) unbestätigt (docs/angebot.md §9, docs/owner-checklist.md „Angebot pilot“).'
+    - title: 'Wir kommen zu Ihnen, messen nach und besprechen die Details.'
+      review: needs-review
+      note: 'Ob und was das Aufmaß kostet, ist unbestätigt (docs/configurator.md §5, §9).'
+    - title: 'Nach dem Aufmaß erhalten Sie ein verbindliches schriftliches Angebot.'
+      review: needs-review
+      note: 'Ablauf Phase 7e (docs/angebot.md §9), vom Inhaber unbestätigt.'
+    - title: 'Sobald Sie uns den Auftrag erteilen, fertigen wir in unserer Werkstatt in Mannheim.'
+      review: needs-review
+      note: 'Ablauf Phase 7e (docs/angebot.md §9), vom Inhaber unbestätigt.'
+    - title: 'Wir liefern, montieren und gehen das Ergebnis gemeinsam mit Ihnen durch.'
+      review: needs-review
+      note: 'Ablauf Phase 7e (docs/angebot.md §9), vom Inhaber unbestätigt.'

@@ -20,6 +20,9 @@ jobs:
     env:
       PUBLIC_DEMO: "${{ vars.PUBLIC_DEMO || 'true' }}"
       PUBLIC_FORM_ENDPOINT: '${{ vars.PUBLIC_FORM_ENDPOINT }}'
+      # Decision D3 (docs/assistant.md §0): when set, every form posts to its /anfrage and form.taxi is
+      # unused. Unset by default, so the Pages demo stays network-free.
+      PUBLIC_ASSISTANT_ENDPOINT: '${{ vars.PUBLIC_ASSISTANT_ENDPOINT }}'
     steps:
       - name: Check out repository
         uses: actions/checkout@v7

@@ -1,6 +1,8 @@
 ---
 // Thank-you page of the configurator request (noindex; excluded from prerendering by the
-// speculation rules). Copy: src/content/pages/konfigurator-danke.yaml.
+// speculation rules). Copy: src/content/pages/konfigurator-danke.yaml. „Was passiert jetzt?“ lists
+// the Preisrahmen steps (`nextLive`) when the build posts to the assistant (docs/angebot.md §9).
+import { USES_ASSISTANT } from '../../../components/forms/mode';
 import PageLayout from '../../../layouts/PageLayout.astro';
 import ReviewMark from '../../../components/ui/ReviewMark.astro';
 import { getPageCopy } from '../../../lib/page-copy';
@@ -11,7 +13,7 @@ import { url } from '../../../lib/url';
 
 const copy = await getPageCopy('konfigurator-danke', konfiguratorDankeSchema);
 const ui = await getPageCopy('ui', uiFormsSchema);
-const { next } = copy;
+const { next, nextLive } = copy;
 const status = marked(next);
 ---
 
@@ -41,22 +43,45 @@ const status = marked(next);
           </a>
         </li>
       </ul>
-      <div class="stack stack--xs prose">
-        <h2>{next.h2}</h2>
-        <ol>
-          {next.steps.map((step) => (
-            <li>
-              {status ? (
-                <ReviewMark status={status} note={next.note}>
-                  {step}
-                </ReviewMark>
-              ) : (
-                step
-              )}
-            </li>
-          ))}
-        </ol>
-      </div>
+      {USES_ASSISTANT ? (
+        <div class="stack stack--xs prose" data-timeline="live">
+          <h2>{nextLive.h2}</h2>
+          <ol>
+            {nextLive.steps.map((step) => {
+              const mark = marked(step);
+              return (
+                <li data-review={mark}>
+                  {step.when && <strong>{step.when}: </strong>}
+                  {mark ? (
+                    <ReviewMark status={mark} note={step.note}>
+                      {step.title}
+                    </ReviewMark>
+                  ) : (
+                    step.title
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      ) : (
+        <div class="stack stack--xs prose">
+          <h2>{next.h2}</h2>
+          <ol>
+            {next.steps.map((step) => (
+              <li>
+                {status ? (
+                  <ReviewMark status={status} note={next.note}>
+                    {step}
+                  </ReviewMark>
+                ) : (
+                  step
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   </section>
 </PageLayout>

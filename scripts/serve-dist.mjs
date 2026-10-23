@@ -1,5 +1,5 @@
 // Zero-dependency static server that mimics GitHub Pages for dist/ (docs/architecture.md §4).
-// - mounts dist/ at BASE_PATH ("/" when unset)
+// - mounts dist/ (or DIST_DIR) at BASE_PATH ("/" when unset)
 // - 301 to the trailing-slash URL for directories, including the bare base
 // - serves dir/index.html; 404.html with status 404 for every miss
 // - 405 for anything other than GET/HEAD; path-traversal guard
@@ -11,7 +11,9 @@ import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
-const ROOT = resolve(fileURLToPath(new URL('../dist/', import.meta.url)));
+// DIST_DIR (relative to the repo) serves a variant build, e.g. env/assistant.env's assistant build.
+const REPO = fileURLToPath(new URL('../', import.meta.url));
+const ROOT = resolve(REPO, process.env['DIST_DIR'] || 'dist');
 const PORT = Number(process.env['PORT']) || 4173;
 /** @param {string} s */
 const trim = (s) => s.replace(/^\/+|\/+$/g, '');

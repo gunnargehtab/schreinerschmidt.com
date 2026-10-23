@@ -12,7 +12,8 @@
 //        {total}: {title}"), step-of, compact, edit, link-copied-label, photo-remove.
 // Form   <form id="anfrage" class="wizard" autocomplete="off">
 //          demo: method="dialog" + a visible demo note ([data-demo-note] in step pruefen, ribbon on top).
-//          live: method="post" action=FORM_ENDPOINT enctype="multipart/form-data" with hidden
+//          live: method="post" action=FORM_ENDPOINT (the assistant's /anfrage, else form.taxi; D3,
+//                src/lib/form-target.mjs) enctype="multipart/form-data" with hidden
 //                _subject, _replyto (empty), _lang=de, _next (absolute URL of konfigurator/danke/),
 //                MAX_FILE_SIZE and empty anfrage_id, anfrage_json, zusammenfassung. Demo: none of them.
 //          The honeypot (Honeypot component, name "homepage") is the last child before the step nav.
@@ -61,7 +62,8 @@
 //        h2#h-erfolg (demo/live variant chosen at build time), [data-anfrage-id], [data-success-summary],
 //        [data-success-drawing], <figure data-success-snapshot hidden> (demo: the 3D snapshot as <img>
 //        via an object URL, submit.ts, plus <a data-snapshot-link>; href + download set by JS), [data-action=mail|copy|
-//        save|print|link] (all hidden), the timeline.
+//        save|print|link] (all hidden), the timeline (`success.timelineLive` when the build posts to
+//        the assistant, docs/angebot.md §9; else `success.timeline`).
 // Preview figure[data-preview] > [data-preview-drawing] (build-time SVG) + [data-viewer] hidden, caption.
 // ==========================================================================
 import { getEntry } from 'astro:content';
@@ -72,7 +74,7 @@ import { konfiguratorSchema } from '../../lib/page-copy/konfigurator';
 import { absolute, url } from '../../lib/url';
 import ErrorSummary from '../forms/ErrorSummary.astro';
 import Honeypot from '../forms/Honeypot.astro';
-import { FORM_ENDPOINT, formMode } from '../forms/mode';
+import { FORM_ENDPOINT, USES_ASSISTANT, formMode } from '../forms/mode';
 import Progress from './Progress.astro';
 import SuccessTimeline from './SuccessTimeline.astro';
 import SummarySidebar from './SummarySidebar.astro';
@@ -97,10 +99,13 @@ if (!Astro.site) throw new Error('Wizard: `site` is not configured');
 const mode = formMode();
 const live = mode === 'live';
 if (live && !FORM_ENDPOINT?.startsWith('https://')) {
-  throw new Error('Wizard: live mode needs an https PUBLIC_FORM_ENDPOINT');
+  throw new Error('Wizard: live mode needs an https PUBLIC_ASSISTANT_ENDPOINT or PUBLIC_FORM_ENDPOINT');
 }
+// „Was passiert jetzt?“: the Preisrahmen steps only when the assistant answers (docs/angebot.md §9).
+const timeline = live && USES_ASSISTANT ? copy.success.timelineLive : copy.success.timeline;
 
-// 10 MB per photo (docs/configurator.md photo policy); form.taxi reads MAX_FILE_SIZE.
+// 10 MB per photo (docs/configurator.md photo policy); form.taxi reads MAX_FILE_SIZE, the assistant
+// accepts and ignores it (its own limits, docs/angebot.md §2.2).
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const formAttrs = live
@@ -215,7 +220,7 @@ const actions = copy.success.actions;
         {actions.link}
       </button>
     </div>
-    <SuccessTimeline timeline={copy.success.timeline} />
+    <SuccessTimeline timeline={timeline} />
   </section>
 </section>
 

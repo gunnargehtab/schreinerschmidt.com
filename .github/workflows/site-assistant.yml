@@ -1,0 +1,54 @@
+name: Site, assistant build
+# The production variant whose forms post to the assistant backend (decision D3, docs/assistant.md §0;
+# docs/angebot.md §9, docs/architecture.md §8 "Endpoint"): `npm run test:assistant`, exactly the step
+# `npm run verify` ends with (build into .cache/dist-assistant, the dist suite, the assistant e2e
+# specs in the chromium and no-js projects). All settings come from env/assistant.env: `--env-file`
+# never overrides a variable that is already set, so this workflow sets no env of its own (no
+# PUBLIC_DEMO, no endpoints, no SITE/BASE_PATH). Independent of deploy.yml; never deploys.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: 'site-assistant-${{ github.ref }}'
+  cancel-in-progress: true
+jobs:
+  assistant-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Restore Astro cache
+        uses: actions/cache@v6
+        with:
+          path: .cache/astro
+          key: "astro-${{ runner.os }}-${{ hashFiles('package-lock.json','astro.config.mjs') }}-${{ hashFiles('src/assets/**') }}"
+          restore-keys: 'astro-${{ runner.os }}-'
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v6
+        with:
+          path: '~/.cache/ms-playwright'
+          key: "pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}"
+      # Both projects of test:e2e:assistant (chromium, no-js) run on Chromium.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build, dist tests and e2e specs of the assistant build
+        run: npm run test:assistant
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-assistant
+          path: playwright-report/
+          retention-days: 7

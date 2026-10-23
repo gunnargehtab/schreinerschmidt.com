@@ -269,7 +269,7 @@ Step 3:
    - Weiter/Zurück are hidden.
    - The final submit button comes before the step nav in the DOM, so Enter submits.
 7. **Where the form goes:**
-   - **Live:** `method=post action=https://form.taxi/s/… enctype=multipart/form-data`, `_next` → `/konfigurator/danke/`.
+   - **Live:** `method=post action=https://form.taxi/s/… enctype=multipart/form-data`, `_next` → `/konfigurator/danke/`. With `PUBLIC_ASSISTANT_ENDPOINT` set the action is `${origin}/anfrage` of the assistant backend instead (decision D3, 2026-10-23; `docs/angebot.md` §9).
    - **Demo:** `method="dialog"` (validates, transmits nothing) plus a visible note "Demo: Es werden keine Daten übertragen."
 
 ## 3. JS enhancement
@@ -750,13 +750,14 @@ function frame(now: number) { raf = 0;
 - `anhaenge` lists `zeichnung.svg` and the photo file names; empty checkbox groups are left out of `felder`. A checked option the chosen `moebel_art` does not offer (hidden `label[data-when]`) counts nowhere: summary, payload, URL and generator all use `effectiveValues()` from `fields.ts`, and the controller fills the default.
 - `_replyto`, `_lang=de`, `anfrage_id` (from `crypto.randomUUID()`).
 
-**Demo mode** (`PUBLIC_FORM_ENDPOINT` unset):
+**Demo mode** (`PUBLIC_DEMO`; neither endpoint is used):
 - Nothing is sent.
 - A "Demo-Modus" ribbon shows, and the button reads "Anfrage abschließen (Demo)".
 - The success view offers: the summary, drawing and snapshot, plus "Per E-Mail senden" (mailto), "Zusammenfassung kopieren", "Als Textdatei speichern", "Drucken / als PDF speichern" and "Konfigurationslink kopieren".
 - The success drawing is rendered again for the measured width of `[data-success-drawing]` (`preview/index.ts` `screenDrawing()`), so its labels stay 12 px in the narrower success column; the panel-sized SVG shows until then, and the DIN print sheet is prepared afterwards.
 
 **Live mode:**
+- The endpoint is the assistant backend's `/anfrage` when `PUBLIC_ASSISTANT_ENDPOINT` is set, else form.taxi (`PUBLIC_FORM_ENDPOINT`); both answer `{success, error, error_msg}` the same way. With the assistant, the success view shows the live „Was passiert jetzt?“ steps (`success.timelineLive`; `docs/angebot.md` §9).
 - `fetch(endpoint, { method: 'POST', body: fd, headers: { Accept: 'application/json' }, signal: AbortSignal.any([AbortSignal.timeout(20000), userSignal]) })`. Success means `res.ok && json.success`.
 - **Time-trap:** a submit within 5 s of the first human interaction (`pointerdown`, `keydown` or `input` on the form), or with none recorded, gets a fake success. Values restored from this device's session or draft prove a human: the clock is dated 5 s back, so a submit right after a reload is sent for real.
 - **Retries:**

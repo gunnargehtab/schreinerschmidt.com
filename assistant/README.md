@@ -42,6 +42,12 @@ or `live`, the process refuses to start until `PUBLIC_BASE_URL`, `SITE_ORIGIN`, 
 `MAIL_FROM`, `SEND_MODE` and `DATA_DIR` are set; errors name the variables, never their values.
 `GET /dev/outbox` exists only outside production and only in `dry-run`.
 
+**The site side (phase 7e, decision D3).** Build the site with `PUBLIC_ASSISTANT_ENDPOINT` set to
+this backend's origin (no path, e.g. `https://anfrage.<domain>`): every site form (Konfigurator,
+Kontakt, Karriere) then posts multipart to `/anfrage` and the site's CSP allows this origin. Set
+`SITE_ORIGIN` to the site's `SITE` origin (the `Origin` check, CORS and the `_next` redirect depend
+on it) and `SITE_BASE` to its base path. See `docs/architecture.md` §8 "Endpoint".
+
 Behind a reverse proxy set `TRUST_PROXY=1`: the rate limit then keys on the last
 `X-Forwarded-For` hop, but only for connections from loopback or a private address (127/8, ::1,
 10/8, 172.16/12, 192.168/16, fc00::/7), i.e. the proxy itself. Any other peer's header is ignored.

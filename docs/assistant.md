@@ -15,7 +15,7 @@ A comes first: it is lower risk, needs no new UI, and pays off with every enquir
 |---|---|---|
 | D1 | Backend host | An EU-hosted serverless function or a small EU VPS (§2.1). Decide together with the production host (plan §12 item 10). |
 | D2 | Where Claude runs | Claude API (Anthropic, US) with a DPA, or Claude on Google Vertex AI in the `eu` multi-region (Google as processor). Legal review decides (§7). |
-| D3 | Keep form.taxi? | Replace it with the assistant backend for all forms (one processor fewer), or keep form.taxi and only forward a copy. Recommendation: replace. |
+| D3 | Keep form.taxi? | **Decided 2026-10-23: replace.** When `PUBLIC_ASSISTANT_ENDPOINT` is set, every form (Konfigurator, Kontakt, Karriere) posts to the assistant backend's `/anfrage`; form.taxi (`PUBLIC_FORM_ENDPOINT`) is only the fallback while it is unset (phase 7e, `docs/angebot.md` §9, `docs/architecture.md` §8). |
 | D4 | Chat at all? | Only after A has run for a few weeks and the owner sees value. |
 
 ## 1. Scope
@@ -60,8 +60,9 @@ The backend must be on **its own subdomain of the production domain** (e.g. `anf
 Both POST endpoints check `Origin` against the production origin, reject other content types, and enforce the same honeypot and time-trap rules as today.
 
 ## 3. Site changes
-- **Env:** `PUBLIC_ASSISTANT_ENDPOINT` (https, optional) replaces `PUBLIC_FORM_ENDPOINT` under D3, or sits beside it. `PUBLIC_ASSISTANT_CHAT` (boolean, default `false`) gates the widget.
-- **CSP:** `connect-src` and `form-action` gain the backend origin, exactly like `formSrc` today. Extend the dist test that checks the CSP so the origin appears only when the env var is set.
+- **Env:** `PUBLIC_ASSISTANT_ENDPOINT` (https origin without a path, optional) replaces `PUBLIC_FORM_ENDPOINT` under D3 (decided: replace): when set, all forms post to `${origin}/anfrage` and form.taxi is unused; unset, form.taxi stays the fallback. Not in `env/pages.env`. `PUBLIC_ASSISTANT_CHAT` (boolean, default `false`) gates the widget (not built yet).
+- **Build guard (forms, 7e):** a production build needs `PUBLIC_ASSISTANT_ENDPOINT` or `PUBLIC_FORM_ENDPOINT`.
+- **CSP:** `connect-src` and `form-action` gain the backend origin, exactly like `formSrc` today; with both env vars set only the one in use (the assistant). The dist CSP test checks the origin appears only when the env var is set (done in 7e, `src/lib/form-target.mjs`).
 - **Demo builds** (`PUBLIC_DEMO=true`): no endpoint, so no CSP change, no widget and zero network, unchanged from today.
 - **Build guard:** a production build with `PUBLIC_ASSISTANT_CHAT=true` fails unless the knowledge export (§5.3) is non-empty and the Datenschutz entry for the assistant is no longer `needs-review`.
 

@@ -1,8 +1,8 @@
 ---
 // File upload (CV) inside a <Field>, production forms only (docs/architecture.md §8). The demo
 // transmits nothing, so it shows the label and a note instead of an input. The 10 MB limit is
-// checked in enhance.ts (setCustomValidity) and stated in the hint. FormShell switches to
-// multipart/form-data when it finds a file input.
+// checked in enhance.ts (setCustomValidity) and stated in the hint. Live FormShell forms are
+// always multipart/form-data.
 import Field from './Field.astro';
 import { describedBy, formMode, type FormMode } from './mode';
 import { MAX_FILE_MB, MESSAGES } from '../../scripts/forms/messages.de';

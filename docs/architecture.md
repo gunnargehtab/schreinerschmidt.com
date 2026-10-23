@@ -50,6 +50,7 @@ This document is the authoritative technical reference. It complements `docs/pla
   - `paths: {"~/*": ["./src/*"]}`.
 - `env/pages.env`: `SITE=https://gunnargehtab.github.io`, `BASE_PATH=/schreinerschmidt.com`, `PUBLIC_DEMO=true`.
 - `env/audit.env`: `SITE=http://localhost:4173`, `BASE_PATH=/`, `PUBLIC_DEMO=false`, `PUBLIC_FORM_ENDPOINT=https://form.taxi/s/audit-placeholder`.
+- `env/assistant.env` (phase 7e): the assistant build, `SITE=http://localhost:4174`, `BASE_PATH=/`, `PORT=4174`, `PUBLIC_DEMO=false`, `PUBLIC_ASSISTANT_ENDPOINT=https://anfrage.schreinerei.invalid`, `DIST_DIR=.cache/dist-assistant`, `ALLOW_PLACEHOLDERS=true`. `pages.env` never gets the assistant endpoint: the Pages demo stays network-free.
 
 **npm scripts.** On Windows, npm runs scripts through cmd.exe, so set env via `--env-file`:
 ```json
@@ -66,8 +67,9 @@ This document is the authoritative technical reference. It complements `docs/pla
 "test:links": "node --env-file-if-exists=env/pages.env scripts/check-links.mjs",
 "lighthouse": "node scripts/lighthouse.mjs",
 "assets:migrate": "node scripts/migrate-assets.mjs",
-"verify": "npm run format:check && npm run check && npm run test:unit && npm run build && npm run test:dist && npm run test:e2e && npm run test:links"
+"verify": "npm run format:check && npm run check && npm run test:unit && npm run build && npm run test:dist && npm run test:e2e && npm run test:links && npm run test:assistant"
 ```
+Phase 7e adds `build:assistant`, `test:dist:assistant`, `test:e2e:assistant` and `test:assistant` (all three) for the assistant build (§8, §11).
 `playwright.config.ts` calls `process.loadEnvFile('env/pages.env')` when `BASE_PATH` is not set.
 
 ## 2. `astro.config.mjs` (skeleton)
@@ -303,9 +305,18 @@ Where the remaining photos go:
 | Mode | Without JS | With JS (`src/scripts/forms/enhance.ts`) |
 |---|---|---|
 | Demo | `<form method="dialog">` validates, then does nothing; notice "Demo: Es werden keine Daten übertragen." | Validate → error summary, or inline success "Demo – nichts übertragen". **Zero network.** |
-| Production | `method=post action={endpoint}` (`enctype=multipart/form-data` on the job form); hidden `_next`, `_lang=de`, `_subject` | `fetch(endpoint, {method: 'POST', body: new FormData(form), headers: {Accept: 'application/json'}})` → `{success, error, error_msg}`; on failure, the error summary + tel/mailto fallback |
+| Production | `method=post action={endpoint}` `enctype=multipart/form-data` (every form, also without a file input; phase 7e); hidden `_next`, `_lang=de`, `_subject` | `fetch(endpoint, {method: 'POST', body: new FormData(form), headers: {Accept: 'application/json'}})` → `{success, error, error_msg}`; on failure, the error summary + tel/mailto fallback |
 
 **Never** POST to Pages (it returns 405), and **never** use GET for personal data.
+
+**Endpoint (decision D3, 2026-10-23, `docs/assistant.md` §0).** `src/lib/form-target.mjs` decides, for `astro.config.mjs` (build guard, CSP) and `src/components/forms/mode.ts` (form action) alike:
+- `PUBLIC_ASSISTANT_ENDPOINT` set (an https origin without a path; a path fails the build): **every** form (Konfigurator, Kontakt, Karriere) posts to `${origin}/anfrage`, the assistant backend (`docs/angebot.md` §2). `PUBLIC_FORM_ENDPOINT` is then unused.
+- Otherwise `PUBLIC_FORM_ENDPOINT` (form.taxi) as the fallback.
+- A production build (`PUBLIC_DEMO=false`) needs one of the two. Demo builds post nowhere and add no origin to the CSP, whatever the env holds.
+- CSP `connect-src` and `form-action` gain exactly one origin, the one in use (none in demo builds); `tests/dist/csp.test.ts` checks it per page.
+- The backend accepts `multipart/form-data` only (415 otherwise), so FormShell always sets the enctype. The JS paths send `FormData` (multipart) with `Accept: application/json` and the default credentials mode (no cookies cross-origin); the backend answers with `Access-Control-Allow-Origin` for `SITE_ORIGIN`, which must equal the site's `SITE` origin. `_next` is the absolute danke URL on that origin (the backend redirects nowhere else). The backend's `error` is the site's reason key, derived from the status as `reasonOf()` does.
+- In assistant builds the Konfigurator success view and `/konfigurator/danke/` show the Preisrahmen steps (`success.timelineLive`, `nextLive`), and the Datenschutz page renders its `assistant` blocks instead of the `formtaxi` ones (§9).
+- Tests: `npm run test:assistant` builds the assistant variant into `.cache/dist-assistant` (`env/assistant.env`), runs the whole dist suite on it (`tests/dist/form-target.test.ts` checks action, enctype, `_next`, timeline and Datenschutz per build) and `tests/e2e/assistant*.spec.ts` with `page.route()` answering the endpoint. Those specs skip against the demo build.
 
 **Spam protection:**
 - Honeypot with a neutral name, hidden via a CSS class (never inline style); `aria-hidden` wrapper, `tabindex=-1`, `autocomplete=off`.
@@ -360,7 +371,7 @@ Both pages carry `review: needs-review` and show a demo banner "Rechtliche Prüf
 - No automated decision-making.
 - "Stand" date.
 
-The hosting and form sections render conditionally on demo or production mode.
+The hosting and form sections render conditionally on demo or production mode. In production builds the form sections also switch on the form service (D3, §8): `<!-- assistant -->` blocks (the assistant backend as processor and host, „Anfragen und Preisrahmen“ with the price evaluation by Claude, data minimisation, Art. 22, retention) or `<!-- formtaxi -->` blocks (form.taxi); exactly one kind renders (`src/lib/legal-tokens.ts`).
 
 ## 10. CI/CD (`.github/workflows/deploy.yml`)
 ```yaml
@@ -372,7 +383,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions: { contents: read, pages: read }
     concurrency: { group: build-${{ github.ref }}, cancel-in-progress: true }
-    env: { PUBLIC_DEMO: "${{ vars.PUBLIC_DEMO || 'true' }}", PUBLIC_FORM_ENDPOINT: "${{ vars.PUBLIC_FORM_ENDPOINT }}" }
+    env: { PUBLIC_DEMO: "${{ vars.PUBLIC_DEMO || 'true' }}", PUBLIC_FORM_ENDPOINT: "${{ vars.PUBLIC_FORM_ENDPOINT }}", PUBLIC_ASSISTANT_ENDPOINT: "${{ vars.PUBLIC_ASSISTANT_ENDPOINT }}" }
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -429,6 +440,7 @@ jobs:
   - All tests still run.
   - The artifact upload and the deploy and smoke jobs are skipped until Pages exists: `steps.pages.outcome` and the build job's output `pages`.
 - **`quality.yml`** (weekly + manual): `build:audit` → serve → Lighthouse, plus external link checks; reports uploaded.
+- **`site-assistant.yml`** (push to main, pull requests, manual; phase 7e): `npm run test:assistant` on Chromium, the same step `verify` ends with (§8 "Endpoint"). It sets no env of its own, because `--env-file` never overrides a set variable, and it never deploys.
 - **`dependabot.yml`:** npm weekly (Astro packages grouped, `typescript >= 7` ignored); Actions monthly.
 - **One-time setup** (after user confirmation):
   1. Repo-local git identity.
@@ -451,6 +463,7 @@ jobs:
 
 **Dist tests** (Vitest project `dist`, using node-html-parser):
 - Every inline script and style has a CSP hash.
+- `connect-src` and `form-action` hold `'self'` plus the origin of the form service in use, once; only `'self'` in demo builds (§8 "Endpoint"). The demo build contains the assistant origin nowhere; the assistant build (`npm run test:assistant`) runs the whole suite again.
 - No `style=` attribute except custom properties.
 - No root-relative URL without the base.
 - Redirect targets exist.

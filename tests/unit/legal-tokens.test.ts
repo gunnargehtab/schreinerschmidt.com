@@ -59,6 +59,34 @@ describe('selectModeBlocks', () => {
     expect(selectModeBlocks(text, false)).toBe(text);
   });
 
+  it('keeps the blocks of the form service in production only (D3)', () => {
+    const forms = [
+      '<!-- production -->',
+      'Produktion.',
+      '<!-- /production -->',
+      '<!-- formtaxi -->',
+      'Formulardienst form.taxi.',
+      '<!-- /formtaxi -->',
+      '<!-- assistant -->',
+      'Anfrage-Server.',
+      '<!-- /assistant -->',
+    ].join('\n');
+    const assistant = selectModeBlocks(forms, false, 'assistant');
+    expect(assistant).toContain('Produktion.');
+    expect(assistant).toContain('Anfrage-Server.');
+    expect(assistant).not.toContain('form.taxi');
+    for (const out of [selectModeBlocks(forms, false), selectModeBlocks(forms, false, 'formtaxi')]) {
+      expect(out).toContain('Formulardienst form.taxi.');
+      expect(out).not.toContain('Anfrage-Server.');
+    }
+    // Demo builds keep neither, whatever the service.
+    const demo = selectModeBlocks(forms, true, 'assistant');
+    expect(demo).not.toContain('Anfrage-Server.');
+    expect(demo).not.toContain('form.taxi');
+    expect(demo).not.toContain('Produktion.');
+    expect(() => selectModeBlocks('<!-- production -->\n<!-- assistant -->', false)).toThrow(/inside an open/);
+  });
+
   it('rejects unbalanced blocks', () => {
     expect(() => selectModeBlocks('<!-- demo -->\ntext', true)).toThrow(/never closed/);
     expect(() => selectModeBlocks('text\n<!-- /demo -->', true)).toThrow(/without a matching opener/);
@@ -137,9 +165,13 @@ describe('the real templates', () => {
     readFileSync(`src/content/legal/${name}.md`, 'utf8').replace(/^---[\s\S]*?\n---\n/, '');
 
   for (const name of ['impressum', 'datenschutz']) {
-    for (const demo of [true, false]) {
-      it(`${name} (${demo ? 'demo' : 'production'}) leaves no token or comment behind`, () => {
-        const out = resolveLegalMarkdown(body(name), { site, demo });
+    for (const [demo, forms] of [
+      [true, undefined],
+      [false, 'formtaxi'],
+      [false, 'assistant'],
+    ] as const) {
+      it(`${name} (${demo ? 'demo' : `production, ${forms}`}) leaves no token or comment behind`, () => {
+        const out = resolveLegalMarkdown(body(name), { site, demo, forms });
         expect(out).not.toContain('{{');
         expect(out).not.toContain('<!--');
         expect(out).not.toContain('-->');
@@ -147,6 +179,24 @@ describe('the real templates', () => {
       });
     }
   }
+
+  it('datenschutz shows the assistant section only when the forms post to the assistant', () => {
+    const assistant = resolveLegalMarkdown(body('datenschutz'), { site, demo: false, forms: 'assistant' });
+    const formTaxi = resolveLegalMarkdown(body('datenschutz'), { site, demo: false, forms: 'formtaxi' });
+    const demo = resolveLegalMarkdown(body('datenschutz'), { site, demo: true, forms: 'assistant' });
+    expect(assistant).toContain('## Anfragen und Preisrahmen');
+    expect(assistant).toContain('Art.\u202f22 DSGVO');
+    expect(assistant).toContain('Ulf Schmidt');
+    expect(assistant).not.toContain('form.taxi');
+    expect(assistant).not.toContain('In dieser Vorabversion');
+    // Unknown facts stay review marks, never invented values.
+    expect(assistant).toMatch(/data-review="placeholder"[^>]*>wird ergänzt/);
+    expect(formTaxi).toContain('Zur Übermittlung der Formulare nutzen wir den Dienst form.taxi');
+    expect(formTaxi).not.toContain('Anfragen und Preisrahmen');
+    expect(formTaxi).not.toContain('Anfrage-Server');
+    expect(demo).not.toContain('Anfragen und Preisrahmen');
+    expect(demo).not.toContain('Anfrage-Server');
+  });
 
   it('datenschutz shows only the blocks of the current mode', () => {
     const demo = resolveLegalMarkdown(body('datenschutz'), { site, demo: true });

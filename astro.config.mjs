@@ -13,6 +13,7 @@ import {
   speculationRulesScript,
   filterPreselectScript,
 } from './src/lib/inline-scripts.mjs';
+import { cspFormSource, formTarget } from './src/lib/form-target.mjs';
 import { basePathLinks } from './src/lib/markdown/base-path-links.mjs';
 import { placeholderMarks } from './src/lib/markdown/placeholder-marks.mjs';
 
@@ -22,8 +23,13 @@ const SITE = process.env['SITE'] || 'http://localhost:4321';
 const BASE = trim(process.env['BASE_PATH']) ? `/${trim(process.env['BASE_PATH'])}/` : '/';
 const DEMO = process.env['PUBLIC_DEMO'] !== 'false';
 const FORM = process.env['PUBLIC_FORM_ENDPOINT'] || '';
-if (!DEMO && !FORM) throw new Error('Production build needs PUBLIC_FORM_ENDPOINT');
-const formSrc = FORM ? ` ${new URL(FORM).origin}` : '';
+const ASSISTANT = process.env['PUBLIC_ASSISTANT_ENDPOINT'] || '';
+if (!DEMO && !FORM && !ASSISTANT) {
+  throw new Error('Production build needs PUBLIC_ASSISTANT_ENDPOINT or PUBLIC_FORM_ENDPOINT');
+}
+// D3 (docs/assistant.md §0): the assistant replaces form.taxi when set. Only the origin of the service
+// in use goes into connect-src/form-action, and none in demo builds (src/lib/form-target.mjs).
+const formSrc = cspFormSource(formTarget({ demo: DEMO, assistant: ASSISTANT, form: FORM }));
 // `PUBLIC_3D=off` (docs/configurator.md §4.5) compiles the 3D path out: the schema field is a
 // boolean, so normalise the spelling before the env is validated. PreviewPanel.astro renders no
 // 3D tools and the Möbel preview never import()s the loader when it is false.
@@ -118,6 +124,9 @@ function cspMetaFirst() {
 export default defineConfig({
   site: SITE,
   base: BASE,
+  // `DIST_DIR` builds a second variant next to dist/ (env/assistant.env: the assistant build the
+  // dist and e2e tests check, docs/architecture.md §11). Unset: dist/.
+  outDir: process.env['DIST_DIR'] || './dist',
   output: 'static',
   trailingSlash: 'always',
   build: { format: 'directory', inlineStylesheets: 'always' },
@@ -189,6 +198,15 @@ export default defineConfig({
     schema: {
       PUBLIC_DEMO: envField.boolean({ context: 'client', access: 'public', default: true }),
       PUBLIC_FORM_ENDPOINT: envField.string({
+        context: 'client',
+        access: 'public',
+        optional: true,
+        url: true,
+        startsWith: 'https://',
+      }),
+      // The assistant backend (docs/assistant.md §3): an https origin without a path; form-target.mjs
+      // rejects a path. When set, every form posts to `${origin}/anfrage` (D3).
+      PUBLIC_ASSISTANT_ENDPOINT: envField.string({
         context: 'client',
         access: 'public',
         optional: true,

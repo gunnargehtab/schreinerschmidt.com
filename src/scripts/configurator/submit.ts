@@ -44,10 +44,12 @@ export function shortId(uuid: string): string {
 export const isBot = (honeypot: string, elapsed: number): boolean => honeypot.trim() !== '' || elapsed < MIN_FILL_MS;
 
 /**
- * The failure reason for a form.taxi answer, or null on success (`res.ok && json.success`). 4xx and
- * `success: false` mean the request was rejected (no retry); 5xx counts as a network problem and is
- * retried once. `error_msg` is English and stays out of the UI: the reason keys select the German
- * lines of the markup (`[data-reason]`). Pure.
+ * The failure reason for a form-service answer (the assistant's /anfrage or form.taxi), or null on
+ * success (`res.ok && json.success`). 4xx and `success: false` mean the request was rejected (no
+ * retry); 5xx counts as a network problem and is retried once. The assistant derives its `error`
+ * key from the status the same way (docs/angebot.md §2.2), so the body's key is not read (budget).
+ * `error_msg` is English and stays out of the UI: the reason keys select the German lines of the
+ * markup (`[data-reason]`). Pure.
  */
 export function reasonOf(status: number, json: { success?: boolean }): SubmitError | null {
   if (status >= 200 && status < 300 && json.success) return null;

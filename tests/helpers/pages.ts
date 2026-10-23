@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { parse, type HTMLElement } from 'node-html-parser';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-export const DIST = join(ROOT, 'dist');
+/** dist/, or the variant build in `DIST_DIR` (env/assistant.env: the assistant build). */
+export const DIST = process.env['DIST_DIR'] ? resolve(ROOT, process.env['DIST_DIR']) : join(ROOT, 'dist');
 export const hasDist = existsSync(DIST);
 
 /** `/schreinerschmidt.com/` style base: leading and trailing slash, or `/`. */
@@ -17,6 +18,15 @@ export function getBase(): string {
 
 /** Demo mode is the default; only an explicit `false` turns it off (see env/audit.env). */
 export const isDemo = (): boolean => process.env['PUBLIC_DEMO'] !== 'false';
+
+/**
+ * The assistant origin the build under test posts to (env/assistant.env), or null. Mirrors
+ * src/lib/form-target.mjs: demo builds post nowhere.
+ */
+export const assistantOrigin = (): string | null => {
+  const raw = process.env['PUBLIC_ASSISTANT_ENDPOINT'];
+  return raw && !isDemo() ? new URL(raw).origin : null;
+};
 
 /** All files below dist/ with the given extension (e.g. `.html`), as absolute paths, sorted. */
 export function listFiles(ext: string): string[] {
@@ -108,5 +118,5 @@ export function distEnvMismatch(): string | null {
     problems.push(`dist/index.html has robots "${robots}", but PUBLIC_DEMO is ${isDemo() ? 'on' : 'off'}`);
   }
   if (problems.length === 0) return null;
-  return `${problems.join('; ')}. Use "npm run build" + "npm run test:dist", or "npm run build:audit" + "npm run test:dist:audit".`;
+  return `${problems.join('; ')}. Use "npm run build" + "npm run test:dist", "npm run build:audit" + "npm run test:dist:audit", or "npm run build:assistant" + "npm run test:dist:assistant".`;
 }

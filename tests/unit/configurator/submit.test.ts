@@ -48,6 +48,16 @@ describe('reasonOf', () => {
     expect(reasonOf(503, { success: true })).toBe('network');
   });
 
+  it('reads the assistant backend answers: its `error` key follows the status (docs/angebot.md §2.2)', () => {
+    // The backend's body: {success: false, error: 'rejected' | 'network', error_msg} (assistant/src/anfrage.ts).
+    const failure = (error: string): { success?: boolean } => ({ success: false, ...{ error, error_msg: 'English' } });
+    expect(reasonOf(200, { success: true })).toBeNull();
+    for (const status of [400, 403, 413, 415, 422, 429]) expect(reasonOf(status, failure('rejected'))).toBe('rejected');
+    for (const status of [500, 502]) expect(reasonOf(status, failure('network'))).toBe('network');
+    // form.taxi's own error values map by status as well.
+    expect(reasonOf(422, failure('invalid'))).toBe('rejected');
+  });
+
   it('only ever yields the reason keys that have a German line in the markup', () => {
     fc.assert(
       fc.property(fc.integer({ min: 100, max: 599 }), fc.option(fc.boolean(), { nil: undefined }), (status, ok) => {
