@@ -13,6 +13,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "eval": "tsx eval/run.mts",
+    "demo": "tsx eval/demo.mts",
     "brief": "node scripts/build-brief.mjs"
   },
   "dependencies": {

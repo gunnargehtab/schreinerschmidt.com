@@ -1,8 +1,13 @@
 // An in-process ClaudeClient for tests and `npm run eval -- --dry`: no network, no key. Answers
 // come from queues (a value, a thrown error, or a function of the input), else from defaults that
 // pass the guards. Every call is recorded with its input and corrective codes.
+//
+// AufnahmeClaude (7f) serves recorded answers per case for `npm run demo` and the recorded eval:
+// a lookup maps the case id to its recording, the n-th call of a kind gets the n-th recorded
+// answer (the first answer, then the corrective retry), and the last one repeats. Recorded answers
+// cost nothing, so their usage is zero.
 import type { AngebotstextInput, BewertenInput } from './input';
-import type { ClaudeClient, KiErgebnis, KiNutzung, KiOptionen } from './client';
+import { KiFehler, type ClaudeClient, type KiErgebnis, type KiNutzung, type KiOptionen } from './client';
 import type { Verstoss } from './guards';
 import type { Angebotstext, Bewertung } from './schemas';
 
@@ -73,5 +78,45 @@ export class FakeClaude implements ClaudeClient {
   async angebotstext(input: AngebotstextInput, o: KiOptionen = {}): Promise<KiErgebnis<Angebotstext>> {
     this.calls.push({ aufruf: 'angebotstext', input, korrektur: o.korrektur ?? [] });
     return this.answer(this.angebotQueue, this.defaults.angebotstext ?? defaultAngebotstext, input, o);
+  }
+}
+
+/** Recorded answers of one case: in call order (first answer, then the retry after a guard note). */
+export interface Aufnahme {
+  bewerten: readonly Bewertung[];
+  /** Empty for spam (the step never asks for an Angebot text then). */
+  angebotstext: readonly Angebotstext[];
+}
+
+export const AUFNAHME_MODEL = 'aufnahme';
+const NULL_USAGE: KiNutzung = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+
+/**
+ * Serves recorded answers by case id. A case without a recording, or a call kind without one, is a
+ * permanent `ki_keine_aufnahme` failure (the step then takes its normal failure path).
+ */
+export class AufnahmeClaude implements ClaudeClient {
+  readonly calls: FakeCall[] = [];
+  private readonly zaehler = new Map<string, number>();
+
+  constructor(private readonly finde: (fall: string) => Aufnahme | null | undefined) {}
+
+  private naechste<T>(fall: string, aufruf: FakeCall['aufruf'], liste: readonly T[] | undefined): KiErgebnis<T> {
+    const key = `${fall}|${aufruf}`;
+    const n = this.zaehler.get(key) ?? 0;
+    this.zaehler.set(key, n + 1);
+    const antwort = liste?.[Math.min(n, liste.length - 1)];
+    if (antwort === undefined) throw new KiFehler('ki_keine_aufnahme', false);
+    return { output: structuredClone(antwort), usage: { ...NULL_USAGE }, model: AUFNAHME_MODEL };
+  }
+
+  async bewerten(input: BewertenInput, o: KiOptionen = {}): Promise<KiErgebnis<Bewertung>> {
+    this.calls.push({ aufruf: 'bewerten', input, korrektur: o.korrektur ?? [] });
+    return this.naechste(input.fall, 'bewerten', this.finde(input.fall)?.bewerten);
+  }
+
+  async angebotstext(input: AngebotstextInput, o: KiOptionen = {}): Promise<KiErgebnis<Angebotstext>> {
+    this.calls.push({ aufruf: 'angebotstext', input, korrektur: o.korrektur ?? [] });
+    return this.naechste(input.fall, 'angebotstext', this.finde(input.fall)?.angebotstext);
   }
 }

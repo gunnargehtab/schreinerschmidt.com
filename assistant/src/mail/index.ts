@@ -109,6 +109,8 @@ export function createMailer(config: Config, opts: MailerOptions = {}): Mailer {
         from: config.mailFrom,
         to,
         subject,
+        // The injected clock (tests, the demo's fake clock); the system clock in production.
+        date: new Date(now()),
         text: m.text,
         textEncoding: 'quoted-printable',
         attachments: (m.attachments ?? []).map((a) => ({
