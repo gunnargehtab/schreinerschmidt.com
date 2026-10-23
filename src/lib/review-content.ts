@@ -57,7 +57,8 @@ export function loadReviewItems(): Promise<ReviewItem[]> {
     }
     // Page copy and legal templates are only scanned for `[[Platzhalter: …]]` markers. A legal body is
     // reduced to its production text: demo-only blocks never go live, so their markers can't block.
-    // Of the form-service blocks only those of the build's service count (form.taxi in demo builds).
+    // Of the form-service blocks only those of the build's service count; demo builds scan the
+    // assistant blocks, the service decided for production (D3, docs/assistant.md §0).
     const copy: ReviewEntry[] = [
       ...(await getCollection('pages')).map((e) => ({
         collection: 'pages',
@@ -68,7 +69,7 @@ export function loadReviewItems(): Promise<ReviewItem[]> {
         collection: 'legal',
         id: e.id,
         data: e.data as Record<string, unknown>,
-        body: stripComments(selectModeBlocks(e.body ?? '', false, FORM_SERVICE)),
+        body: stripComments(selectModeBlocks(e.body ?? '', false, FORM_SERVICE ?? 'assistant')),
       })),
     ];
     return collectReviewItems({ entries, copy, assets, sources: sourceFiles });

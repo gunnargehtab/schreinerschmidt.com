@@ -40,7 +40,7 @@ Diese Website kommt ohne Cookies aus. Wir setzen keine Analyse- oder Tracking-Di
 
 <!-- assistant -->
 
-Anfragen aus dem Konfigurator nimmt unser eigener Anfrage-Server entgegen. Er berechnet nach festen Regeln einen unverbindlichen Preisrahmen und lässt Ihre Projektangaben, ohne Ihre Kontaktdaten und ohne Ihre Fotos, von einem KI-Modell bewerten. Ob und was Sie von uns erhalten, entscheidet immer ein Mensch. Einzelheiten stehen im Abschnitt „Anfragen und Preisrahmen“.
+Anfragen aus dem Konfigurator nimmt unser eigener Anfrage-Server entgegen. Er berechnet mit unseren Preissätzen einen unverbindlichen Preisrahmen und lässt Ihre Projektangaben, ohne Ihre Kontaktdaten und ohne Ihre Fotos, von einem KI-Modell bewerten. Ob und was Sie von uns erhalten, entscheidet immer ein Mensch. Einzelheiten stehen im Abschnitt „Anfragen und Preisrahmen“.
 <!-- /assistant -->
 
 ## Hosting und Server-Logs
@@ -102,7 +102,7 @@ Für die Speicherdauer gilt das Gleiche wie bei der Kontaktaufnahme per E-Mail o
 
 <!-- needs-review: ganzer Abschnitt (docs/angebot.md §9, docs/assistant.md §7): Auftragsverarbeitung, Drittlandübermittlung (Entscheidung D2: Claude API bei Anthropic oder Claude auf Google Vertex AI; fällt D2 auf Vertex AI, ändert sich der genannte Anbieter), Art. 22 DSGVO, Rechtsgrundlage und Löschfristen vor dem Livebetrieb rechtlich prüfen. -->
 
-Wenn Sie uns eine Anfrage über den Konfigurator senden, legt unser Anfrage-Server dafür einen Vorgang mit einer Vorgangsnummer an und speichert Ihre Angaben einschließlich Ihrer Kontaktdaten. Aus Ihren Projektangaben (zum Beispiel Maße, Holzart, Oberfläche oder Stückzahl) und unseren eigenen Preissätzen berechnet er einen unverbindlichen Preisrahmen. Diese Berechnung folgt festen Regeln, die wir vorgegeben haben; eine künstliche Intelligenz legt dabei keinen Preis fest.
+Wenn Sie uns eine Anfrage über den Konfigurator senden, legt unser Anfrage-Server dafür einen Vorgang mit einer Vorgangsnummer an und speichert Ihre Angaben einschließlich Ihrer Kontaktdaten. Aus Ihren Projektangaben (zum Beispiel Maße, Holzart, Oberfläche oder Stückzahl) und unseren eigenen Preissätzen berechnet er einen unverbindlichen Preisrahmen. Die Preissätze legen wir fest; ein KI-Modell nennt dabei keine Beträge. Bei Vorhaben, für die das Formular keine festen Mengen erfasst (zum Beispiel Reparaturen, Arbeiten im Altbau oder frei beschriebene Vorhaben), schätzt das KI-Modell zunächst den Umfang an Arbeit und Material; den Preisrahmen rechnet der Server auch dann mit unseren Preissätzen aus, und {{owner}} prüft ihn, bevor Sie ihn erhalten.
 
 Zusätzlich lassen wir Ihre Projektangaben von dem KI-Modell Claude des Anbieters Anthropic bewerten: Ist das Vorhaben so machbar, passt es zu unserer Werkstatt, und welche Angaben fehlen noch? Das Modell entwirft außerdem den Text unserer Antwort und, wenn Angaben fehlen, unsere Rückfragen. Anthropic verarbeitet diese Daten in unserem Auftrag ([[Platzhalter: Vertragspartner und Anschrift laut Auftragsverarbeitungsvertrag]]). [[Platzhalter: Serverstandort und Grundlage einer Übermittlung in Drittländer nach rechtlicher Prüfung]] [[Platzhalter: Speicherdauer beim KI-Anbieter laut Vertrag]]
 
@@ -188,7 +188,7 @@ Wir treffen keine Entscheidungen, die ausschließlich auf einer automatisierten 
 
 <!-- assistant -->
 
-Das gilt auch für Anfragen aus dem Konfigurator: Den Preisrahmen berechnen feste Regeln, die KI-Bewertung bereitet unsere Entscheidung nur vor, und ob und was Sie von uns erhalten, prüft und entscheidet ein Mensch (siehe „Anfragen und Preisrahmen“). <!-- needs-review: ob der Vergleich mit dem Budgetrahmen und die Prüfung des Einzugsgebiets in der Bewertung als Profiling nach Art. 4 Nr. 4 DSGVO gelten, rechtlich prüfen; die Aussage „kein Profiling“ im Absatz darüber hängt davon ab. -->
+Das gilt auch für Anfragen aus dem Konfigurator: Den Preisrahmen berechnet der Server mit unseren Preissätzen, die KI-Bewertung bereitet unsere Entscheidung nur vor, und ob und was Sie von uns erhalten, prüft und entscheidet ein Mensch (siehe „Anfragen und Preisrahmen“). <!-- needs-review: ob der Vergleich mit dem Budgetrahmen und die Prüfung des Einzugsgebiets in der Bewertung als Profiling nach Art. 4 Nr. 4 DSGVO gelten, rechtlich prüfen; die Aussage „kein Profiling“ im Absatz darüber hängt davon ab. -->
 <!-- /assistant -->
 
 ## Änderungen dieser Erklärung
