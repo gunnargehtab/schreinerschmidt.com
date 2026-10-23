@@ -20,6 +20,23 @@ describe('eval fixtures', () => {
     expect(new Set(FAELLE.map((f) => f.id)).size).toBe(24);
   });
 
+  it('carries an expected recommendation; unviable cases never expect „Freigeben“', () => {
+    for (const f of FAELLE) {
+      expect(['absagen', 'pruefen', 'freigeben']).toContain(f.erwartet.empfehlung);
+      if (f.art === 'unpassend') expect(f.erwartet.empfehlung).toBe('absagen');
+      if (f.erwartet.spam) expect(f.erwartet.empfehlung).toBe('absagen');
+      expect(f.titel.length).toBeGreaterThan(5);
+    }
+  });
+
+  it('has clearly invented customers (placeholder names, example.com, 0000 numbers)', () => {
+    for (const f of FAELLE) {
+      expect(String(f.values['name'])).toMatch(/Muster|Beispiel|Probe|Normalverbraucher/);
+      expect(String(f.values['email'])).toMatch(/@example\.com$/);
+      expect(String(f.values['telefon'])).toMatch(/^0000 /);
+    }
+  });
+
   it.each(FAELLE.map((f) => [f.id, f] as const))('%s passes the server validation unchanged', (_, f) => {
     const fields = new Map<string, string[]>();
     for (const [k, v] of Object.entries(f.values)) if (v !== undefined) fields.set(k, Array.isArray(v) ? v : [v]);

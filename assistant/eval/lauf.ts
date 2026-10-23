@@ -1,17 +1,18 @@
 // The quality eval (docs/angebot.md §11): every fixture runs through the real `preis` and
 // `bewertung` steps (prompts, guards, retry, template, Mengen pricing) on an in-memory store, with
-// the real Claude client or the dry-run fake. Reported per fixture: whether spam, machbarkeit and
-// passt_zum_betrieb match the expectation, which path produced the Angebot text, and whether any
-// Claude answer contained an amount (a guard event with `betrag`/`prozent`, even when the retry or
-// the template caught it). Totals: expectation matches, guard-pass rate (Angebot texts accepted on
-// the first answer) and „no amount in any Claude text“. 7d adds the recommendation (§7.1) computed
-// from the stored result, and counts unviable fixtures (`art: 'unpassend'`) recommended „Freigeben“
-// (the §11 bar: none). The fixtures carry no expected recommendation yet.
-import type { ClaudeClient } from '../src/claude/client';
-import { FakeClaude, defaultAngebotstext } from '../src/claude/fake';
+// the real Claude client, the dry-run fake or the recorded answers. Reported per fixture: whether
+// spam, machbarkeit and passt_zum_betrieb match the expectation, which path produced the Angebot
+// text, and whether any Claude answer contained an amount (a guard event with `betrag`/`prozent`,
+// even when the retry or the template caught it). Totals: expectation matches, guard-pass rate
+// (Angebot texts accepted on the first answer) and „no amount in any Claude text“. 7d adds the
+// recommendation (§7.1) computed from the stored result, and counts unviable fixtures
+// (`art: 'unpassend'`) recommended „Freigeben“ (the §11 bar: none). 7f adds the expected
+// recommendation per fixture: the bar is a match in ≥ 20 of 24.
+import { MAX_TOKENS, type ClaudeClient } from '../src/claude/client';
+import { AufnahmeClaude, FakeClaude, defaultAngebotstext } from '../src/claude/fake';
 import { pruefeAngebotstext, pruefeRueckfragen } from '../src/claude/guards';
 import type { AngebotstextInput } from '../src/claude/input';
-import { monat } from '../src/claude/kosten';
+import { kostenUsd, monat } from '../src/claude/kosten';
 import type { Angebotstext, Bewertung } from '../src/claude/schemas';
 import { loadConfig } from '../src/config';
 import { empfehlungFuer } from '../src/fall-daten';
@@ -23,6 +24,7 @@ import { bewertung, type AngebotRecord, type BewertungRecord } from '../src/step
 import { preis } from '../src/steps/preis';
 import { openSqliteStore } from '../src/store';
 import type { Payload } from '../src/types';
+import { AUFNAHMEN } from './fixtures/aufnahmen';
 import type { EvalFall } from './fixtures/faelle';
 
 export interface FallErgebnis {
@@ -43,6 +45,8 @@ export interface FallErgebnis {
   gespeichertSauber: boolean;
   /** The recommendation (§7.1) from the stored result. */
   empfehlung: Empfehlung;
+  /** It is the fixture's expected recommendation. */
+  empfehlungOk: boolean;
   /** An unviable fixture recommended „Freigeben“ (must never happen). */
   unpassendFreigegeben: boolean;
   ok: boolean;
@@ -50,7 +54,10 @@ export interface FallErgebnis {
 
 export interface EvalBericht {
   faelle: FallErgebnis[];
+  /** Fixtures whose spam, machbarkeit and passt_zum_betrieb match. */
   erwartungTreffer: number;
+  /** Fixtures whose recommendation matches (§11 bar: ≥ 20 of 24). */
+  empfehlungTreffer: number;
   angebote: number;
   ersteAntwortSauber: number;
   ohneBetrag: number;
@@ -132,6 +139,7 @@ export async function evaluiere(
         betragImText,
         gespeichertSauber,
         empfehlung: empf,
+        empfehlungOk: empf === f.erwartet.empfehlung,
         unpassendFreigegeben,
         ok:
           !fehler && spamOk && machbarkeitOk && passtOk && !betragImText && gespeichertSauber && !unpassendFreigegeben,
@@ -141,6 +149,7 @@ export async function evaluiere(
     return {
       faelle: out,
       erwartungTreffer: out.filter((r) => r.spamOk && r.machbarkeitOk && r.passtOk).length,
+      empfehlungTreffer: out.filter((r) => r.empfehlungOk).length,
       angebote: angebote.length,
       ersteAntwortSauber: angebote.filter((r) => r.pfad === 'ki').length,
       ohneBetrag: out.filter((r) => !r.betragImText).length,
@@ -195,4 +204,19 @@ export function dryClient(f: EvalFall): FakeClaude {
     },
   });
   return fake;
+}
+
+/** The recorded answers of one fixture (eval/fixtures/aufnahmen.ts), whatever the case id. */
+export const aufnahmeClient = (f: EvalFall): AufnahmeClaude => new AufnahmeClaude(() => AUFNAHMEN[f.id]);
+
+/** Minimum number of recommendation matches of the §11 bar. */
+export const BAR_TREFFER = 20;
+
+/**
+ * Rough upper cost estimate of a live run over `n` fixtures: the full output budget, prompt ≈ 3 500
+ * input tokens per call, plus one retry in four.
+ */
+export function schaetzung(n: number): number {
+  const call = (maxOut: number) => kostenUsd({ input: 3500, output: maxOut, cacheRead: 0, cacheWrite: 0 });
+  return n * (call(MAX_TOKENS.bewerten) + call(MAX_TOKENS.angebotstext)) * 1.25;
 }

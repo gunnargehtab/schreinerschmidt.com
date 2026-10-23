@@ -9,7 +9,8 @@ Phase 7b: Hono server, `POST /anfrage` (form.taxi-compatible), server-side valid
 and `SEND_MODE`. Phase 7c: the `bewertung` step after `preis` (Claude's assessment, Mengen pricing
 for free-text projects, the Angebot text through the output guards; `src/claude/`). Phase 7d: the
 owner's side (the recommendation, the TL;DR mail, the review page with its actions, the customer
-mails with the PDF, reminders, expiry and retention).
+mails with the PDF, reminders, expiry and retention). Phase 7f: `npm run demo`, a dry-run
+walkthrough of all 24 eval fixtures for the owner, with recorded Claude answers.
 
 It is its own npm package (Node 24, ESM, TypeScript 6.0.3) and imports the shared configurator
 code from `../src/lib/configurator/` by relative path; the production bundle inlines it.
@@ -18,17 +19,19 @@ code from `../src/lib/configurator/` by relative path; the production bundle inl
 
 Run them in `assistant/`:
 
-| Command                 | What it does                                                                                                   |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `npm ci`                | Install the pinned dependencies                                                                                |
-| `npm run dev`           | Dev server with reload (`tsx watch`), reads `.env` if present                                                  |
-| `npm run typecheck`     | `tsc --noEmit` with the site's strictness                                                                      |
-| `npm test`              | Vitest, in-process, a temp data directory per test                                                             |
-| `npm run build`         | esbuild bundle `dist/server.mjs` (npm packages stay external)                                                  |
-| `npm start`             | Run the bundle (`npm ci --omit=dev` is enough on the host)                                                     |
-| `npm run brief`         | Regenerate `src/claude/brief.generated.ts` (brief, confirmed shop contact) and `src/pdf/wordmark.generated.ts` |
-| `npm run eval`          | Quality eval against Claude (key, cost estimate, `--yes`)                                                      |
-| `npm run eval -- --dry` | The same eval against the in-process fake (no key, no cost)                                                    |
+| Command                       | What it does                                                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `npm ci`                      | Install the pinned dependencies                                                                                |
+| `npm run dev`                 | Dev server with reload (`tsx watch`), reads `.env` if present                                                  |
+| `npm run typecheck`           | `tsc --noEmit` with the site's strictness                                                                      |
+| `npm test`                    | Vitest, in-process, a temp data directory per test                                                             |
+| `npm run build`               | esbuild bundle `dist/server.mjs` (npm packages stay external)                                                  |
+| `npm start`                   | Run the bundle (`npm ci --omit=dev` is enough on the host)                                                     |
+| `npm run brief`               | Regenerate `src/claude/brief.generated.ts` (brief, confirmed shop contact) and `src/pdf/wordmark.generated.ts` |
+| `npm run eval`                | Quality eval against Claude (key, cost estimate, `--yes`)                                                      |
+| `npm run eval -- --dry`       | The same eval against the in-process fake (no key, no cost)                                                    |
+| `npm run eval -- --aufnahmen` | The same eval against the recorded answers (no key, no cost; the bar as a regression test)                     |
+| `npm run demo`                | The owner demo: 24 cases in dry-run with recorded answers, output in `DATA_DIR/demo/` (see below)              |
 
 `GET /health` answers `204`. Outside production and in `dry-run`, `GET /dev/outbox` lists the outbox.
 
@@ -93,6 +96,25 @@ Spec and decisions in `docs/angebot.md` §3, §5, §7 and §8. All German copy l
 - **Timers** (on the runner's minute tick): one reminder after 2 working days (BW holidays
   2026–2027, placeholder list), `abgelaufen` after the link's validity, and daily retention (90
   days for Absage/expired, 12 months otherwise; content only, the row and range stay).
+
+## Demo for the owner (phase 7f)
+
+`npm run demo` runs the 24 eval fixtures (`eval/fixtures/faelle.ts`, invented customers) through
+the real backend in-process: `POST /anfrage` with the site's multipart body, the pipeline up to
+the TL;DR, then owner actions through the review routes (Freigeben with confirm for the clear
+cases, Selbst kalkulieren with an own range, Rückfragen, Absage). `SEND_MODE=dry-run` is forced, the
+store and outbox are temporary, the clock is fake. Spec and details: `docs/angebot.md` §11.
+
+- **Claude:** recorded answers (`eval/fixtures/aufnahmen.ts`) unless `ANTHROPIC_API_KEY` is set
+  **and** `--live` is passed; then the cost estimate is printed and the run needs `--yes`
+  (`npm run demo -- --live --yes`).
+- **Output:** `DATA_DIR/demo/` (default `data/demo/`, wiped each run): `index.html`, the German
+  overview for the owner, and one folder per case with the enquiry and TL;DR mails (`.eml`,
+  `.html`), the review page, the PDF preview and, after an action, the confirm and result pages,
+  the customer mail and the Angebot PDF.
+- **Screenshots (optional):** PNGs of the review pages need Playwright with Chromium from the
+  site's `node_modules` (`DEMO_CHROMIUM=/path/to/chrome` picks the browser), PNGs of the Angebot
+  PDFs need `pdftoppm`. Missing tools are skipped with a note; `--ohne-bilder` skips both.
 
 ## SEND_MODE
 
