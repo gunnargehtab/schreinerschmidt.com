@@ -62,6 +62,7 @@ function fontsourceLocal() {
       const fonts = result.fonts.flatMap((font) => {
         const src = font.src.map((source) => {
           if (!('url' in source)) return source;
+          if (source.url.startsWith('file:')) return { ...source, url: fileURLToPath(source.url) };
           const m = JSDELIVR.exec(source.url);
           if (!m) return source;
           const file = join(root, 'node_modules', m[1] ?? '', m[2] ?? '');

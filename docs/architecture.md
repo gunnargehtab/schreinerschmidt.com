@@ -16,7 +16,7 @@ This document is the authoritative technical reference. It complements `docs/pla
    - JSON-LD is not subject to `script-src`.
    - Inline speculation rules **are** subject to it.
 6. **Fonts.** `fontProviders.npm({ remote: false })` alone is **not** offline: it reads the `@fontsource-variable/*` CSS from `node_modules`, but unifont then rewrites every `src` to jsdelivr. Its faces also carry no subset, so `subsets` doesn't filter and `<Font preload={[{subset:'latin'}]}>` emits nothing, and the package CSS's `font-display: swap` overrides the family's `display`.
-   - `astro.config.mjs` therefore wraps it in **`fontsourceLocal()`**. The wrapper maps the jsdelivr URLs back to `node_modules` files, derives the subset from the file name, drops unrequested subsets and removes the package's `display`. **Don't simplify it away.**
+   - `astro.config.mjs` therefore wraps it in **`fontsourceLocal()`**. The wrapper normalizes local `file://` URLs to filesystem paths and maps jsdelivr URLs back to `node_modules` files, derives the subset from the file name, drops unrequested subsets and removes the package's `display`. **Don't simplify it away.**
    - Result: offline builds pinned by the lockfile, latin + latin-ext faces only, one latin preload per family, and Fraunces gets `optional`.
 7. **Structured data.**
    - FAQ rich results are gone, so `FAQPage` markup is optional.
