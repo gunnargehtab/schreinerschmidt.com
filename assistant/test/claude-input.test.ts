@@ -117,6 +117,18 @@ function fall(values: Values, extra: Partial<Payload> = {}): Fall {
     tokenHash: null,
     messageId: null,
     version: 1,
+    tokenExpiresAt: null,
+    tldrAt: null,
+    tldrMessageId: null,
+    empfehlung: null,
+    entscheidung: null,
+    sperre: null,
+    angebotsnummer: null,
+    preisMin: null,
+    preisMax: null,
+    statusAt: null,
+    erinnertAt: null,
+    bereinigtAt: null,
   };
 }
 

@@ -2,7 +2,11 @@
 // own adapter, and the node:sqlite implementation (one file, WAL, migrations by PRAGMA user_version).
 // Tables: `faelle` (cases), `ereignisse` (event log: kind + code, never content), `jobs` (the
 // persisted steps of the job runner, jobs.ts) and `ki_kosten` (7c: estimated Claude spend per
-// month, for the CLAUDE_MONTHLY_LIMIT_USD guard; numbers only).
+// month, for the CLAUDE_MONTHLY_LIMIT_USD guard; numbers only) and `angebotsnummern` (7d: the
+// per-year sequence of the Angebotsnummer A-YYYY-NNNN; a number is assigned once and never reused).
+// 7d adds the owner-side columns to `faelle` (migration 3): token expiry, TL;DR time and Message-ID,
+// the recommendation, the owner's decision with the sent text, an in-flight action marker, the
+// Angebotsnummer, the range kept after retention, the reminder and retention times.
 import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -33,7 +37,8 @@ export const STATUSES: readonly Status[] = [
 
 /**
  * Allowed forward moves (§3 "only forward"). Everything not listed is rejected, including every
- * move back to an earlier state. 7d may widen `kontakt` (e.g. to `gesendet` after the answers).
+ * move back to an earlier state. 7d: `kontakt` stays final (after the customer's answers the owner
+ * replies from his mailbox); `bewertung_fehlgeschlagen` reaches `gesendet` via the manual range.
  */
 export const TRANSITIONS: Readonly<Record<Status, readonly Status[]>> = {
   eingegangen: ['bewertet', 'bewertung_fehlgeschlagen', 'abgelaufen'],
@@ -74,6 +79,29 @@ export interface Fall {
   /** Message-ID of the enquiry mail, for threading (7d). */
   messageId: string | null;
   version: number;
+  /** 7d: expiry of the review link (epoch ms). */
+  tokenExpiresAt: number | null;
+  /** 7d: when the TL;DR went out (epoch ms); reminder and expiry count from here. */
+  tldrAt: number | null;
+  /** 7d: Message-ID of the TL;DR mail (the reminder threads to it). */
+  tldrMessageId: string | null;
+  /** 7d: the Empfehlung (empfehlung.ts) as sent in the TL;DR. */
+  empfehlung: unknown;
+  /** 7d: the owner's decision and the sent text (review/entscheidung.ts). */
+  entscheidung: unknown;
+  /** 7d: an action in flight (`{ art, at }`); set before a customer mail goes out. */
+  sperre: unknown;
+  /** 7d: `A-YYYY-NNNN`, assigned on Freigeben, never reused. */
+  angebotsnummer: string | null;
+  /** 7d: the gross range (computed, or the one sent); kept after retention. */
+  preisMin: number | null;
+  preisMax: number | null;
+  /** 7d: last status change (epoch ms); retention counts from here. */
+  statusAt: number | null;
+  /** 7d: the reminder went out (epoch ms). */
+  erinnertAt: number | null;
+  /** 7d: content deleted by the retention job (epoch ms). */
+  bereinigtAt: number | null;
 }
 
 export type JobStatus = 'pending' | 'running' | 'done' | 'failed';
@@ -119,6 +147,15 @@ export interface FallPatch {
   angebot?: unknown;
   tokenHash?: string | null;
   messageId?: string | null;
+  tokenExpiresAt?: number | null;
+  tldrAt?: number | null;
+  tldrMessageId?: string | null;
+  empfehlung?: unknown;
+  entscheidung?: unknown;
+  sperre?: unknown;
+  preisMin?: number | null;
+  preisMax?: number | null;
+  erinnertAt?: number | null;
 }
 
 export interface Store {
@@ -128,8 +165,35 @@ export interface Store {
   getByAnfrageId(anfrageId: string): Promise<Fall | null>;
   /** Data update without a status change; bumps the version (stale `expectedVersion` → null). */
   update(id: string, patch: FallPatch, expectedVersion?: number): Promise<Fall | null>;
-  /** Forward-only status change, pinned to the current status and version. */
-  transition(id: string, from: Status, to: Status, expectedVersion: number, now: number): Promise<TransitionResult>;
+  /**
+   * Forward-only status change, pinned to the current status and version; an optional patch is
+   * written in the same transaction.
+   */
+  transition(
+    id: string,
+    from: Status,
+    to: Status,
+    expectedVersion: number,
+    now: number,
+    patch?: FallPatch,
+  ): Promise<TransitionResult>;
+  /** Cases in one of the given statuses, oldest first (timers, retention). */
+  faelleMitStatus(statuses: readonly Status[], limit?: number): Promise<Fall[]>;
+  /**
+   * The case's Angebotsnummer `A-YYYY-NNNN`: the stored one, or the next number of `jahr`'s sequence
+   * (assigned once, in one transaction; a number is never handed out twice).
+   */
+  angebotsnummer(id: string, jahr: number): Promise<string>;
+  /**
+   * Retention (§5): deletes the case's content (payload, Kalkulation, Bewertung, Angebot text,
+   * recommendation, decision texts, token, Message-IDs) and keeps id, dates, status and range.
+   */
+  bereinige(id: string, now: number): Promise<boolean>;
+  /**
+   * Marks the reminder as sent without a version bump (a page open in the owner's browser stays
+   * valid); false when it was already marked. `null` clears it again (the send failed).
+   */
+  erinnert(id: string, at: number | null): Promise<boolean>;
   /** Content-free event: a kind and an optional machine code. */
   event(fallId: string, kind: string, code: string | null, now: number): Promise<void>;
   events(fallId: string): Promise<Ereignis[]>;
@@ -200,7 +264,37 @@ const MIGRATIONS: readonly string[] = [
      aufrufe INTEGER NOT NULL DEFAULT 0,
      updated_at TEXT NOT NULL
    ) STRICT;`,
+  // 7d: owner side. Times are epoch ms (INTEGER); JSON columns as before.
+  `ALTER TABLE faelle ADD COLUMN token_expires_at INTEGER;
+   ALTER TABLE faelle ADD COLUMN tldr_at INTEGER;
+   ALTER TABLE faelle ADD COLUMN tldr_message_id TEXT;
+   ALTER TABLE faelle ADD COLUMN empfehlung TEXT;
+   ALTER TABLE faelle ADD COLUMN entscheidung TEXT;
+   ALTER TABLE faelle ADD COLUMN sperre TEXT;
+   ALTER TABLE faelle ADD COLUMN angebotsnummer TEXT;
+   ALTER TABLE faelle ADD COLUMN preis_min INTEGER;
+   ALTER TABLE faelle ADD COLUMN preis_max INTEGER;
+   ALTER TABLE faelle ADD COLUMN status_at INTEGER;
+   ALTER TABLE faelle ADD COLUMN erinnert_at INTEGER;
+   ALTER TABLE faelle ADD COLUMN bereinigt_at INTEGER;
+   CREATE UNIQUE INDEX faelle_angebotsnummer ON faelle(angebotsnummer) WHERE angebotsnummer IS NOT NULL;
+   CREATE INDEX faelle_status ON faelle(status);
+   CREATE TABLE angebotsnummern (
+     jahr INTEGER PRIMARY KEY,
+     letzte INTEGER NOT NULL
+   ) STRICT;`,
 ];
+
+/** The payload a case keeps after retention: no values, no texts. */
+export const LEERER_PAYLOAD: Payload = {
+  values: {},
+  anfrage: null,
+  zusammenfassung: '',
+  subject: '',
+  replyTo: null,
+  configUrl: null,
+  anhaenge: [],
+};
 
 type Row = Record<string, unknown>;
 
@@ -208,6 +302,7 @@ const iso = (ms: number): string => new Date(ms).toISOString();
 const json = (x: unknown): string | null => (x === null || x === undefined ? null : JSON.stringify(x));
 const parse = (x: unknown): unknown => (typeof x === 'string' ? JSON.parse(x) : null);
 const str = (x: unknown): string | null => (typeof x === 'string' ? x : null);
+const num = (x: unknown): number | null => (typeof x === 'number' || typeof x === 'bigint' ? Number(x) : null);
 
 function toFall(r: Row): Fall {
   return {
@@ -224,7 +319,42 @@ function toFall(r: Row): Fall {
     tokenHash: str(r['token_hash']),
     messageId: str(r['message_id']),
     version: Number(r['version']),
+    tokenExpiresAt: num(r['token_expires_at']),
+    tldrAt: num(r['tldr_at']),
+    tldrMessageId: str(r['tldr_message_id']),
+    empfehlung: parse(r['empfehlung']),
+    entscheidung: parse(r['entscheidung']),
+    sperre: parse(r['sperre']),
+    angebotsnummer: str(r['angebotsnummer']),
+    preisMin: num(r['preis_min']),
+    preisMax: num(r['preis_max']),
+    statusAt: num(r['status_at']),
+    erinnertAt: num(r['erinnert_at']),
+    bereinigtAt: num(r['bereinigt_at']),
   };
+}
+
+type Cell = string | number | null;
+
+/** Column values of a patch (only the keys present). */
+function patchColumns(patch: FallPatch): Record<string, Cell> {
+  const cols: Record<string, Cell> = {};
+  const n = (x: number | null | undefined): number | null => (typeof x === 'number' && Number.isFinite(x) ? x : null);
+  if ('kalkulation' in patch) cols['kalkulation'] = json(patch.kalkulation);
+  if ('bewertung' in patch) cols['bewertung'] = json(patch.bewertung);
+  if ('angebot' in patch) cols['angebot'] = json(patch.angebot);
+  if ('tokenHash' in patch) cols['token_hash'] = patch.tokenHash ?? null;
+  if ('messageId' in patch) cols['message_id'] = patch.messageId ?? null;
+  if ('tokenExpiresAt' in patch) cols['token_expires_at'] = n(patch.tokenExpiresAt);
+  if ('tldrAt' in patch) cols['tldr_at'] = n(patch.tldrAt);
+  if ('tldrMessageId' in patch) cols['tldr_message_id'] = patch.tldrMessageId ?? null;
+  if ('empfehlung' in patch) cols['empfehlung'] = json(patch.empfehlung);
+  if ('entscheidung' in patch) cols['entscheidung'] = json(patch.entscheidung);
+  if ('sperre' in patch) cols['sperre'] = json(patch.sperre);
+  if ('preisMin' in patch) cols['preis_min'] = n(patch.preisMin);
+  if ('preisMax' in patch) cols['preis_max'] = n(patch.preisMax);
+  if ('erinnertAt' in patch) cols['erinnert_at'] = n(patch.erinnertAt);
+  return cols;
 }
 
 const toJob = (r: Row): Job => ({
@@ -261,8 +391,22 @@ export function openSqliteStore(dataDir: string | ':memory:'): Store {
     get: db.prepare('SELECT * FROM faelle WHERE id = ?'),
     byAnfrage: db.prepare('SELECT * FROM faelle WHERE anfrage_id = ?'),
     transition: db.prepare(
-      `UPDATE faelle SET status = ?, version = version + 1, decided_at = COALESCE(?, decided_at)
+      `UPDATE faelle SET status = ?, version = version + 1, decided_at = COALESCE(?, decided_at), status_at = ?
        WHERE id = ? AND status = ? AND version = ?`,
+    ),
+    nummerVon: db.prepare('SELECT angebotsnummer FROM faelle WHERE id = ?'),
+    erinnert: db.prepare('UPDATE faelle SET erinnert_at = ? WHERE id = ? AND erinnert_at IS NULL'),
+    erinnertLoeschen: db.prepare('UPDATE faelle SET erinnert_at = NULL WHERE id = ?'),
+    nummerNext: db.prepare(
+      `INSERT INTO angebotsnummern (jahr, letzte) VALUES (?, 1)
+       ON CONFLICT(jahr) DO UPDATE SET letzte = letzte + 1 RETURNING letzte`,
+    ),
+    nummerSet: db.prepare('UPDATE faelle SET angebotsnummer = ? WHERE id = ? AND angebotsnummer IS NULL'),
+    bereinige: db.prepare(
+      `UPDATE faelle SET payload = ?, kalkulation = NULL, bewertung = NULL, angebot = NULL, empfehlung = NULL,
+         entscheidung = NULL, sperre = NULL, token_hash = NULL, token_expires_at = NULL, message_id = NULL,
+         tldr_message_id = NULL, bereinigt_at = ?, version = version + 1
+       WHERE id = ? AND bereinigt_at IS NULL`,
     ),
     event: db.prepare('INSERT INTO ereignisse (fall_id, at, kind, code) VALUES (?, ?, ?, ?)'),
     events: db.prepare('SELECT * FROM ereignisse WHERE fall_id = ? ORDER BY id'),
@@ -329,12 +473,7 @@ export function openSqliteStore(dataDir: string | ':memory:'): Store {
       return r ? toFall(r) : null;
     },
     async update(id, patch, expectedVersion) {
-      const cols: Record<string, string | null> = {};
-      if ('kalkulation' in patch) cols['kalkulation'] = json(patch.kalkulation);
-      if ('bewertung' in patch) cols['bewertung'] = json(patch.bewertung);
-      if ('angebot' in patch) cols['angebot'] = json(patch.angebot);
-      if ('tokenHash' in patch) cols['token_hash'] = patch.tokenHash ?? null;
-      if ('messageId' in patch) cols['message_id'] = patch.messageId ?? null;
+      const cols = patchColumns(patch);
       const keys = Object.keys(cols);
       const set = [...keys.map((k) => `${k} = ?`), 'version = version + 1'].join(', ');
       const where = expectedVersion === undefined ? 'id = ?' : 'id = ? AND version = ?';
@@ -346,17 +485,52 @@ export function openSqliteStore(dataDir: string | ':memory:'): Store {
       const r = db.prepare(`UPDATE faelle SET ${set} WHERE ${where}`).run(...args);
       return r.changes === 1 ? getFall(id) : null;
     },
-    async transition(id, from, to, expectedVersion, now) {
+    async transition(id, from, to, expectedVersion, now, patch) {
       return tx((): TransitionResult => {
         const cur = getFall(id);
         if (!cur) return { ok: false, reason: 'not_found', fall: null };
         if (!canTransition(from, to)) return { ok: false, reason: 'illegal', fall: cur };
         if (cur.status !== from || cur.version !== expectedVersion) return { ok: false, reason: 'stale', fall: cur };
-        const r = q.transition.run(to, DECISIONS.includes(to) ? iso(now) : null, id, from, expectedVersion);
+        const r = q.transition.run(to, DECISIONS.includes(to) ? iso(now) : null, now, id, from, expectedVersion);
         if (r.changes !== 1) return { ok: false, reason: 'stale', fall: cur };
+        const cols = patch ? patchColumns(patch) : {};
+        const keys = Object.keys(cols);
+        if (keys.length) {
+          db.prepare(`UPDATE faelle SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).run(
+            ...keys.map((k) => cols[k] ?? null),
+            id,
+          );
+        }
         q.event.run(id, iso(now), `status:${to}`, null);
         return { ok: true, fall: getFall(id)! };
       });
+    },
+    async faelleMitStatus(statuses, limit = 500) {
+      if (!statuses.length) return [];
+      const marks = statuses.map(() => '?').join(',');
+      const rows = db
+        .prepare(`SELECT * FROM faelle WHERE status IN (${marks}) ORDER BY created_at, id LIMIT ?`)
+        .all(...statuses, limit) as Row[];
+      return rows.map(toFall);
+    },
+    async angebotsnummer(id, jahr) {
+      return tx((): string => {
+        const have = q.nummerVon.get(id) as Row | undefined;
+        if (!have) throw Object.assign(new Error('no case'), { code: 'no_case' });
+        const old = str(have['angebotsnummer']);
+        if (old) return old;
+        const n = Number((q.nummerNext.get(jahr) as Row)['letzte']);
+        const nummer = `A-${jahr}-${String(n).padStart(4, '0')}`;
+        q.nummerSet.run(nummer, id);
+        return nummer;
+      });
+    },
+    async erinnert(id, at) {
+      if (at === null) return q.erinnertLoeschen.run(id).changes === 1;
+      return q.erinnert.run(at, id).changes === 1;
+    },
+    async bereinige(id, now) {
+      return q.bereinige.run(JSON.stringify(LEERER_PAYLOAD), now, id).changes === 1;
     },
     async event(fallId, kind, code, now) {
       q.event.run(fallId, iso(now), kind, code);

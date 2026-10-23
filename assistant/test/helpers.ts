@@ -111,7 +111,17 @@ export interface HarnessOptions {
   peer?: string;
   /** Claude client for the `bewertung` step (default null: the no-AI path, never the network). */
   claude?: ClaudeClient | null;
+  /**
+   * Pipeline override. Tests of the enquiry mail and of 7b/7c details use `PIPELINE_7C`
+   * (`preis`, `bewertung`), so the TL;DR (7d) does not add mails they do not look at.
+   */
+  pipeline?: readonly string[];
+  /** Timers on the runner's tick (default on, as in production). */
+  timers?: boolean;
 }
+
+/** The pipeline before 7d: no TL;DR step. */
+export const PIPELINE_7C: readonly string[] = ['preis', 'bewertung'];
 
 export type Harness = ReturnType<typeof harness>;
 
@@ -139,6 +149,8 @@ export function harness(o: HarnessOptions = {}) {
     mailer,
     steps: { ...STEPS, ...o.steps },
     claude: o.claude ?? null,
+    ...(o.pipeline ? { pipeline: o.pipeline } : {}),
+    ...(o.timers === false ? { timers: false } : {}),
     auto: o.auto ?? false,
     rateLimit: o.rateLimit ?? { limit: 1000 },
   });

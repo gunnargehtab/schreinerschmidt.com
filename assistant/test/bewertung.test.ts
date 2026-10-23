@@ -55,14 +55,14 @@ const GUT: Angebotstext = {
 };
 
 describe('pipeline', () => {
-  it('runs preis → bewertung; stores Bewertung and the KI text; status stays eingegangen', async () => {
-    expect(PIPELINE).toEqual(['preis', 'bewertung']);
+  it('runs preis → bewertung → tldr; stores Bewertung and the KI text; the TL;DR sets bewertet', async () => {
+    expect(PIPELINE).toEqual(['preis', 'bewertung', 'tldr']);
     const claude = new FakeClaude();
     const h = make({ claude });
     const fall = await submit(h);
-    expect(await h.deps.runner.runDue()).toBe(2);
+    expect(await h.deps.runner.runDue()).toBe(3);
     const s = await state(h, fall.id);
-    expect(s.fall.status).toBe('eingegangen');
+    expect(s.fall.status).toBe('bewertet');
     expect(s.rec).toMatchObject({
       quelle: 'ki',
       grund: null,
@@ -102,7 +102,7 @@ describe('pipeline', () => {
     const h2 = make({ dir: h1.dir, claude: claude2, clock: h1.clock });
     await h2.deps.runner.start();
     h2.clock.advance(BACKOFF_MS[0]!);
-    expect(await h2.deps.runner.runDue()).toBe(1);
+    expect(await h2.deps.runner.runDue()).toBe(2); // bewertung (angebotstext only), then tldr
     expect(claude2.calls.map((c) => c.aufruf)).toEqual(['angebotstext']);
     expect((await state(h2, fall.id)).ang?.pfad).toBe('ki');
   });
@@ -252,7 +252,7 @@ describe('without AI', () => {
   it('no key: marker with bewertung null, event ki_deaktiviert, the template text, step done', async () => {
     const h = make(); // harness default: claude null
     const fall = await submit(h);
-    expect(await h.deps.runner.runDue()).toBe(2);
+    expect(await h.deps.runner.runDue()).toBe(3);
     const s = await state(h, fall.id);
     expect(s.rec).toMatchObject({
       quelle: 'ohne_ki',
@@ -262,7 +262,7 @@ describe('without AI', () => {
     });
     expect(s.ang).toMatchObject({ pfad: 'vorlage', grund: 'ki_deaktiviert' });
     expect(s.events).toEqual(expect.arrayContaining(['ki_deaktiviert', 'angebot_vorlage:ki_deaktiviert']));
-    expect(s.fall.status).toBe('eingegangen');
+    expect(s.fall.status).toBe('bewertet'); // the TL;DR „ohne KI-Bewertung“ went out
   });
 
   it('budget used up: skips Claude with ki_budget, like the no-key path', async () => {

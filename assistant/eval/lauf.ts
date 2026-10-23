@@ -4,7 +4,9 @@
 // passt_zum_betrieb match the expectation, which path produced the Angebot text, and whether any
 // Claude answer contained an amount (a guard event with `betrag`/`prozent`, even when the retry or
 // the template caught it). Totals: expectation matches, guard-pass rate (Angebot texts accepted on
-// the first answer) and „no amount in any Claude text“.
+// the first answer) and „no amount in any Claude text“. 7d adds the recommendation (§7.1) computed
+// from the stored result, and counts unviable fixtures (`art: 'unpassend'`) recommended „Freigeben“
+// (the §11 bar: none). The fixtures carry no expected recommendation yet.
 import type { ClaudeClient } from '../src/claude/client';
 import { FakeClaude, defaultAngebotstext } from '../src/claude/fake';
 import { pruefeAngebotstext, pruefeRueckfragen } from '../src/claude/guards';
@@ -12,6 +14,8 @@ import type { AngebotstextInput } from '../src/claude/input';
 import { monat } from '../src/claude/kosten';
 import type { Angebotstext, Bewertung } from '../src/claude/schemas';
 import { loadConfig } from '../src/config';
+import { empfehlungFuer } from '../src/fall-daten';
+import type { Empfehlung } from '../src/empfehlung';
 import type { StepContext } from '../src/jobs';
 import { createLogger, type Logger } from '../src/log';
 import type { Mailer } from '../src/mail/index';
@@ -37,6 +41,10 @@ export interface FallErgebnis {
   betragImText: boolean;
   /** The stored customer texts pass the guards (they always should). */
   gespeichertSauber: boolean;
+  /** The recommendation (§7.1) from the stored result. */
+  empfehlung: Empfehlung;
+  /** An unviable fixture recommended „Freigeben“ (must never happen). */
+  unpassendFreigegeben: boolean;
   ok: boolean;
 }
 
@@ -46,6 +54,8 @@ export interface EvalBericht {
   angebote: number;
   ersteAntwortSauber: number;
   ohneBetrag: number;
+  /** Unviable fixtures recommended „Freigeben“ (§11 bar: 0). */
+  unpassendFreigegeben: number;
   usd: number;
 }
 
@@ -103,6 +113,8 @@ export async function evaluiere(
       );
       const gespeichertSauber =
         (!ang || pruefeAngebotstext(ang.text).length === 0) && (!b || pruefeRueckfragen(b.rueckfragen).length === 0);
+      const empf = empfehlungFuer(fehler ? { ...after, status: 'bewertung_fehlgeschlagen' } : after, events).empfehlung;
+      const unpassendFreigegeben = f.art === 'unpassend' && empf === 'freigeben';
       const spamOk = b !== null && b.spam === f.erwartet.spam;
       const machbarkeitOk = b !== null && f.erwartet.machbarkeit.includes(b.machbarkeit);
       const passtOk =
@@ -119,7 +131,10 @@ export async function evaluiere(
         pfad: ang?.pfad ?? null,
         betragImText,
         gespeichertSauber,
-        ok: !fehler && spamOk && machbarkeitOk && passtOk && !betragImText && gespeichertSauber,
+        empfehlung: empf,
+        unpassendFreigegeben,
+        ok:
+          !fehler && spamOk && machbarkeitOk && passtOk && !betragImText && gespeichertSauber && !unpassendFreigegeben,
       });
     }
     const angebote = out.filter((r) => r.pfad !== null);
@@ -129,6 +144,7 @@ export async function evaluiere(
       angebote: angebote.length,
       ersteAntwortSauber: angebote.filter((r) => r.pfad === 'ki').length,
       ohneBetrag: out.filter((r) => !r.betragImText).length,
+      unpassendFreigegeben: out.filter((r) => r.unpassendFreigegeben).length,
       usd: await store.kiKosten(monat(now)),
     };
   } finally {

@@ -12,6 +12,7 @@ import type { JobRunner } from './jobs';
 import { errorCode, type Logger } from './log';
 import { listOutbox, type Mailer } from './mail/index';
 import type { RateLimiter } from './ratelimit';
+import { reviewRoutes } from './review/routes';
 import type { Store } from './store';
 import type { Clock } from './types';
 
@@ -36,7 +37,7 @@ export interface AppDeps {
   bodyLimit?: number;
 }
 
-/** CSP for the backend's own responses; the review page (7d) sets its own. */
+/** CSP for the backend's own responses; the review page (review/routes.ts) sets its own. */
 const CSP = "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 /** The socket peer, or undefined (no socket, e.g. app.request()). */
@@ -92,7 +93,8 @@ export function createApp(d: AppDeps): Hono {
     await next();
     const h = c.res.headers;
     h.set('X-Content-Type-Options', 'nosniff');
-    h.set('Referrer-Policy', 'no-referrer');
+    // The review page sets `same-origin` (review/routes.ts: Origin on form POSTs); all else no-referrer.
+    if (!h.has('Referrer-Policy')) h.set('Referrer-Policy', 'no-referrer');
     h.set('X-Frame-Options', 'DENY');
     if (!h.has('Content-Security-Policy')) h.set('Content-Security-Policy', CSP);
     if (c.req.path !== '/health') h.set('Cache-Control', 'no-store');
@@ -132,6 +134,9 @@ export function createApp(d: AppDeps): Hono {
     return c.body(null, 204);
   });
   app.post('/anfrage', origin, multipart, rate, size, (c) => handleAnfrage(c, d));
+
+  // Owner review page and actions (7d).
+  reviewRoutes(app, d, clientIp);
 
   // Development tool only: never in production, and only while nothing is really sent.
   if (d.config.nodeEnv !== 'production' && d.config.sendMode === 'dry-run') {

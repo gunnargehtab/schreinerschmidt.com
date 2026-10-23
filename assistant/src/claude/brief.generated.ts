@@ -27,3 +27,26 @@ Keine bestätigten Angaben.
 ## Häufige Fragen
 Keine bestätigten Angaben.
 `;
+
+/** Confirmed contact details of the shop (signature of customer mails and PDF); null: unconfirmed. */
+export interface ShopKontakt {
+  name: string | null;
+  inhaber: string | null;
+  titel: string | null;
+  strasse: string | null;
+  plz: string | null;
+  ort: string | null;
+  telefon: string | null;
+  email: string | null;
+}
+
+export const SHOP_KONTAKT: ShopKontakt = {
+  name: null,
+  inhaber: null,
+  titel: null,
+  strasse: null,
+  plz: null,
+  ort: null,
+  telefon: null,
+  email: null,
+};

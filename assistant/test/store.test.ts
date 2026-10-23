@@ -102,7 +102,7 @@ describe('cases', () => {
     const b = open(dir);
     expect(await b.getByAnfrageId('id-00000002')).toMatchObject({ kurz: 'WXYZ', payload });
     const db = new DatabaseSync(join(dir, DB_FILE), { readOnly: true });
-    expect(db.prepare('PRAGMA user_version').get()).toEqual({ user_version: 2 });
+    expect(db.prepare('PRAGMA user_version').get()).toEqual({ user_version: 3 });
     expect(db.prepare('PRAGMA journal_mode').get()).toEqual({ journal_mode: 'wal' });
     const cols = (db.prepare("SELECT name FROM pragma_table_info('ereignisse')").all() as { name: string }[]).map(
       (r) => r.name,
@@ -112,14 +112,52 @@ describe('cases', () => {
   });
 });
 
+/** Undoes migration 3 (7d) on a database file, back to user_version 2. */
+const ROLLBACK_7D = `DROP INDEX faelle_angebotsnummer; DROP INDEX faelle_status; DROP TABLE angebotsnummern;
+  ${[
+    'token_expires_at',
+    'tldr_at',
+    'tldr_message_id',
+    'empfehlung',
+    'entscheidung',
+    'sperre',
+    'angebotsnummer',
+    'preis_min',
+    'preis_max',
+    'status_at',
+    'erinnert_at',
+    'bereinigt_at',
+  ]
+    .map((c) => `ALTER TABLE faelle DROP COLUMN ${c};`)
+    .join(' ')}
+  PRAGMA user_version = 2;`;
+
+describe('owner side (7d)', () => {
+  it('upgrades a 7c database (user_version 2) and keeps its cases', async () => {
+    const dir = tempDir();
+    const a = open(dir);
+    await a.create({ anfrageId: 'id-00000004', kurz: 'EFGH', payload }, [], T);
+    await a.close();
+    const raw = new DatabaseSync(join(dir, DB_FILE));
+    raw.exec(ROLLBACK_7D);
+    raw.close();
+    const b = open(dir);
+    const f = await b.getByAnfrageId('id-00000004');
+    expect(f).toMatchObject({ kurz: 'EFGH', tokenExpiresAt: null, angebotsnummer: null, statusAt: null });
+    expect(await b.angebotsnummer(f!.id, 2026)).toBe('A-2026-0001');
+    await b.close();
+  });
+});
+
 describe('ki_kosten (7c)', () => {
   it('sums the estimated spend per month and upgrades a 7b database (user_version 1)', async () => {
     const dir = tempDir();
     const a = open(dir);
     await a.create({ anfrageId: 'id-00000003', kurz: 'ABCD', payload }, [], T);
     await a.close();
-    // Roll the file back to the 7b schema, then reopen: migration 2 runs, the case stays.
+    // Roll the file back to the 7b schema, then reopen: migrations 2 and 3 run, the case stays.
     const raw = new DatabaseSync(join(dir, DB_FILE));
+    raw.exec(ROLLBACK_7D);
     raw.exec('DROP TABLE ki_kosten; PRAGMA user_version = 1;');
     raw.close();
     const b = open(dir);

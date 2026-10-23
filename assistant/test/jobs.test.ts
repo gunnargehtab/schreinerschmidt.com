@@ -4,7 +4,7 @@ import type { KalkulierenResult } from '../../src/lib/configurator/pricing/kalku
 import { BACKOFF_MS } from '../src/jobs';
 import { MAIL_BACKOFF_MS } from '../src/steps/anfrage-mail';
 import { BODEN, REGAL, SONSTIGES, anfrageJson, configuratorForm, jpeg, newId } from './fixtures';
-import { cleanupDirs, harness, type Harness } from './helpers';
+import { PIPELINE_7C, cleanupDirs, harness, type Harness } from './helpers';
 
 const open: Harness[] = [];
 const make = (...a: Parameters<typeof harness>) => {
@@ -27,10 +27,10 @@ async function submit(h: Harness, v = REGAL, opts: Parameters<typeof configurato
 const kinds = async (h: Harness, id: string) => (await h.deps.store.events(id)).map((e) => e.kind);
 
 describe('preis step', () => {
-  it('stores a rule-based Kalkulation for a Möbel Regal; the status stays eingegangen', async () => {
+  it('stores a rule-based Kalkulation for a Möbel Regal; the TL;DR then sets bewertet', async () => {
     const h = make();
     const fall = await submit(h, REGAL);
-    expect(await h.deps.runner.runDue()).toBe(2); // preis, then bewertung (no key: without AI)
+    expect(await h.deps.runner.runDue()).toBe(3); // preis, bewertung (no key: without AI), tldr
     const after = await h.deps.store.get(fall.id);
     const k = after?.kalkulation as KalkulierenResult;
     expect(k.kind).toBe('regeln');
@@ -39,7 +39,7 @@ describe('preis step', () => {
     expect(k.kalkulation.min).toBeGreaterThan(0);
     expect(k.kalkulation.min).toBeLessThanOrEqual(k.kalkulation.max);
     expect(k.kalkulation.positionen.some((p) => p.text.startsWith('Anfahrt'))).toBe(true);
-    expect(after?.status).toBe('eingegangen');
+    expect(after?.status).toBe('bewertet');
     expect(await kinds(h, fall.id)).toContain('preis_regeln');
     expect(await kinds(h, fall.id)).not.toContain('build_mismatch');
     expect((await h.deps.store.job(fall.id, 'preis'))?.status).toBe('done');
@@ -64,7 +64,7 @@ describe('preis step', () => {
     const mismatch = events.find((e) => e.kind === 'build_mismatch');
     expect(mismatch).toBeDefined();
     expect(mismatch?.code).toBeNull();
-    expect((await h.deps.store.get(fall.id))?.status).toBe('eingegangen');
+    expect((await h.deps.store.get(fall.id))?.status).toBe('bewertet');
     expect((await h.deps.store.job(fall.id, 'preis'))?.status).toBe('done');
   });
 });
@@ -100,11 +100,12 @@ describe('failures and retries', () => {
     h.clock.advance(BACKOFF_MS[1]! - 1);
     expect(await h.deps.runner.runDue()).toBe(0);
     h.clock.advance(1);
-    expect(await h.deps.runner.runDue()).toBe(1);
+    expect(await h.deps.runner.runDue()).toBe(2); // preis fails for good, then the failed-case TL;DR
     expect(await job()).toMatchObject({ status: 'failed', attempts: 3, lastErrorCode: 'KAPUTT' });
 
     const after = await h.deps.store.get(fall.id);
     expect(after?.status).toBe('bewertung_fehlgeschlagen');
+    expect(h.outbox()).toHaveLength(2); // the enquiry, then the TL;DR „Bewertung fehlgeschlagen“
     const failed = (await h.deps.store.events(fall.id)).find((e) => e.kind === 'preis_failed');
     expect(failed?.code).toBe('KAPUTT');
     expect(h.logs.some((l) => l.includes('Kalkulation kaputt'))).toBe(false);
@@ -113,7 +114,7 @@ describe('failures and retries', () => {
   });
 
   it('retries a failed enquiry mail from the stored payload, naming the missing attachments', async () => {
-    const h = make();
+    const h = make({ pipeline: PIPELINE_7C });
     h.ctl.fail = 1;
     const fall = await submit(h, REGAL, { files: [{ name: 'fotos[]', file: jpeg('Wand.jpg') }] });
     expect(h.outbox()).toHaveLength(0);
@@ -130,7 +131,7 @@ describe('failures and retries', () => {
   });
 
   it('gives up on the enquiry mail after six attempts without touching the case status', async () => {
-    const h = make();
+    const h = make({ pipeline: PIPELINE_7C });
     h.ctl.fail = 6;
     const fall = await submit(h, REGAL);
     await h.deps.runner.runDue();
@@ -157,11 +158,12 @@ describe('resume after restart', () => {
     const h2 = make({ dir: h1.dir });
     await h2.deps.runner.start();
     expect(await h2.deps.store.job(fall.id, 'anfrage_mail')).toMatchObject({ status: 'pending' });
-    expect(await h2.deps.runner.runDue()).toBe(3); // anfrage_mail, preis, bewertung
+    expect(await h2.deps.runner.runDue()).toBe(4); // anfrage_mail, preis, bewertung, tldr
     const after = await h2.deps.store.get(fall.id);
     expect((after?.kalkulation as KalkulierenResult).kind).toBe('regeln');
     expect(after?.messageId).toBeTruthy();
-    expect(h2.outbox()).toHaveLength(1);
+    expect(after?.status).toBe('bewertet');
+    expect(h2.outbox()).toHaveLength(2); // the enquiry, then the TL;DR
     expect(h2.logs.some((l) => l.includes('"event":"jobs_resumed"'))).toBe(true);
   });
 });
