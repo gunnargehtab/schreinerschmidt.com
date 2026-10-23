@@ -60,13 +60,22 @@ export async function erinnerungen(d: TimerDeps): Promise<number> {
   return n;
 }
 
-/** Waiting cases whose link has expired → `abgelaufen` (nothing is sent). Returns the number moved. */
+/**
+ * Waiting cases whose link has expired → `abgelaufen` (nothing is sent). Returns the number moved.
+ * Left alone: a case whose TL;DR never went out (no `tldrAt`/expiry yet: the owner never had the
+ * link) and a case with an action in flight (`sperre`: a customer mail may be on its way; the
+ * action's own status change decides). A `sperre` is never cleared here.
+ */
 export async function ablauf(d: TimerDeps): Promise<number> {
   const now = d.clock.now();
   let n = 0;
   for (const f of await d.store.faelleMitStatus(WARTEND)) {
-    if (f.tokenExpiresAt === null || f.tokenExpiresAt > now) continue;
-    const r = await d.store.transition(f.id, f.status, 'abgelaufen', f.version, now, { sperre: null });
+    if (f.tldrAt === null || f.tokenExpiresAt === null || f.tokenExpiresAt > now) continue;
+    if (f.sperre !== null && f.sperre !== undefined) {
+      d.log.warn('ablauf_uebersprungen', { fall: f.id, code: 'sperre' });
+      continue;
+    }
+    const r = await d.store.transition(f.id, f.status, 'abgelaufen', f.version, now);
     if (r.ok) {
       d.log.info('abgelaufen', { fall: f.id });
       n++;

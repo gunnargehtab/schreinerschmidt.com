@@ -209,7 +209,8 @@ export class JobRunner {
         await store.event(fall.id, `${job.step}_failed`, code, clock.now());
         try {
           if (step.exhausted) await step.exhausted({ ...ctx, fall: (await store.get(fall.id)) ?? fall }, code);
-          if (this.pipeline.includes(job.step)) {
+          // A TL;DR that cannot be sent is not a failed assessment: its own handler retries it.
+          if (this.pipeline.includes(job.step) && job.step !== TLDR_STEP) {
             await markFailed(ctx, code);
             // The owner still gets a TL;DR for the failed case (an existing tldr row is left alone).
             if (job.step !== TLDR_STEP && this.pipeline.includes(TLDR_STEP)) {

@@ -165,6 +165,11 @@ export const SEITE = {
   nichtEnthalten: 'Nicht enthalten',
   naechsterSchritt: 'Nächster Schritt',
   eineProZeile: 'Eine Angabe pro Zeile.',
+  /** 7d review: the Annahmen the customer gets are a field of the form. */
+  annahmenFeld: 'Annahmen',
+  annahmenHinweis:
+    'Eine Angabe pro Zeile. Erscheinen im PDF; nur was für den Kunden verständlich ist. Leer lassen, wenn keine.',
+  annahmenIntern: 'Annahmen der Kalkulation (intern; was der Kunde sieht, steht im Formular unten)',
   textHinweis:
     'Der Preisrahmen steht nur in den beiden Feldern oben. Im Text sind keine Beträge, Prozentangaben, Termine, Fristen, Links oder pauschalen Umweltaussagen möglich; die bestätigten Kontaktdaten des Betriebs dürfen vorkommen.',
   vorschau: 'PDF-Vorschau öffnen (mit dem gespeicherten Text)',

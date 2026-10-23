@@ -10,7 +10,6 @@
 // no-break space, drops format and control characters, replaces a few symbols („≤“ → „<=“) and
 // falls back to the base letter or „?“, so no customer text can make the PDF fail.
 import { PDFDocument, StandardFonts, degrees, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-import type { Kalkulation } from '../../../src/lib/configurator/pricing/types';
 import { SHOP_KONTAKT } from '../claude/brief.generated';
 import type { Angebotstext } from '../claude/schemas';
 import type { Config } from '../config';
@@ -115,7 +114,8 @@ const AKZENT = rgb(0.62, 0.13, 0.14); // #9e2124
 export interface PdfInput {
   fall: Fall;
   text: Angebotstext;
-  kalkulation: Kalkulation | null;
+  /** The Annahmen for the customer, as the owner edited them (never the raw Kalkulation list). */
+  annahmen: readonly string[];
   /** Gross range; null only in a preview without a range yet. */
   min: number | null;
   max: number | null;
@@ -226,6 +226,18 @@ class Schreiber {
   }
 }
 
+/** Left edge of the meta block (Angebotsnummer, Datum, Vorgang) on the first page. */
+export const META_X = RAND.links + BREITE - 62 * MM;
+/** The address column ends 6 mm before the meta block, so long names and places never overlap it. */
+export const ADRESS_BREITE = BREITE - 62 * MM - 6 * MM;
+export const ADRESS_LINKS = RAND.links;
+export const ADRESS_SIZE = 10.5;
+
+/** The customer's name and PLZ/Ort as given, wrapped to the address column. */
+export function adressZeilen(font: PDFFont, name: string | null, plzOrt: string): string[] {
+  return [name, plzOrt].filter((x): x is string => !!x).flatMap((x) => umbrechen(x, font, ADRESS_SIZE, ADRESS_BREITE));
+}
+
 const wordmarkBytes = (): Uint8Array => Buffer.from(WORDMARK_PNG_BASE64, 'base64');
 
 /** The sender line under the letterhead: confirmed details only. */
@@ -265,10 +277,7 @@ export async function angebotPdf(config: Config, i: PdfInput): Promise<Uint8Arra
   // Customer (as given) left, meta right.
   const metaTop = w.y;
   w.zeile(PDF.fuer, { size: 8, color: GRAU });
-  const name = kundeName(v);
-  if (name) w.zeile(name, { size: 10.5 });
-  const po = plzOrt(v);
-  if (po) w.zeile(po, { size: 10.5 });
+  for (const l of adressZeilen(font, kundeName(v), plzOrt(v))) w.zeile(l, { size: ADRESS_SIZE });
   const kundeY = w.y;
   const meta: [string, string][] = [
     [PDF.angebotsnummer, i.nummer ?? PDF.nummerVorschau],
@@ -276,7 +285,7 @@ export async function angebotPdf(config: Config, i: PdfInput): Promise<Uint8Arra
     [PDF.vorgang, `#${i.fall.kurz}`],
   ];
   let my = metaTop;
-  const mx = RAND.links + BREITE - 62 * MM;
+  const mx = META_X;
   for (const [label, wert] of meta) {
     my -= 13;
     w.page.drawText(pdfText(label), { x: mx, y: my, size: 8.5, font, color: GRAU });
@@ -302,10 +311,9 @@ export async function angebotPdf(config: Config, i: PdfInput): Promise<Uint8Arra
     w.ueberschrift(PDF.nichtEnthalten);
     w.liste(i.text.nicht_enthalten);
   }
-  const annahmen = i.kalkulation?.annahmen ?? [];
-  if (annahmen.length) {
+  if (i.annahmen.length) {
     w.ueberschrift(PDF.annahmen);
-    w.liste(annahmen, 9.5);
+    w.liste(i.annahmen, 9.5);
   }
 
   // Preisrahmen box.

@@ -13,6 +13,7 @@ import {
   projektZeilen,
   stepZeilen,
   tierVon,
+  vorbelegteAnnahmen,
   type Zeile,
 } from '../fall-daten';
 import { formatBreite, formatDatum, formatEuro, formatEuroRange, formatMenge, formatZeitpunkt } from '../format';
@@ -304,7 +305,7 @@ function kalkulationBlock(k: Kalkulation | null): Roh {
     </dl>
     ${
       k.annahmen.length
-        ? html`<h3>${SEITE.annahmen}</h3>
+        ? html`<h3>${SEITE.annahmenIntern}</h3>
             <ul>
               ${k.annahmen.map((a) => html`<li>${a}</li>`)}
             </ul>`
@@ -366,6 +367,7 @@ function angebotFormular(k: Kontext, aktion: 'freigeben' | 'manuell', e: Eingabe
         ${textfeld(p, 'leistung', SEITE.leistung, e.leistung ?? '', fehler, { mehrzeilig: true, zeilen: 6, hilfe: SEITE.eineProZeile, pflicht: true })}
         ${textfeld(p, 'nicht_enthalten', SEITE.nichtEnthalten, e.nicht_enthalten ?? '', fehler, { mehrzeilig: true, zeilen: 4, hilfe: SEITE.eineProZeile })}
         ${textfeld(p, 'naechster_schritt', SEITE.naechsterSchritt, e.naechster_schritt ?? '', fehler, { mehrzeilig: true, zeilen: 5, pflicht: true })}
+        ${textfeld(p, 'annahmen', SEITE.annahmenFeld, e.annahmen ?? '', fehler, { mehrzeilig: true, zeilen: 4, hilfe: SEITE.annahmenHinweis })}
       </fieldset>
       <p><a href="${vorschauLink(k.fall.id, k.token)}">${SEITE.vorschau}</a></p>
       <div class="knoepfe"><button type="submit">${SEITE.weiterSenden}</button></div>
@@ -505,7 +507,7 @@ export function fallSeite(k: Kontext, o: FallSeiteOptionen = {}): string {
   const fehler = o.fehler ?? [];
   const e = istEmpfehlung(fall.empfehlung) ? fall.empfehlung : null;
   const entscheidung = o.ergebnis ?? (istEntscheidung(fall.entscheidung) ? fall.entscheidung : null);
-  const vorbelegt = eingabeVon(d.text, fall.preisMin, fall.preisMax);
+  const vorbelegt = eingabeVon(d.text, fall.preisMin, fall.preisMax, vorbelegteAnnahmen(fall));
   const rueckfragen = (d.bewertung?.bewertung?.rueckfragen ?? []).join('\n');
   const eingabe = (f: 'freigeben' | 'manuell' | 'ablehnen'): Eingabe =>
     o.formular === f && o.eingabe ? o.eingabe : f === 'ablehnen' ? { rueckfragen } : vorbelegt;
@@ -581,7 +583,7 @@ export function bestaetigenSeite(
     ${
       o.pdf
         ? html`<form method="get" action="${pfad(k.fall.id, 'vorschau.pdf')}">
-            ${hidden('t', k.token)}${['min', 'max', 'einleitung', 'leistung', 'nicht_enthalten', 'naechster_schritt'].map((n) => (felder[n] !== undefined ? hidden(n, felder[n]!) : null))}
+            ${hidden('t', k.token)}${['min', 'max', 'einleitung', 'leistung', 'nicht_enthalten', 'naechster_schritt', 'annahmen'].map((n) => (felder[n] !== undefined ? hidden(n, felder[n]!) : null))}
             <div class="knoepfe"><button type="submit" class="sekundaer">${SEITE.pdfMitAenderungen}</button></div>
           </form>`
         : null

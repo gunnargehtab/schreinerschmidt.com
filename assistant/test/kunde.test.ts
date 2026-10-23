@@ -3,7 +3,6 @@
 // WinAnsi mapping), the per-year Angebotsnummer sequence and the wordmark embedding.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { inflateSync } from 'node:zlib';
 import nodemailer from 'nodemailer';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +15,7 @@ import { angebotPdf, pdfText, winAnsi } from '../src/pdf/index';
 import { pruefeInhaberText } from '../src/review/formular';
 import { REGAL } from './fixtures';
 import { OWNER, cleanupDirs, harness, header, tempDir, testConfig, type Harness } from './helpers';
+import { pdfTexte } from './pdf-helpers';
 import { aktion, bewerteterFall, formular, kundenmails, seite } from './review-helpers';
 
 let h: Harness | undefined;
@@ -25,29 +25,6 @@ afterEach(async () => {
   vi.restoreAllMocks();
   cleanupDirs();
 });
-
-/** The text drawn in a PDF: every `<hex> Tj` of every (inflated) content stream, CP1252-decoded. */
-export function pdfTexte(bytes: Uint8Array): string[] {
-  const buf = Buffer.from(bytes);
-  const out: string[] = [];
-  const dec = new TextDecoder('windows-1252');
-  let i = 0;
-  for (;;) {
-    const s = buf.indexOf('stream\n', i);
-    if (s < 0) break;
-    const e = buf.indexOf('endstream', s);
-    const raw = buf.subarray(s + 7, e);
-    let text: string;
-    try {
-      text = inflateSync(raw).toString('latin1');
-    } catch {
-      text = raw.toString('latin1');
-    }
-    for (const m of text.matchAll(/<([0-9A-Fa-f]*)> Tj/g)) out.push(dec.decode(Buffer.from(m[1]!, 'hex')));
-    i = e + 9;
-  }
-  return out;
-}
 
 const NB = '\u00a0';
 
@@ -333,7 +310,7 @@ describe('PDF', () => {
         nicht_enthalten: Array.from({ length: 6 }, () => lang.slice(0, 200)),
         naechster_schritt: 'Aufmaß',
       },
-      kalkulation: null,
+      annahmen: [],
       min: 1,
       max: 9_999_999,
       nummer: 'A-2026-0042',

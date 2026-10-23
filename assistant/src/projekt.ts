@@ -434,3 +434,18 @@ export function budgetText(wert: string): string {
   if (max === null && min !== null) return BUDGET.ueber(formatEuro(min));
   return formatEuroRange(min!, max!);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Annahmen
+
+/**
+ * Assumption lines that stay internal (7d review): travel and service area, Claude's estimated
+ * quantities, workshop and installation hours, clamping notes of the Mengen pricing.
+ */
+const INTERNE_ANNAHME =
+  /Anfahrt|PLZ|Einzugsgebiet|Mengen geschätzt|Werkstatt|Montage|stunden|\bh\b|Maximum|begrenzt|Plattenfläche|Pauschalpreis/i;
+
+/** The Kalkulation's assumptions the customer may see: internal lines out, guard-clean only. */
+export function kundenAnnahmen(annahmen: readonly string[] | null | undefined): string[] {
+  return sauber((annahmen ?? []).filter((a) => typeof a === 'string' && !INTERNE_ANNAHME.test(a)));
+}

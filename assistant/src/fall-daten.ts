@@ -9,7 +9,7 @@ import { kalkulationOf, typLabel } from './claude/input';
 import type { Angebotstext } from './claude/schemas';
 import { vorlageAngebotstext } from './claude/templates';
 import { empfehlung, type EmpfehlungErgebnis } from './empfehlung';
-import { budgetText } from './projekt';
+import { budgetText, kundenAnnahmen } from './projekt';
 import { headerText, lineText } from './sanitize';
 import type { AngebotRecord, BewertungRecord } from './steps/bewertung';
 import type { Ereignis, Fall } from './store';
@@ -167,3 +167,11 @@ export function empfehlungFuer(fall: Fall, ereignisse: readonly Ereignis[]): Emp
     fehlgeschlagen: fall.status === 'bewertung_fehlgeschlagen',
   });
 }
+
+/**
+ * The Annahmen pre-filled for the customer: on Freigeben (`bewertet`) the Kalkulation's lines
+ * without the internal ones (projekt.ts kundenAnnahmen); on the own-range path (`manuell`,
+ * `bewertung_fehlgeschlagen`) none, as the calculation they belonged to is replaced.
+ */
+export const vorbelegteAnnahmen = (fall: Fall): string[] =>
+  fall.status === 'bewertet' ? kundenAnnahmen(kalkulationOf(fall.kalkulation)?.annahmen) : [];

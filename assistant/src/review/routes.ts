@@ -26,7 +26,7 @@ import type { Context, Hono, MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { getCookie } from 'hono/cookie';
 import type { AppDeps } from '../app';
-import { fallDaten } from '../fall-daten';
+import { fallDaten, vorbelegteAnnahmen } from '../fall-daten';
 import { berlinJahr } from '../format';
 import { errorCode } from '../log';
 import { absageMail, angebotMail, erlaubteKontaktangaben, rueckfragenMail, type KundenmailArt } from '../mail/kunde';
@@ -144,16 +144,17 @@ export function reviewRoutes(app: Hono, d: AppDeps, clientIp: (c: Context) => st
     let text = daten.text;
     let min = fall.preisMin;
     let max = fall.preisMax;
+    let annahmen = vorbelegteAnnahmen(fall);
     const q = new URL(c.req.url).searchParams;
     if (q.has('einleitung') || q.has('min')) {
       const r = pruefeAngebot(eingabeAus(q), erlaubteKontaktangaben(config));
-      if (r.ok) ({ text, min, max } = r.wert);
+      if (r.ok) ({ text, min, max, annahmen } = r.wert);
     }
     try {
       const pdf = await angebotPdf(config, {
         fall,
         text,
-        kalkulation: daten.kalkulation,
+        annahmen,
         min,
         max,
         nummer: null,
@@ -278,6 +279,11 @@ export function reviewRoutes(app: Hono, d: AppDeps, clientIp: (c: Context) => st
       const cur = (await store.get(a.fall.id)) ?? a.fall;
       return antwort(c, 409, seite(a, cur, { hinweis: { text: SEITE.veraltet, art: 'warn' } }), 'stale', a.fall.id);
     }
+    // The link may have expired between the access check and the claim: release, send nothing.
+    if (claimed.tokenExpiresAt === null || claimed.tokenExpiresAt <= clock.now()) {
+      await store.update(a.fall.id, { sperre: null });
+      return fehler(c, 410, 'expired_at_claim');
+    }
     let gebaut: Awaited<ReturnType<typeof bauen>>;
     let sent;
     try {
@@ -344,6 +350,7 @@ export function reviewRoutes(app: Hono, d: AppDeps, clientIp: (c: Context) => st
     leistung: w.text.leistung.join('\n'),
     nicht_enthalten: w.text.nicht_enthalten.join('\n'),
     naechster_schritt: w.text.naechster_schritt,
+    annahmen: w.annahmen.join('\n'),
   });
 
   /** Freigeben (bewertet) and the own range (manuell, bewertung_fehlgeschlagen): one path. */
@@ -378,7 +385,6 @@ export function reviewRoutes(app: Hono, d: AppDeps, clientIp: (c: Context) => st
         },
       );
     if (a.schritt !== 'senden') return antwort(c, 200, bestaetigen(a.fall), 'confirm', a.fall.id);
-    const daten = fallDaten(a.fall);
     const art: Aktion = aktion === 'freigeben' ? 'freigeben' : 'eigener_preis';
     return senden(
       a,
@@ -390,7 +396,7 @@ export function reviewRoutes(app: Hono, d: AppDeps, clientIp: (c: Context) => st
         const pdf = await angebotPdf(config, {
           fall,
           text: w.text,
-          kalkulation: daten.kalkulation,
+          annahmen: w.annahmen,
           min: w.min,
           max: w.max,
           nummer,
@@ -401,7 +407,7 @@ export function reviewRoutes(app: Hono, d: AppDeps, clientIp: (c: Context) => st
           mail: angebotMail(config, fall, w, pdf),
           mailArt: 'angebot',
           anhang,
-          extra: { preis: { min: w.min, max: w.max }, angebotsnummer: nummer, text: w.text },
+          extra: { preis: { min: w.min, max: w.max }, angebotsnummer: nummer, text: w.text, annahmen: w.annahmen },
         };
       },
       (fall, hinweis) => bestaetigen(fall, hinweis),

@@ -11,7 +11,7 @@
 // send and write finds no Message-ID and sends once more with a fresh token (the old link dies).
 // The step uses the enquiry mail's longer retry schedule (MAIL_BACKOFF_MS).
 import { empfehlungFuer, fallDaten } from '../fall-daten';
-import type { StepContext, StepDef } from '../jobs';
+import { TLDR_STEP, type StepContext, type StepDef } from '../jobs';
 import { errorCode } from '../log';
 import { tldrMail } from '../mail/tldr';
 import type { Fall } from '../store';
@@ -24,31 +24,57 @@ const DAY = 86_400_000;
 export const reviewLink = (publicBaseUrl: string, id: string, token: string): string =>
   `${publicBaseUrl}/angebot/${encodeURIComponent(id)}?t=${encodeURIComponent(token)}`;
 
-async function abschliessen(ctx: StepContext, fall: Fall, messageId: string, at: number): Promise<void> {
+/** After the TL;DR is out: Message-ID, time and the link's expiry (only now), `eingegangen` → `bewertet`. */
+async function abschliessen(
+  ctx: StepContext,
+  fall: Fall,
+  messageId: string,
+  at: number,
+  gueltigBis: number,
+): Promise<void> {
   const { store, clock } = ctx;
+  const patch = { tldrMessageId: messageId, tldrAt: at, tokenExpiresAt: gueltigBis };
   for (let i = 0; i < 3; i++) {
     const cur = (await store.get(fall.id)) ?? fall;
     if (cur.status !== 'eingegangen') {
-      await store.update(cur.id, { tldrMessageId: messageId, tldrAt: at });
+      await store.update(cur.id, patch);
       return;
     }
-    const r = await store.transition(cur.id, 'eingegangen', 'bewertet', cur.version, clock.now(), {
-      tldrMessageId: messageId,
-      tldrAt: at,
-    });
+    const r = await store.transition(cur.id, 'eingegangen', 'bewertet', cur.version, clock.now(), patch);
     if (r.ok || r.reason !== 'stale') return;
   }
 }
 
+/** After the mail schedule (≈ 7 h 20 min): one more try every 6 h … */
+export const TLDR_NACHLAUF_MS = 6 * 3_600_000;
+/** … this many times (12 × 6 h: about 3 days after the mail schedule). */
+export const TLDR_NACHLAEUFE = 12;
+/** The job's attempt counter grows by 2 per late try (the failed run, then the re-queue). */
+const MAX_ZAEHLER = MAIL_BACKOFF_MS.length + 1 + 2 * TLDR_NACHLAEUFE;
+
 export const tldr: StepDef = {
   backoff: MAIL_BACKOFF_MS,
+  /**
+   * The schedule is used up: the case must not disappear silently. Error-level `tldr_failed`, and
+   * the step is queued again every 6 h (status unchanged; the runner does not mark a `tldr` failure
+   * as `bewertung_fehlgeschlagen`), TLDR_NACHLAEUFE times.
+   */
+  async exhausted({ fall, store, clock, log }, code) {
+    const job = await store.job(fall.id, TLDR_STEP);
+    const attempts = job?.attempts ?? 0;
+    log.error('tldr_failed', { fall: fall.id, code, attempt: attempts });
+    if (attempts < MAX_ZAEHLER) {
+      await store.retry(fall.id, TLDR_STEP, clock.now() + TLDR_NACHLAUF_MS, code, clock.now());
+    }
+  },
   async run(ctx) {
     const { store, clock, config, mailer, log } = ctx;
     const fall = await store.get(ctx.fall.id);
     if (!fall || (fall.status !== 'eingegangen' && fall.status !== 'bewertung_fehlgeschlagen')) return;
     if (fall.tldrMessageId) {
       // Sent before; only the status change is missing.
-      if (fall.status === 'eingegangen') await abschliessen(ctx, fall, fall.tldrMessageId, fall.tldrAt ?? clock.now());
+      const at = fall.tldrAt ?? clock.now();
+      await abschliessen(ctx, fall, fall.tldrMessageId, at, fall.tokenExpiresAt ?? at + config.tokenTtlDays * DAY);
       return;
     }
     const e = empfehlungFuer(fall, await store.events(fall.id));
@@ -58,7 +84,8 @@ export const tldr: StepDef = {
     const gueltigBis = now + config.tokenTtlDays * DAY;
     const saved = await store.update(fall.id, {
       tokenHash: tokenHash(token),
-      tokenExpiresAt: gueltigBis,
+      // The link only counts from the successful send (abschliessen); until then it answers 410.
+      tokenExpiresAt: null,
       empfehlung: e,
       preisMin: d.kalkulation?.min ?? null,
       preisMax: d.kalkulation?.max ?? null,
@@ -77,7 +104,7 @@ export const tldr: StepDef = {
     log.info('mail_sent', { fall: fall.id, kind: 'owner', mode: mailer.mode, code: 'tldr' });
     try {
       await store.event(fall.id, 'tldr_gesendet', e.empfehlung, clock.now());
-      await abschliessen(ctx, saved, sent.messageId, clock.now());
+      await abschliessen(ctx, saved, sent.messageId, clock.now(), gueltigBis);
     } catch (err) {
       log.error('bookkeeping_failed', { fall: fall.id, step: 'tldr', code: errorCode(err) });
     }

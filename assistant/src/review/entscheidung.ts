@@ -31,6 +31,8 @@ export interface Entscheidung {
   angebotsnummer?: string;
   /** The Angebot text as sent (Freigeben / eigener Preisrahmen). */
   text?: Angebotstext;
+  /** The Annahmen as sent in the PDF. */
+  annahmen?: string[];
   mail?: GesendeteMail;
 }
 

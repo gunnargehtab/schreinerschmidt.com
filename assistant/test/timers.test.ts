@@ -70,8 +70,8 @@ describe('working days (arbeitstage.ts)', () => {
     expect(new Date(nachArbeitstagen(t, 2)).toISOString()).toBe('2026-12-29T09:00:00.000Z');
     // Fri 2 Oct 2026: Sat 3 Oct is a holiday anyway; Mon 5 (1), Tue 6 (2).
     expect(new Date(nachArbeitstagen(Date.UTC(2026, 9, 2, 12), 2)).toISOString()).toBe('2026-10-06T12:00:00.000Z');
-    // 23:30 Berlin on a Friday is still that Friday (UTC is 21:30).
-    expect(new Date(nachArbeitstagen(Date.UTC(2026, 9, 23, 21, 30), 2)).toISOString()).toBe('2026-10-27T21:30:00.000Z');
+    // 23:30 CEST on a Friday is still that Friday; Tuesday 23:30 CET after the DST change.
+    expect(new Date(nachArbeitstagen(Date.UTC(2026, 9, 23, 21, 30), 2)).toISOString()).toBe('2026-10-27T22:30:00.000Z');
   });
 });
 

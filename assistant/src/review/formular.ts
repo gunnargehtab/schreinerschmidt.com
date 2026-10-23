@@ -15,6 +15,7 @@ export type Feld =
   | 'leistung'
   | 'nicht_enthalten'
   | 'naechster_schritt'
+  | 'annahmen'
   | 'folge'
   | 'kontakt_art'
   | 'rueckfragen'
@@ -33,6 +34,7 @@ export const FELD_LABEL: Readonly<Record<Feld, string>> = {
   leistung: SEITE.leistung,
   nicht_enthalten: SEITE.nichtEnthalten,
   naechster_schritt: SEITE.naechsterSchritt,
+  annahmen: SEITE.annahmenFeld,
   folge: SEITE.folgeLegend,
   kontakt_art: SEITE.kontaktArtLegend,
   rueckfragen: SEITE.rueckfragen,
@@ -60,6 +62,7 @@ const FELDER: readonly Feld[] = [
   'leistung',
   'nicht_enthalten',
   'naechster_schritt',
+  'annahmen',
   'folge',
   'kontakt_art',
   'rueckfragen',
@@ -125,7 +128,12 @@ export interface AngebotEingabe {
   min: number;
   max: number;
   text: Angebotstext;
+  /** The Annahmen the customer gets (PDF), as edited by the owner; may be empty. */
+  annahmen: string[];
 }
+
+/** At most this many Annahmen lines. */
+export const ANNAHMEN_MAX = 10;
 
 function textFeld(
   feld: Feld,
@@ -186,8 +194,10 @@ export function pruefeAngebot(e: Eingabe, erlaubt: readonly string[]): Ergebnis<
   listenFeld('leistung', text.leistung, LIST_LIMITS.leistung, true, erlaubt, fehler);
   listenFeld('nicht_enthalten', text.nicht_enthalten, LIST_LIMITS.nicht_enthalten, false, erlaubt, fehler);
   textFeld('naechster_schritt', text.naechster_schritt, TEXT_LIMITS.naechster_schritt, true, erlaubt, fehler);
+  const annahmen = zeilen(e.annahmen);
+  listenFeld('annahmen', annahmen, ANNAHMEN_MAX, false, erlaubt, fehler);
   if (fehler.length || min === null || max === null) return { ok: false, fehler };
-  return { ok: true, wert: { min, max, text } };
+  return { ok: true, wert: { min, max, text, annahmen } };
 }
 
 export type Ablehnung =
@@ -221,7 +231,12 @@ export function pruefeAblehnung(e: Eingabe, erlaubt: readonly string[]): Ergebni
 }
 
 /** The Eingabe that pre-fills the Angebot form from a stored text and range. */
-export function eingabeVon(text: Angebotstext, min: number | null, max: number | null): Eingabe {
+export function eingabeVon(
+  text: Angebotstext,
+  min: number | null,
+  max: number | null,
+  annahmen: readonly string[],
+): Eingabe {
   return {
     min: min === null ? '' : String(min),
     max: max === null ? '' : String(max),
@@ -229,5 +244,6 @@ export function eingabeVon(text: Angebotstext, min: number | null, max: number |
     leistung: text.leistung.join('\n'),
     nicht_enthalten: text.nicht_enthalten.join('\n'),
     naechster_schritt: text.naechster_schritt,
+    annahmen: annahmen.join('\n'),
   };
 }
