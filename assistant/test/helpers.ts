@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { vi } from 'vitest';
 import { createApp } from '../src/app';
+import type { ClaudeClient } from '../src/claude/client';
 import { loadConfig, type Config } from '../src/config';
 import type { StepRegistry } from '../src/jobs';
 import { createLogger } from '../src/log';
@@ -108,6 +109,8 @@ export interface HarnessOptions {
   auto?: boolean;
   /** Socket peer address for the rate limit (app.request() has no socket). */
   peer?: string;
+  /** Claude client for the `bewertung` step (default null: the no-AI path, never the network). */
+  claude?: ClaudeClient | null;
 }
 
 export type Harness = ReturnType<typeof harness>;
@@ -135,6 +138,7 @@ export function harness(o: HarnessOptions = {}) {
     log,
     mailer,
     steps: { ...STEPS, ...o.steps },
+    claude: o.claude ?? null,
     auto: o.auto ?? false,
     rateLimit: o.rateLimit ?? { limit: 1000 },
   });

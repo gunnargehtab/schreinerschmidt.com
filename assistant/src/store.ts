@@ -1,7 +1,8 @@
 // Storage (docs/angebot.md §5): a small async Store interface, so a serverless host can bring its
 // own adapter, and the node:sqlite implementation (one file, WAL, migrations by PRAGMA user_version).
-// Tables: `faelle` (cases), `ereignisse` (event log: kind + code, never content) and `jobs` (the
-// persisted steps of the job runner, jobs.ts).
+// Tables: `faelle` (cases), `ereignisse` (event log: kind + code, never content), `jobs` (the
+// persisted steps of the job runner, jobs.ts) and `ki_kosten` (7c: estimated Claude spend per
+// month, for the CLAUDE_MONTHLY_LIMIT_USD guard; numbers only).
 import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -60,9 +61,14 @@ export interface Fall {
   createdAt: string;
   decidedAt: string | null;
   payload: Payload;
-  /** KalkulierenResult of the `preis` step (Kalkulation or the `mengen-noetig` marker). */
+  /**
+   * KalkulierenResult of the `preis` step (Kalkulation or the `mengen-noetig` marker); the
+   * `bewertung` step replaces a `mengen-noetig` with `{ kind: 'ki-mengen', kalkulation }` (claude/input.ts).
+   */
   kalkulation: unknown;
+  /** BewertungRecord of the `bewertung` step (steps/bewertung.ts). */
   bewertung: unknown;
+  /** AngebotRecord of the `bewertung` step (steps/bewertung.ts); null for spam. */
   angebot: unknown;
   tokenHash: string | null;
   /** Message-ID of the enquiry mail, for threading (7d). */
@@ -143,6 +149,11 @@ export interface Store {
   resetRunning(now: number): Promise<number>;
   /** The earliest `next_at` of a pending job, or null. */
   nextDue(): Promise<number | null>;
+
+  /** Estimated Claude spend (USD) of a month (`YYYY-MM`). */
+  kiKosten(monat: string): Promise<number>;
+  /** Adds to a month's estimated Claude spend. */
+  addKiKosten(monat: string, usd: number, now: number): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -182,6 +193,13 @@ const MIGRATIONS: readonly string[] = [
      PRIMARY KEY (fall_id, step)
    ) STRICT;
    CREATE INDEX jobs_due ON jobs(status, next_at);`,
+  // 7c: estimated Claude spend per month (usage tokens × list prices, claude/kosten.ts).
+  `CREATE TABLE ki_kosten (
+     monat TEXT PRIMARY KEY,
+     usd REAL NOT NULL DEFAULT 0,
+     aufrufe INTEGER NOT NULL DEFAULT 0,
+     updated_at TEXT NOT NULL
+   ) STRICT;`,
 ];
 
 type Row = Record<string, unknown>;
@@ -267,6 +285,11 @@ export function openSqliteStore(dataDir: string | ':memory:'): Store {
     ),
     resetRunning: db.prepare(`UPDATE jobs SET status = 'pending', updated_at = ? WHERE status = 'running'`),
     nextDue: db.prepare(`SELECT MIN(next_at) AS n FROM jobs WHERE status = 'pending'`),
+    kiKosten: db.prepare('SELECT usd FROM ki_kosten WHERE monat = ?'),
+    addKiKosten: db.prepare(
+      `INSERT INTO ki_kosten (monat, usd, aufrufe, updated_at) VALUES (?, ?, 1, ?)
+       ON CONFLICT(monat) DO UPDATE SET usd = usd + excluded.usd, aufrufe = aufrufe + 1, updated_at = excluded.updated_at`,
+    ),
   };
 
   const getFall = (id: string): Fall | null => {
@@ -375,6 +398,14 @@ export function openSqliteStore(dataDir: string | ':memory:'): Store {
     async nextDue() {
       const r = q.nextDue.get() as Row | undefined;
       return r && r['n'] !== null && r['n'] !== undefined ? Number(r['n']) : null;
+    },
+    async kiKosten(monat) {
+      const r = q.kiKosten.get(monat) as Row | undefined;
+      return r ? Number(r['usd']) : 0;
+    },
+    async addKiKosten(monat, usd, now) {
+      if (!Number.isFinite(usd) || usd < 0) return;
+      q.addKiKosten.run(monat, usd, iso(now));
     },
     async close() {
       if (db.isOpen) db.close();

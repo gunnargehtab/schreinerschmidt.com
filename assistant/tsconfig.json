@@ -28,6 +28,7 @@
   "include": [
     "src",
     "test",
+    "eval",
     "*.config.ts",
     "../src/lib/configurator/**/*.ts",
     "../src/scripts/configurator/preview/params.ts"

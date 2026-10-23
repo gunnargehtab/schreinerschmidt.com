@@ -198,7 +198,7 @@ describe('4: a delivered mail is never sent again', () => {
 
 describe('5: guards follow SEND_MODE, not only NODE_ENV', () => {
   it('requires the production values for allowlist and live even without NODE_ENV=production', () => {
-    const smtp = { SMTP_HOST: 'h', SMTP_USER: 'u', SMTP_PASS: 'p' };
+    const smtp = { SMTP_HOST: 'h', SMTP_USER: 'u', SMTP_PASS: 'p', ANTHROPIC_API_KEY: 'k' };
     for (const mode of ['allowlist', 'live']) {
       try {
         loadConfig({ SEND_MODE: mode, ...smtp }, '/srv');
@@ -217,7 +217,9 @@ describe('5: guards follow SEND_MODE, not only NODE_ENV', () => {
   });
 
   it('serves /dev/outbox only in dry-run', async () => {
-    h = harness({ env: { SEND_MODE: 'allowlist', SMTP_HOST: 'h', SMTP_USER: 'u', SMTP_PASS: 'p' } });
+    h = harness({
+      env: { SEND_MODE: 'allowlist', SMTP_HOST: 'h', SMTP_USER: 'u', SMTP_PASS: 'p', ANTHROPIC_API_KEY: 'k' },
+    });
     expect(h.config.nodeEnv).toBe('test');
     expect((await h.app.request('/dev/outbox')).status).toBe(404);
   });

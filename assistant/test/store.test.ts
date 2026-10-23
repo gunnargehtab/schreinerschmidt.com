@@ -102,13 +102,36 @@ describe('cases', () => {
     const b = open(dir);
     expect(await b.getByAnfrageId('id-00000002')).toMatchObject({ kurz: 'WXYZ', payload });
     const db = new DatabaseSync(join(dir, DB_FILE), { readOnly: true });
-    expect(db.prepare('PRAGMA user_version').get()).toEqual({ user_version: 1 });
+    expect(db.prepare('PRAGMA user_version').get()).toEqual({ user_version: 2 });
     expect(db.prepare('PRAGMA journal_mode').get()).toEqual({ journal_mode: 'wal' });
     const cols = (db.prepare("SELECT name FROM pragma_table_info('ereignisse')").all() as { name: string }[]).map(
       (r) => r.name,
     );
     expect(cols).toEqual(['id', 'fall_id', 'at', 'kind', 'code']);
     db.close();
+  });
+});
+
+describe('ki_kosten (7c)', () => {
+  it('sums the estimated spend per month and upgrades a 7b database (user_version 1)', async () => {
+    const dir = tempDir();
+    const a = open(dir);
+    await a.create({ anfrageId: 'id-00000003', kurz: 'ABCD', payload }, [], T);
+    await a.close();
+    // Roll the file back to the 7b schema, then reopen: migration 2 runs, the case stays.
+    const raw = new DatabaseSync(join(dir, DB_FILE));
+    raw.exec('DROP TABLE ki_kosten; PRAGMA user_version = 1;');
+    raw.close();
+    const b = open(dir);
+    expect(await b.getByAnfrageId('id-00000003')).toMatchObject({ kurz: 'ABCD' });
+    expect(await b.kiKosten('2026-10')).toBe(0);
+    await b.addKiKosten('2026-10', 0.25, T);
+    await b.addKiKosten('2026-10', 0.5, T);
+    await b.addKiKosten('2026-11', 1, T);
+    await b.addKiKosten('2026-10', Number.NaN, T);
+    await b.addKiKosten('2026-10', -3, T);
+    expect(await b.kiKosten('2026-10')).toBeCloseTo(0.75);
+    expect(await b.kiKosten('2026-11')).toBe(1);
   });
 });
 

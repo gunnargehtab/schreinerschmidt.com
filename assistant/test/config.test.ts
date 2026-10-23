@@ -55,14 +55,28 @@ describe('config', () => {
     ]);
   });
 
-  it('requires SMTP credentials for allowlist and live', () => {
-    expect(fails({ ...PROD, SEND_MODE: 'live' }).variables).toEqual(['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS']);
-    expect(fails({ ...PROD, SEND_MODE: 'allowlist', SMTP_HOST: 'smtp.test' }).variables).toEqual([
+  it('requires SMTP credentials and the Claude key for allowlist and live', () => {
+    expect(fails({ ...PROD, SEND_MODE: 'live' }).variables).toEqual([
+      'SMTP_HOST',
       'SMTP_USER',
       'SMTP_PASS',
+      'ANTHROPIC_API_KEY',
     ]);
-    const c = loadConfig({ ...PROD, SEND_MODE: 'live', SMTP_HOST: 'smtp.test', SMTP_USER: 'u', SMTP_PASS: 'p' });
+    expect(
+      fails({ ...PROD, SEND_MODE: 'allowlist', SMTP_HOST: 'smtp.test', ANTHROPIC_API_KEY: 'k' }).variables,
+    ).toEqual(['SMTP_USER', 'SMTP_PASS']);
+    const real = { SMTP_HOST: 'smtp.test', SMTP_USER: 'u', SMTP_PASS: 'p' };
+    expect(fails({ ...PROD, SEND_MODE: 'allowlist', ...real }).variables).toEqual(['ANTHROPIC_API_KEY']);
+    const c = loadConfig({ ...PROD, SEND_MODE: 'live', ...real, ANTHROPIC_API_KEY: 'k' });
     expect(c.smtp).toEqual({ host: 'smtp.test', port: 587, user: 'u', pass: 'p' });
+    expect(c.anthropicApiKey).toBe('k');
+  });
+
+  it('keeps Claude optional in dry-run and parses the monthly limit', () => {
+    expect(loadConfig(PROD, '/srv')).toMatchObject({ anthropicApiKey: null, claudeMonthlyLimitUsd: null });
+    expect(loadConfig({ ...PROD, CLAUDE_MONTHLY_LIMIT_USD: '25.5' }, '/srv').claudeMonthlyLimitUsd).toBe(25.5);
+    expect(fails({ ...PROD, CLAUDE_MONTHLY_LIMIT_USD: '-1' }).variables).toEqual(['CLAUDE_MONTHLY_LIMIT_USD']);
+    expect(fails({ ...PROD, CLAUDE_MONTHLY_LIMIT_USD: 'viel' }).variables).toEqual(['CLAUDE_MONTHLY_LIMIT_USD']);
   });
 
   it('never puts values into errors or the loggable summary', () => {

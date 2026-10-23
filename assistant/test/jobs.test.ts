@@ -30,7 +30,7 @@ describe('preis step', () => {
   it('stores a rule-based Kalkulation for a Möbel Regal; the status stays eingegangen', async () => {
     const h = make();
     const fall = await submit(h, REGAL);
-    expect(await h.deps.runner.runDue()).toBe(1);
+    expect(await h.deps.runner.runDue()).toBe(2); // preis, then bewertung (no key: without AI)
     const after = await h.deps.store.get(fall.id);
     const k = after?.kalkulation as KalkulierenResult;
     expect(k.kind).toBe('regeln');
@@ -157,7 +157,7 @@ describe('resume after restart', () => {
     const h2 = make({ dir: h1.dir });
     await h2.deps.runner.start();
     expect(await h2.deps.store.job(fall.id, 'anfrage_mail')).toMatchObject({ status: 'pending' });
-    expect(await h2.deps.runner.runDue()).toBe(2);
+    expect(await h2.deps.runner.runDue()).toBe(3); // anfrage_mail, preis, bewertung
     const after = await h2.deps.store.get(fall.id);
     expect((after?.kalkulation as KalkulierenResult).kind).toBe('regeln');
     expect(after?.messageId).toBeTruthy();
