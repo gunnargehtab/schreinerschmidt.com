@@ -2,10 +2,12 @@
 // Shared form wrapper (docs/architecture.md §8, plan §7). Fields go into the default slot.
 // - demo (PUBLIC_DEMO): <form method="dialog"> validates natively and sends nothing; a visible
 //   notice says so. With JS: inline success "Demo – nichts übertragen", zero network.
-// - live: method="post" to the form endpoint (form.taxi; CSP form-action/connect-src allow its
-//   origin), multipart when the slot has a file input, hidden _next (absolute danke URL), _lang, _subject.
-//   With JS: fetch() POST with Accept: application/json, then the danke page, or the error summary
-//   with a tel/mailto fallback.
+// - live: method="post" to the form endpoint (the assistant backend's /anfrage, or form.taxi as the
+//   fallback, src/lib/form-target.mjs; CSP form-action/connect-src allow its origin), always
+//   enctype="multipart/form-data" (the assistant answers 415 to anything else, docs/angebot.md §9),
+//   hidden _next (absolute danke URL on the site origin), _lang, _subject.
+//   With JS: fetch() POST of the FormData (multipart) with Accept: application/json and no
+//   credentials, then the danke page, or the error summary with a tel/mailto fallback.
 // Never GET with personal data, never POST to Pages (405).
 import { getEntry } from 'astro:content';
 import { absolute, url } from '../../lib/url';
@@ -40,7 +42,7 @@ interface Props {
   headingLevel?: 2 | 3 | 4;
   /** Defaults to the build mode (PUBLIC_DEMO). Only the test fixture overrides it. */
   mode?: FormMode;
-  /** Defaults to PUBLIC_FORM_ENDPOINT. */
+  /** Defaults to the build's form action (mode.ts FORM_ENDPOINT: the assistant, else form.taxi). */
   endpoint?: string;
   class?: string;
 }
@@ -67,13 +69,14 @@ const {
 
 const mode = formMode(Astro.props.mode);
 const live = mode === 'live';
-if (live && !endpoint) throw new Error(`FormShell "${id}": production forms need PUBLIC_FORM_ENDPOINT`);
+if (live && !endpoint) {
+  throw new Error(`FormShell "${id}": production forms need PUBLIC_ASSISTANT_ENDPOINT or PUBLIC_FORM_ENDPOINT`);
+}
 if (live && !endpoint?.startsWith('https://')) throw new Error(`FormShell "${id}": the endpoint must be https`);
 if (!Astro.site) throw new Error('FormShell: `site` is not configured');
 
 const next = url(danke);
 const fields = await Astro.slots.render('default');
-const multipart = /<input\b[^>]*\btype="file"/i.test(fields);
 
 const site = (await getEntry('settings', 'site'))?.data;
 if (!site) throw new Error('FormShell: settings entry "site" is missing');
@@ -82,7 +85,8 @@ const formAttrs = live
   ? {
       method: 'post',
       action: endpoint,
-      ...(multipart ? { enctype: 'multipart/form-data' } : {}),
+      // Always multipart, also without a file input: the no-JS post must match the JS FormData post.
+      enctype: 'multipart/form-data',
       'data-next': next,
       'data-sending': sendingText,
     }

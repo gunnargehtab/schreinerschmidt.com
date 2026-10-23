@@ -1,9 +1,10 @@
 ---
 // Datenschutzerklärung (docs/architecture.md §9). The Markdown template in src/content/legal/datenschutz.md is
-// resolved against the settings (tokens, demo/production blocks) and rendered at build time by
+// resolved against the settings (tokens, demo/production and assistant/formtaxi blocks) and rendered at build time by
 // renderLegal(); unconfirmed facts show as review marks, never as invented values.
 import { getEntry } from 'astro:content';
 import { PUBLIC_DEMO } from 'astro:env/client';
+import { FORM_SERVICE } from '../../components/forms/mode';
 import PageLayout from '../../layouts/PageLayout.astro';
 // Not InPageNav directly behind the layout: a styled component without imports of its own ties with
 // global.css on Astro's cumulative import index and may be bundled first, demoting the `components`
@@ -23,6 +24,8 @@ const site = await getSite();
 const { html, headings } = await renderLegal(entry.body ?? '', {
   site,
   demo: PUBLIC_DEMO,
+  // Production: the assistant or the form.taxi blocks (D3, src/lib/form-target.mjs).
+  forms: FORM_SERVICE,
   base: import.meta.env.BASE_URL,
 });
 const { title, seo, stand, review } = entry.data;

@@ -6,6 +6,7 @@ import { distEnvMismatch, hasDist } from './pages';
 export {
   DIST,
   ROOT,
+  assistantOrigin,
   distEnvMismatch,
   getBase,
   hasDist,

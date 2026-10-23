@@ -360,16 +360,18 @@ All customer mails come **from the shop's address** (`MAIL_FROM`, `Reply-To` the
 - `live`: real sending. Needs the owner's OK, the confirmed mailbox and the legal review (`docs/owner-checklist.md`).
 
 ## 9. Site changes
-- **Endpoint:** the configurator posts to `PUBLIC_ASSISTANT_ENDPOINT` + `/anfrage` (`docs/assistant.md` §3, CSP origin added only when set). Demo builds unchanged.
-- **Multipart everywhere:** the backend accepts `multipart/form-data` only, so every form that posts to it needs `enctype="multipart/form-data"`, also without a file input (today `FormShell` sets it only with one; a no-JS contact post would get 415).
-- **Success view, „Was passiert jetzt?“** (copywriter, `needs-review`), replacing steps 2–4 of `docs/configurator.md` §5 in live mode only:
+Done in phase 7e (2026-10-23); copy and Datenschutz text are drafts for the copywriter and the legal review.
+- **Endpoint (D3 decided 2026-10-23: replace):** when `PUBLIC_ASSISTANT_ENDPOINT` is set (an https origin without a path), **every** form posts to `${origin}/anfrage`: the Konfigurator, the contact form and the application form (`src/lib/form-target.mjs`, `docs/architecture.md` §8). form.taxi (`PUBLIC_FORM_ENDPOINT`) is only the fallback while it is unset; a production build needs one of the two. CSP `connect-src`/`form-action` gain only the origin in use (`docs/assistant.md` §3). Demo builds and `env/pages.env` are unchanged: no endpoint, no network. `deploy.yml` passes `vars.PUBLIC_ASSISTANT_ENDPOINT` (unset by default).
+- **Multipart everywhere:** the backend accepts `multipart/form-data` only, so every live form carries `enctype="multipart/form-data"`, also without a file input (before 7e `FormShell` set it only with one; a no-JS contact post would have got 415). The JS paths already send `FormData`.
+- **Contract (checked in 7e, no backend change):** `submit.ts` and `enhance.ts` send `Accept: application/json` and the default credentials mode (no cookies cross-origin; the backend's `Access-Control-Allow-Origin` for `SITE_ORIGIN` lets them read the JSON). `{success: true}` → success; 4xx/`success: false` → `rejected` (no retry); 5xx → `network` (the Konfigurator retries once). The backend's `error` key follows the status the same way, so the client reads the status, not the key (the flow budget has no room for more). Without JS the backend answers 303 to `_next`, the absolute danke URL on the site origin; `SITE_ORIGIN` (backend) must equal the site's `SITE` origin. Tests: `assistant/test/site-forms.test.ts` (the no-JS kontakt and karriere bodies byte for byte), `tests/e2e/assistant*.spec.ts`.
+- **Success view, „Was passiert jetzt?“** (copywriter, `needs-review`), replacing steps 2–4 of `docs/configurator.md` §5 in assistant builds only (`success.timelineLive` in `konfigurator.yaml`, `nextLive` in `konfigurator-danke.yaml`; demo and form.taxi builds keep today's list). Draft, every step `needs-review`:
   1. Heute – Anfrage eingegangen (Vorgangsnummer).
-  2. Innerhalb von 2 Werktagen – Ihr Preisrahmen per E-Mail, persönlich geprüft von Schreinermeister Ulf Schmidt (oder unsere Rückfragen).
+  2. Innerhalb von 2 Werktagen – Ihr Preisrahmen per E-Mail, unverbindlich und persönlich geprüft von Ulf Schmidt (oder unsere Rückfragen). The title „Schreinermeister“ is left out until the owner confirms it (`docs/owner-checklist.md`).
   3. Aufmaß vor Ort.
   4. Verbindliches Angebot.
   5. Fertigung in unserer Werkstatt in Mannheim.
   6. Montage & Übergabe.
-- **Datenschutz:** extend „KI-Assistent und Anfrageverarbeitung“ (`docs/assistant.md` §7) with the price evaluation, the retention periods of §5 and the fact that a person decides every reply (Art. 22 DSGVO: no automated decision with legal effect).
+- **Datenschutz:** in assistant builds the form sections render their `<!-- assistant -->` blocks instead of the form.taxi text: the backend as processor and its host and mail provider (placeholders, AVV), the content-free rate limit, and a new section „Anfragen und Preisrahmen“ (`docs/assistant.md` §7): the price range from fixed rules, Claude (Anthropic) as processor for the evaluation with data minimisation (§6.1: no contact data, no photos, redacted free text; contact posts and applications are not evaluated), a person decides every reply (Art. 22 DSGVO: no automated decision with legal effect), Art. 6(1)(b), the retention of §5 (90 days / 12 months, placeholder). Unknown facts are `[[Platzhalter: …]]`, so the production guard blocks a release until they are filled; the page stays `needs-review`.
 - No price is ever shown on the site; `PUBLIC_PRICING` stays off.
 
 ## 10. Configuration (env, backend only)

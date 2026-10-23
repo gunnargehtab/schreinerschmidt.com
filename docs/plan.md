@@ -113,7 +113,7 @@ Environment files are loaded with `node --env-file(-if-exists)=env/*.env`, which
 | dev:base | `npm run dev:base` | `env/pages.env` | true | Base-path parity |
 | pages (demo) | CI, or `npm run build` | configure-pages outputs `origin` / `base_path` | true | `noindex,nofollow,noimageindex`; no canonical; no sitemap; demo banner; forms transmit nothing |
 | audit | `npm run build:audit` | `localhost:4173` / `/` | false | Lighthouse and SEO checks without noindex |
-| production | later | real domain / `` | false | Needs `PUBLIC_FORM_ENDPOINT`. **The build fails on unconfirmed legal or contact facts.** |
+| production | later | real domain / `` | false | Needs `PUBLIC_ASSISTANT_ENDPOINT` (the assistant backend, decision D3, `docs/angebot.md` §9) or, as the fallback, `PUBLIC_FORM_ENDPOINT`. **The build fails on unconfirmed legal or contact facts.** |
 
 Feature flags: `PUBLIC_3D` (default on) and `PUBLIC_PRICING` (default off; compiled out).
 
@@ -131,7 +131,7 @@ Feature flags: `PUBLIC_3D` (default on) and `PUBLIC_PRICING` (default off; compi
   - Red Hat Display Variable: wght 300–900, `display: swap`.
   - Fraunces Variable Italic: wght, `display: optional`.
   - Subsets latin + latin-ext. latin-ext is only fetched via `unicode-range` when needed (Turkish or Polish names). Only latin is preloaded.
-- **Environment schema** (`env.schema`): `PUBLIC_DEMO`, `PUBLIC_FORM_ENDPOINT`, `PUBLIC_3D`, `PUBLIC_PRICING`.
+- **Environment schema** (`env.schema`): `PUBLIC_DEMO`, `PUBLIC_FORM_ENDPOINT`, `PUBLIC_ASSISTANT_ENDPOINT` (phase 7e: when set, every form posts to the assistant backend instead of form.taxi; `docs/angebot.md` §9), `PUBLIC_3D`, `PUBLIC_PRICING`.
 - **CSP** (`security.csp`, emitted as a meta tag):
   - Astro hashes its own scripts and styles. The `is:inline` scripts (theme init, view-transition types, speculation rules) live in **one source**, `src/lib/inline-scripts.mjs`; the config imports them for hashing and the layout imports them for rendering, so the two can't drift.
   - Directives:
@@ -502,7 +502,7 @@ No framework; custom elements and event delegation.
   - sessionStorage; an **opt-in** localStorage draft that expires after 30 days; one `pushState` per step with `popstate` handling.
 - **Submission.**
   - **Demo:** nothing is transmitted. The success view shows the summary, the drawing and the 3D snapshot, plus mailto, copy, download and print.
-  - **Production:** `fetch` sends a multipart POST to form.taxi (JSON response), with honeypot, time-trap and one retry.
+  - **Production:** `fetch` sends a multipart POST to form.taxi (JSON response), with honeypot, time-trap and one retry. With `PUBLIC_ASSISTANT_ENDPOINT` set it goes to the assistant backend instead (`docs/angebot.md` §9).
   - **Payload:** the plain field names; `anfrage_json`; a German `zusammenfassung`; photos (≤ 6, each ≤ 10 MB, downscaled client-side and EXIF-stripped); the 3D snapshot; the SVG drawing.
 - **Afterwards:**
   - A "Was passiert jetzt?" timeline.
@@ -578,7 +578,7 @@ No framework; custom elements and event delegation.
     - Without JS: `method="dialog"`, so validation runs and nothing is sent, with the note "Demo: Es werden keine Daten übertragen."
     - With JS: an inline success message and zero network requests.
   - **Production:**
-    - POST to form.taxi with `_next` (danke page), `_subject`, `_replyto` and `_lang=de`, or `fetch` with `Accept: application/json`.
+    - POST to form.taxi with `_next` (danke page), `_subject`, `_replyto` and `_lang=de`, or `fetch` with `Accept: application/json`. With `PUBLIC_ASSISTANT_ENDPOINT` set, every form posts multipart to the assistant backend instead (`docs/angebot.md` §9).
     - Honeypot (class-hidden) plus a 3 s time-trap.
     - CV upload on the job form.
   - **Never GET** personal data, and never POST to Pages (it returns 405).
@@ -602,7 +602,7 @@ No framework; custom elements and event delegation.
   - **Datenschutz:**
     - No cookies, tracking or external fonts or embeds.
     - **GitHub Pages hosting logs (DPF)**; this section can be swapped for an EU host.
-    - form.taxi as processor with a DPA (AVV); the demo transmits nothing.
+    - form.taxi as processor with a DPA (AVV); the demo transmits nothing. Assistant builds render the backend and „Anfragen und Preisrahmen“ text instead (`docs/angebot.md` §9).
     - Applications, with the retention period.
     - Browser storage under §25 Abs. 2 Nr. 2 TDDDG: theme only after the user chooses, configurator session state, opt-in draft.
     - Data subject rights; LfDI BW as supervisory authority.

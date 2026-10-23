@@ -11,6 +11,7 @@
     "dev:base": "node --env-file=env/pages.env node_modules/astro/bin/astro.mjs dev",
     "build": "node --env-file-if-exists=env/pages.env node_modules/astro/bin/astro.mjs build",
     "build:audit": "node --env-file=env/audit.env node_modules/astro/bin/astro.mjs build",
+    "build:assistant": "node --env-file=env/assistant.env node_modules/astro/bin/astro.mjs build",
     "serve": "node --env-file-if-exists=env/pages.env scripts/serve-dist.mjs",
     "check": "astro check",
     "textures": "node scripts/textures/prepare.mjs",
@@ -19,8 +20,11 @@
     "test:unit": "vitest run --project unit",
     "test:dist": "vitest run --project dist && html-validate \"dist/**/*.html\" && npm run test:budgets",
     "test:dist:audit": "node --env-file=env/audit.env node_modules/vitest/vitest.mjs run --project dist && html-validate \"dist/**/*.html\" && node --env-file=env/audit.env scripts/check-budgets.mjs",
+    "test:dist:assistant": "node --env-file=env/assistant.env node_modules/vitest/vitest.mjs run --project dist && html-validate \".cache/dist-assistant/**/*.html\" && node --env-file=env/assistant.env scripts/check-budgets.mjs",
     "test:budgets": "node scripts/check-budgets.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:assistant": "node --env-file=env/assistant.env node_modules/@playwright/test/cli.js test --project=chromium --project=no-js assistant",
+    "test:assistant": "npm run build:assistant && npm run test:dist:assistant && npm run test:e2e:assistant",
     "test:links": "node --env-file-if-exists=env/pages.env scripts/check-links.mjs",
     "lighthouse": "node scripts/lighthouse.mjs",
     "assets:archive": "node scripts/archive-originals.mjs --from-site",
@@ -28,7 +32,7 @@
     "assets:sketches": "node scripts/make-sketch-variants.mjs",
     "assets:wordmark": "node scripts/make-wordmark.mjs",
     "assets:icons": "node scripts/make-icons.mjs",
-    "verify": "npm run format:check && npm run check && npm run test:unit && npm run build && npm run test:dist && npm run test:e2e && npm run test:links"
+    "verify": "npm run format:check && npm run check && npm run test:unit && npm run build && npm run test:dist && npm run test:e2e && npm run test:links && npm run test:assistant"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "0.4.3",

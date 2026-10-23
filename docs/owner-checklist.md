@@ -61,7 +61,9 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 ## AI assistant (proposal, `docs/assistant.md`)
 - [ ] Does he want AI help with enquiries at all (triage note and reply draft by email; he always sends the reply himself)?
 - [ ] Later: a chat widget on the site that answers from confirmed site content only?
-- [ ] Which route for Claude: Claude API (Anthropic, US) or Claude on Google Vertex AI (EU)? Data processing agreement (AVV) for the chosen one.
+- [ ] Which route for Claude (D2): Claude API (Anthropic, US) or Claude on Google Vertex AI (EU)? Data processing agreement (AVV) for the chosen one, and the basis for the third-country transfer (legal review). Fills the Datenschutz placeholders „Vertragspartner und Anschrift laut Auftragsverarbeitungsvertrag“, „Serverstandort und Grundlage einer Übermittlung in Drittländer“ and „Speicherdauer beim KI-Anbieter laut Vertrag“.
+- [ ] Backend host and domain (D1): an EU VPS or an EU serverless function, on a subdomain such as `anfrage.<domain>`; its AVV, server location and server logs (Datenschutz placeholders „Hosting-Anbieter des Anfrage-Servers mit Anschrift“ and „Serverstandort laut AVV und Server-Logs des Hosting-Anbieters mit Speicherdauer“).
+- [x] D3, keep form.taxi? **Decided 2026-10-23: replace.** With the assistant endpoint set, every form (Konfigurator, Kontakt, Karriere) posts to the assistant backend; form.taxi is only the fallback (`docs/angebot.md` §9). The form.taxi items above only apply if the assistant is not used.
 - [ ] May applications (CVs) be processed by the AI step? Default: no.
 - [ ] Monthly spending limit he is comfortable with (estimate: about 10 € a month).
 
@@ -71,7 +73,9 @@ The demo runs with placeholders that are clearly flagged. Each item below must b
 - [ ] Range widths (± 15 / 25 / 30 %) and the recommendation thresholds (§7.1).
 - [ ] Wording of the non-binding clause, validity (30 days assumed), the Absage text (legal review).
 - [ ] The sending mailbox for Angebote (depends on the Strato / Microsoft 365 decision).
-- [ ] Retention periods (90 days / 12 months assumed).
+- [ ] Retention periods (90 days / 12 months assumed). Confirming them fills the Datenschutz placeholder „Löschfristen vom Inhaber bestätigen“.
+- [ ] Mail provider and mailbox for sending (`SEND_MODE` `allowlist`, then `live`): SMTP host and account, the recipient address for enquiries, its AVV (Datenschutz placeholder „E-Mail-Anbieter (SMTP) mit Anschrift“).
+- [ ] Datenschutz section „Anfragen und Preisrahmen“ and the assistant paragraphs (`src/content/legal/datenschutz.md`, `assistant` blocks): every `[[Platzhalter: …]]` filled and the legal review done. The production guard blocks a release until then.
 
 ## Production
 - [ ] Hosting and domain (EU host recommended), DNS access, Search Console.

@@ -189,6 +189,39 @@ success:
         text: 'Ihr Stück entsteht bei uns, aus dem Holz, das wir gemeinsam ausgesucht haben.'
       - title: 'Montage & Übergabe'
         text: 'Wir liefern, montieren und übergeben.'
+  # Live variant (docs/angebot.md §9): shown instead of `timeline` when the build posts to the
+  # assistant backend (PUBLIC_ASSISTANT_ENDPOINT), never in the demo. Every step is unconfirmed by the
+  # owner. Deliberately no „Schreinermeister“ (title unconfirmed, docs/owner-checklist.md). The AI
+  # evaluation is explained in the Datenschutzerklärung („Anfragen und Preisrahmen“), not advertised here.
+  timelineLive:
+    h2: 'Was passiert jetzt?'
+    items:
+      - when: 'Heute'
+        title: 'Anfrage eingegangen'
+        text: 'Ihre Angaben sind bei uns angekommen. Wenn Sie uns schreiben oder anrufen, nennen Sie einfach Ihre Vorgangsnummer; damit finden wir Ihre Anfrage sofort wieder.'
+        review: needs-review
+        note: 'Ablauf Phase 7e (docs/angebot.md §9), vom Inhaber unbestätigt.'
+      - when: 'Innerhalb von 2 Werktagen'
+        title: 'Ihr unverbindlicher Preisrahmen per E-Mail'
+        text: 'Sie erhalten einen ersten Preisrahmen, unverbindlich und vorbehaltlich Aufmaß, oder unsere Rückfragen, falls uns Angaben fehlen. Ulf Schmidt sieht sich jede Anfrage persönlich an, bevor Sie eine Antwort bekommen.'
+        review: needs-review
+        note: 'Antwortzeit und Ablauf (Preisrahmen erst nach Freigabe durch den Inhaber) unbestätigt (docs/angebot.md §9, docs/owner-checklist.md „Angebot pilot“).'
+      - title: 'Aufmaß vor Ort'
+        text: 'Wir kommen zu Ihnen, messen nach und besprechen die Details.'
+        review: needs-review
+        note: 'Ob und was das Aufmaß kostet, ist unbestätigt (docs/configurator.md §5, §9).'
+      - title: 'Verbindliches Angebot'
+        text: 'Nach dem Aufmaß erhalten Sie ein schriftliches Angebot, in dem steht, was genau gebaut wird und was es kostet.'
+        review: needs-review
+        note: 'Ablauf Phase 7e (docs/angebot.md §9), vom Inhaber unbestätigt.'
+      - title: 'Fertigung in unserer Werkstatt in Mannheim'
+        text: 'Sobald Sie uns den Auftrag erteilen, beginnt die Arbeit, so wie im Angebot beschrieben.'
+        review: needs-review
+        note: 'Ablauf Phase 7e (docs/angebot.md §9), vom Inhaber unbestätigt.'
+      - title: 'Montage & Übergabe'
+        text: 'Wir liefern, montieren und gehen das Ergebnis gemeinsam mit Ihnen durch.'
+        review: needs-review
+        note: 'Ablauf Phase 7e (docs/angebot.md §9), vom Inhaber unbestätigt.'
 
 # 3D preview (docs/configurator.md §4.6, §4.9–4.11), rendered by preview/PreviewPanel.astro and
 # ViewControls.astro. `label` is the prefix of the canvas aria-label („3D-Vorschau: Regal aus Eiche, …“).

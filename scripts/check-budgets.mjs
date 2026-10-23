@@ -38,7 +38,8 @@ import { gzipSync } from 'node:zlib';
 import { parse } from 'node-html-parser';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const DIST = join(ROOT, 'dist');
+// DIST_DIR checks a variant build (env/assistant.env); default dist/.
+const DIST = resolve(ROOT, process.env['DIST_DIR'] || 'dist');
 if (!process.env['BASE_PATH'] && existsSync(join(ROOT, 'env/pages.env'))) {
   process.loadEnvFile(join(ROOT, 'env/pages.env'));
 }

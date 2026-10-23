@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import type { HTMLElement } from 'node-html-parser';
-import { cspOf, describeDist, isRedirectPage, loadPages, sha256, type DistPage } from '../helpers/dist';
+import { assistantOrigin, cspOf, describeDist, isDemo, isRedirectPage, loadPages, sha256, type DistPage } from '../helpers/dist';
 
 const pages = loadPages().filter((p) => !isRedirectPage(p));
 
@@ -70,6 +70,22 @@ describeDist('CSP meta and inline hashes', () => {
       expect(allowed, `style: ${style.rawText.slice(0, 60)}`).toContain(sha256(style.rawText));
     }
   });
+
+  // D3 (docs/assistant.md §0, src/lib/form-target.mjs): only the origin of the form service in use, once;
+  // the assistant when set, else form.taxi; none in demo builds.
+  const assistant = assistantOrigin();
+  const formTaxi = process.env['PUBLIC_FORM_ENDPOINT'];
+  const formOrigin = isDemo() ? null : (assistant ?? (formTaxi ? new URL(formTaxi).origin : null));
+  it.each(pages.map((p) => [p.rel, p] as const))(
+    `%s: connect-src and form-action allow ${formOrigin ?? 'no form origin'} besides 'self'`,
+    (_rel, page) => {
+      const csp = cspOf(page.root);
+      expect(csp, 'CSP meta tag').not.toBeNull();
+      const expected = ["'self'", ...(formOrigin ? [formOrigin] : [])];
+      expect(csp?.['connect-src']).toEqual(expected);
+      expect(csp?.['form-action']).toEqual(expected);
+    },
+  );
 
   it.each(pages.map((p) => [p.rel, p] as const))('%s: CSP forbids third parties and unsafe code', (_rel, page) => {
     const csp = cspOf(page.root);

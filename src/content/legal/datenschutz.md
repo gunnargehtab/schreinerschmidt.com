@@ -14,7 +14,10 @@ review:
   form.taxi as processor in production, no cookies, no third-party requests, self-hosted fonts.
   Tokens such as {{legalName}} are resolved from src/content/settings.yaml. Blocks fenced by a demo marker line and a
   closing /demo marker line render only in demo builds; production marker lines work the same for production builds
-  (src/lib/legal-tokens.ts). The markers must stand on lines of their own and must not be written out inside this comment.
+  (src/lib/legal-tokens.ts). In production builds, assistant marker lines fence the text for the assistant backend
+  (PUBLIC_ASSISTANT_ENDPOINT set, decision D3 in docs/assistant.md) and formtaxi marker lines the text for the form.taxi
+  fallback; exactly one of the two kinds renders. The markers must stand on lines of their own, must not nest and must
+  not be written out inside this comment.
 
   The hosting section is self-contained so it can be swapped for an EU host.
 -->
@@ -33,7 +36,12 @@ Einen Datenschutzbeauftragten müssen wir nach Art. 37 DSGVO und § 38 BDSG 
 
 ## Das Wichtigste in Kürze
 
-Diese Website kommt ohne Cookies aus. Wir setzen keine Analyse- oder Tracking-Dienste ein, laden keine Schriften, Skripte, Videos oder Karten von fremden Servern und binden keine Social-Media-Plugins ein. Ihr Browser stellt nur Verbindungen zu dem Server her, der die Website ausliefert, und, wenn Sie ein Formular absenden, zu unserem Formulardienst. Personenbezogene Daten verarbeiten wir nur, wenn Sie uns kontaktieren, eine Anfrage senden oder sich bewerben.
+Diese Website kommt ohne Cookies aus. Wir setzen keine Analyse- oder Tracking-Dienste ein, laden keine Schriften, Skripte, Videos oder Karten von fremden Servern und binden keine Social-Media-Plugins ein. Ihr Browser stellt nur Verbindungen zu dem Server her, der die Website ausliefert, und, wenn Sie ein Formular absenden, zu dem Dienst, der das Formular für uns entgegennimmt. Personenbezogene Daten verarbeiten wir nur, wenn Sie uns kontaktieren, eine Anfrage senden oder sich bewerben.
+
+<!-- assistant -->
+
+Anfragen aus dem Konfigurator nimmt unser eigener Anfrage-Server entgegen. Er berechnet nach festen Regeln einen unverbindlichen Preisrahmen und lässt Ihre Projektangaben, ohne Ihre Kontaktdaten und ohne Ihre Fotos, von einem KI-Modell bewerten. Ob und was Sie von uns erhalten, entscheidet immer ein Mensch. Einzelheiten stehen im Abschnitt „Anfragen und Preisrahmen“.
+<!-- /assistant -->
 
 ## Hosting und Server-Logs
 
@@ -70,14 +78,42 @@ Anhand der Postleitzahl zeigt der Konfigurator an, ob Ihr Vorhaben in unserem Ei
 In dieser Vorabversion der Website werden keine Formulardaten übertragen. Ihre Eingaben werden nur in Ihrem Browser geprüft und angezeigt; eine Verbindung zu einem Server wird beim Absenden nicht aufgebaut. Das gilt auch für den Konfigurator: Mit „Anfrage abschließen (Demo)“ wird nichts gesendet, und im Konfigurator gibt es in der Vorabversion keinen Foto-Upload. Die Zusammenfassung Ihrer Konfiguration können Sie selbst per E-Mail an uns schicken, kopieren, speichern oder drucken. Wenn Sie uns erreichen möchten, nutzen Sie bitte Telefon oder E-Mail.
 <!-- /demo -->
 
-<!-- production -->
+<!-- formtaxi -->
 
 Zur Übermittlung der Formulare nutzen wir den Dienst form.taxi ([[Platzhalter: Anbieter und Anschrift laut Auftragsverarbeitungsvertrag]]). Der Dienst nimmt die Formulardaten entgegen und leitet sie per E-Mail an uns weiter. Mit dem Anbieter haben wir einen Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO geschlossen; die Verarbeitung findet auf Servern in Deutschland statt. <!-- needs-review: Serverstandort und Speicherdauer laut AVV bestätigen. --> Der Anbieter speichert die Daten nur so lange, wie es für die Weiterleitung und die Abwehr von Missbrauch nötig ist. [[Platzhalter: Speicherdauer laut AVV]] Die Übertragung erfolgt verschlüsselt (TLS).
-<!-- /production -->
+<!-- /formtaxi -->
+
+<!-- assistant -->
+
+Die Formulare übermitteln Ihre Angaben verschlüsselt (TLS) an unseren eigenen Anfrage-Server. Er leitet Ihre Anfrage per E-Mail an uns weiter und meldet Ihrem Browser, ob sie angekommen ist. Der Server läuft bei [[Platzhalter: Hosting-Anbieter des Anfrage-Servers mit Anschrift]]; die E-Mails versendet er über [[Platzhalter: E-Mail-Anbieter (SMTP) mit Anschrift]]. Beide Anbieter verarbeiten die Daten in unserem Auftrag; mit ihnen haben wir Verträge zur Auftragsverarbeitung nach Art. 28 DSGVO geschlossen. [[Platzhalter: Serverstandort laut AVV sowie Server-Logs des Hosting-Anbieters mit Speicherdauer]] <!-- needs-review: Hosting-Anbieter (docs/assistant.md D1), Mail-Anbieter, AVV, Serverstandort und Server-Logs vor dem Livebetrieb bestätigen (docs/assistant.md §7). -->
+
+Anfragen über das Kontaktformular und Bewerbungen leitet der Server nur weiter; er speichert sie nicht. Fotos und andere Dateien, die Sie mitsenden, speichert er ebenfalls nicht; sie erreichen uns ausschließlich als Anhang der E-Mail. Anfragen aus dem Konfigurator speichert der Server dagegen als Vorgang; was damit geschieht, steht im Abschnitt „Anfragen und Preisrahmen“.
+
+Zum Schutz vor Missbrauch begrenzt der Server, wie viele Anfragen er von einem Internetanschluss annimmt. Dafür bildet er aus Ihrer IP-Adresse einen Prüfwert (einen Hash mit zufälligem Schlüssel), hält ihn nur im Arbeitsspeicher und verwirft ihn spätestens nach 24 Stunden. Rechtsgrundlage ist Art. 6 Abs. 1 Buchst. f DSGVO; unser berechtigtes Interesse liegt darin, den Dienst vor automatisierten Massenanfragen zu schützen. Den Inhalt Ihrer Anfrage schreibt der Server in kein Protokoll; seine eigenen Protokolle halten nur technische Ereignisse ohne Inhalt fest, zum Beispiel wann eine E-Mail versendet wurde. <!-- needs-review: Beschreibung der Ratenbegrenzung (assistant/src/ratelimit.ts) und der inhaltsfreien Logs (Tabelle ereignisse, docs/angebot.md §5) rechtlich prüfen. -->
+<!-- /assistant -->
 
 Zum Schutz vor automatisierten Einsendungen enthalten die Formulare ein Feld, das für Menschen nicht sichtbar ist, und messen die Zeit zwischen der ersten Eingabe und dem Absenden. Wird das unsichtbare Feld ausgefüllt oder das Formular in unter drei Sekunden (im Konfigurator: unter fünf Sekunden) abgeschickt, werten wir die Eingabe als automatisiert und verarbeiten sie nicht weiter. Dabei entstehen keine zusätzlichen personenbezogenen Daten, und es werden keine Dritten eingebunden.
 
 Für die Speicherdauer gilt das Gleiche wie bei der Kontaktaufnahme per E-Mail oder Telefon.
+
+<!-- assistant -->
+
+## Anfragen und Preisrahmen
+
+<!-- needs-review: ganzer Abschnitt (docs/angebot.md §9, docs/assistant.md §7): Auftragsverarbeitung, Drittlandübermittlung (Entscheidung D2: Claude API bei Anthropic oder Claude auf Google Vertex AI; fällt D2 auf Vertex AI, ändert sich der genannte Anbieter), Art. 22 DSGVO, Rechtsgrundlage und Löschfristen vor dem Livebetrieb rechtlich prüfen. -->
+
+Wenn Sie uns eine Anfrage über den Konfigurator senden, legt unser Anfrage-Server dafür einen Vorgang mit einer Vorgangsnummer an und speichert Ihre Angaben einschließlich Ihrer Kontaktdaten. Aus Ihren Projektangaben (zum Beispiel Maße, Holzart, Oberfläche oder Stückzahl) und unseren eigenen Preissätzen berechnet er einen unverbindlichen Preisrahmen. Diese Berechnung folgt festen Regeln, die wir vorgegeben haben; eine künstliche Intelligenz legt dabei keinen Preis fest.
+
+Zusätzlich lassen wir Ihre Projektangaben von dem KI-Modell Claude des Anbieters Anthropic bewerten: Ist das Vorhaben so machbar, passt es zu unserer Werkstatt, und welche Angaben fehlen noch? Das Modell entwirft außerdem den Text unserer Antwort und, wenn Angaben fehlen, unsere Rückfragen. Anthropic verarbeitet diese Daten in unserem Auftrag ([[Platzhalter: Vertragspartner und Anschrift laut Auftragsverarbeitungsvertrag]]). [[Platzhalter: Serverstandort und Grundlage einer Übermittlung in Drittländer nach rechtlicher Prüfung]] [[Platzhalter: Speicherdauer beim KI-Anbieter laut Vertrag]]
+
+Dabei geben wir nur weiter, was für diese Bewertung nötig ist: Ihre Angaben zum Projekt, zum gewünschten Zeitraum und zum Budget, Ihre Postleitzahl, die Anzahl Ihrer Fotos und Ihre Freitexte. Ihren Namen, Ihre E-Mail-Adresse, Ihre Telefonnummer, Ihren Ort und Ihre Angaben zur Erreichbarkeit erhält Anthropic nicht, ebenso wenig Ihre Fotos oder andere Dateien. Aus Ihren Freitexten entfernt der Server vorher E-Mail-Adressen, Telefonnummern, Straßenadressen, Ihren Namen und Ihren Ort. Anfragen über das Kontaktformular und Bewerbungen werden nicht von einer KI bewertet.
+
+Über jede Antwort entscheidet ein Mensch. Bevor Sie etwas von uns erhalten, sieht sich {{owner}} den Vorgang persönlich an: Er gibt den Preisrahmen frei oder ändert ihn, kalkuliert selbst, stellt Ihnen Rückfragen oder sagt ab. Auch den Text unserer Antwort prüft er vorher und ändert ihn bei Bedarf. Ohne seine Entscheidung geht nichts an Sie hinaus; eine ausschließlich automatisierte Entscheidung im Sinne von Art. 22 DSGVO findet nicht statt. Der Preisrahmen ist kein verbindliches Angebot; er gilt vorbehaltlich eines Aufmaßes vor Ort.
+
+Rechtsgrundlage für die Bearbeitung Ihrer Anfrage, die Berechnung des Preisrahmens und die Bewertung ist Art. 6 Abs. 1 Buchst. b DSGVO (Durchführung vorvertraglicher Maßnahmen, die auf Ihre Anfrage erfolgen).
+
+Den Vorgang (Ihre Angaben, den Preisrahmen, die Bewertung und den Wortlaut unserer Antwort) speichert der Anfrage-Server, solange wir Ihre Anfrage bearbeiten. Haben wir abgesagt oder ist der Vorgang ohne Entscheidung abgelaufen, löscht er die Inhalte 90 Tage danach, in allen anderen Fällen zwölf Monate nach unserer Entscheidung. [[Platzhalter: Löschfristen vom Inhaber bestätigen]] Danach bleiben nur die Vorgangsnummer, eine Angebotsnummer (falls vergeben), die Datumsangaben, der Status und der Preisrahmen gespeichert, ohne Ihre Kontaktdaten und ohne Ihre Projektangaben. E-Mails, die wir mit Ihnen wechseln, und Angebote bewahren wir auf, wie im Abschnitt „Kontaktaufnahme per E-Mail oder Telefon“ beschrieben.
+<!-- /assistant -->
 
 ## Bewerbungen
 
@@ -92,10 +128,15 @@ Kommt es nicht zu einer Einstellung, löschen wir Ihre Unterlagen spätestens se
 In dieser Vorabversion der Website werden keine Bewerbungsdaten übertragen, und es ist kein Datei-Upload aktiv. Bitte bewerben Sie sich per E-Mail oder telefonisch.
 <!-- /demo -->
 
-<!-- production -->
+<!-- formtaxi -->
 
 Für die Übermittlung des Bewerbungsformulars einschließlich der hochgeladenen Unterlagen gilt das oben zum Formulardienst form.taxi Gesagte. Die Übertragung erfolgt verschlüsselt (TLS).
-<!-- /production -->
+<!-- /formtaxi -->
+
+<!-- assistant -->
+
+Das Bewerbungsformular übermittelt Ihre Angaben und Unterlagen verschlüsselt (TLS) an unseren Anfrage-Server. Er leitet sie per E-Mail an uns weiter und speichert sie nicht; im Übrigen gilt, was oben unter „Anfrageformulare“ steht. Bewerbungen werden nicht von einer KI bewertet.
+<!-- /assistant -->
 
 ## Speicherung in Ihrem Browser
 
@@ -144,6 +185,11 @@ Lautenschlagerstraße 20\
 ## Keine automatisierte Entscheidungsfindung
 
 Wir treffen keine Entscheidungen, die ausschließlich auf einer automatisierten Verarbeitung beruhen, und setzen kein Profiling ein (Art. 22 DSGVO). Die Berechnungen im Konfigurator (zum Beispiel die Einteilung von Regalböden) finden in Ihrem Browser statt und dienen nur der Vorschau.
+
+<!-- assistant -->
+
+Das gilt auch für Anfragen aus dem Konfigurator: Den Preisrahmen berechnen feste Regeln, die KI-Bewertung bereitet unsere Entscheidung nur vor, und ob und was Sie von uns erhalten, prüft und entscheidet ein Mensch (siehe „Anfragen und Preisrahmen“). <!-- needs-review: ob der Vergleich mit dem Budgetrahmen und die Prüfung des Einzugsgebiets in der Bewertung als Profiling nach Art. 4 Nr. 4 DSGVO gelten, rechtlich prüfen; die Aussage „kein Profiling“ im Absatz darüber hängt davon ab. -->
+<!-- /assistant -->
 
 ## Änderungen dieser Erklärung
 

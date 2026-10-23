@@ -2,6 +2,7 @@
 // and the .astro sources, and runs the production guard. Build-time only (Prüfliste route).
 import { getCollection, type CollectionKey } from 'astro:content';
 import { assets } from './asset-manifest';
+import { FORM_SERVICE } from '../components/forms/mode';
 import { selectModeBlocks, stripComments } from './legal-tokens';
 import {
   collectReviewItems,
@@ -56,6 +57,7 @@ export function loadReviewItems(): Promise<ReviewItem[]> {
     }
     // Page copy and legal templates are only scanned for `[[Platzhalter: …]]` markers. A legal body is
     // reduced to its production text: demo-only blocks never go live, so their markers can't block.
+    // Of the form-service blocks only those of the build's service count (form.taxi in demo builds).
     const copy: ReviewEntry[] = [
       ...(await getCollection('pages')).map((e) => ({
         collection: 'pages',
@@ -66,7 +68,7 @@ export function loadReviewItems(): Promise<ReviewItem[]> {
         collection: 'legal',
         id: e.id,
         data: e.data as Record<string, unknown>,
-        body: stripComments(selectModeBlocks(e.body ?? '', false)),
+        body: stripComments(selectModeBlocks(e.body ?? '', false, FORM_SERVICE)),
       })),
     ];
     return collectReviewItems({ entries, copy, assets, sources: sourceFiles });

@@ -1,7 +1,9 @@
 // Legal pages (docs/architecture.md §9): the Markdown in src/content/legal/*.md is a template. This
 // module turns the raw body into the Markdown that is rendered, as a plain string step BEFORE the
 // Markdown processor runs (no remark/rehype plugin, so astro.config.mjs stays untouched):
-//   1. keep only the `<!-- demo -->` or the `<!-- production -->` blocks of the current build mode,
+//   1. keep only the `<!-- demo -->` or the `<!-- production -->` blocks of the current build mode; in
+//      production also the `<!-- assistant -->` or the `<!-- formtaxi -->` blocks of the form service
+//      in use (D3, src/lib/form-target.mjs),
 //   2. drop every other HTML comment (inline `needs-review:` notes, author notes),
 //   3. resolve `{{tokens}}` from the settings entry (unconfirmed facts get a review-mark span),
 //   4. turn `[[Platzhalter: …]]` markers into a „wird ergänzt“ review-mark span (first, so facts that resolve to a marker are wrapped once),
@@ -34,10 +36,15 @@ export interface LegalSite {
   };
 }
 
+/** The service production forms post to (src/lib/form-target.mjs); form.taxi when not given. */
+export type LegalFormService = 'assistant' | 'formtaxi';
+
 export interface LegalOptions {
   site: LegalSite;
   /** Build mode (PUBLIC_DEMO): selects the demo or the production blocks. */
   demo: boolean;
+  /** Production only: selects the `assistant` or the `formtaxi` blocks. Default `formtaxi`. */
+  forms?: LegalFormService | null | undefined;
 }
 
 const NBSP = ' ';
@@ -51,14 +58,16 @@ export const reviewSpan = (html: string, status: 'needs-review' | 'placeholder',
 
 /**
  * Step 1: keeps the blocks of the current mode. Markers must stand on a line of their own, which
- * keeps them apart from the same text inside prose or author comments.
+ * keeps them apart from the same text inside prose or author comments. Blocks never nest. A demo
+ * build keeps `demo` blocks only; a production build keeps `production` blocks plus those of its
+ * form service (`assistant` or `formtaxi`).
  */
-export function selectModeBlocks(markdown: string, demo: boolean): string {
-  const wanted = demo ? 'demo' : 'production';
+export function selectModeBlocks(markdown: string, demo: boolean, forms?: LegalFormService | null): string {
+  const wanted = new Set(demo ? ['demo'] : ['production', forms ?? 'formtaxi']);
   let open: string | null = null;
   const out: string[] = [];
   for (const line of markdown.split('\n')) {
-    const m = /^\s*<!--\s*(\/?)(demo|production)\s*-->\s*$/.exec(line);
+    const m = /^\s*<!--\s*(\/?)(demo|production|assistant|formtaxi)\s*-->\s*$/.exec(line);
     if (m) {
       const [, closing, mode] = m;
       if (!closing) {
@@ -70,7 +79,7 @@ export function selectModeBlocks(markdown: string, demo: boolean): string {
       }
       continue;
     }
-    if (open && open !== wanted) continue;
+    if (open && !wanted.has(open)) continue;
     out.push(line);
   }
   if (open) throw new Error(`Legal template: <!-- ${open} --> block is never closed`);
@@ -150,8 +159,8 @@ export function resolveTokens(markdown: string, site: LegalSite): string {
 }
 
 /** The whole pipeline: raw template body in, Markdown for the renderer out. */
-export function resolveLegalMarkdown(body: string, { site, demo }: LegalOptions): string {
-  return resolveTokens(stripComments(selectModeBlocks(body, demo)), site);
+export function resolveLegalMarkdown(body: string, { site, demo, forms }: LegalOptions): string {
+  return resolveTokens(stripComments(selectModeBlocks(body, demo, forms)), site);
 }
 
 export interface RenderedLegal {

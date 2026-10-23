@@ -246,7 +246,11 @@ describeDist('konfigurator: DOM contract', () => {
       expect(f.getAttribute('enctype')).toBe('multipart/form-data');
       expect(f.getAttribute('action')).toMatch(/^https:\/\//);
       const next = f.querySelector('input[name="_next"]')?.getAttribute('value') ?? '';
-      expect(next).toMatch(/^https:\/\/.+\/konfigurator\/danke\/$/);
+      expect(next).toMatch(/^https?:\/\/.+\/konfigurator\/danke\/$/);
+      // On the site origin (local production builds use http://localhost, docs/angebot.md §2.2).
+      const site = process.env['SITE'];
+      if (site) expect(new URL(next).origin).toBe(new URL(site).origin);
+      else expect(next).toMatch(/^https:/);
       expect(f.querySelector('input[name="_lang"]')?.getAttribute('value')).toBe('de');
     }
   });
