@@ -36,7 +36,7 @@ Alle Pfade stehen relativ zur Demo-Adresse: `https://gunnargehtab.github.io/schr
 **Öffnen:** die Startseite (oben bleiben, dann langsam scrollen).
 
 **Zeigen:**
-- Die Überschrift „Ihr Experte für umweltbewusstes Holzhandwerk“ ist der Slogan der Altseite. Er ist markiert, weil seit dem 27.09.2026 allgemeine Umweltaussagen ohne Beleg wettbewerbsrechtlich riskant sind (UWG). Als Alternative steht bereit: „Ihr Schreinermeister für Holz nach Maß in Mannheim“.
+- Die Überschrift „Ihr Schreinermeister für Holz nach Maß in Mannheim“ ersetzt den Slogan der Altseite („Ihr Experte für umweltbewusstes Holzhandwerk“). Der alte Slogan ist eine allgemeine Umweltaussage, die seit dem 27.09.2026 ohne Beleg wettbewerbsrechtlich riskant ist (UWG). Die neue Zeile nennt stattdessen, was belegt ist: Meisterbrief, Maßarbeit, Standort. Der alte Slogan bleibt hinterlegt und ist markiert, bis der Inhaber entscheidet.
 - Die Zahlen: Jahre als Meisterbetrieb (aus 2010 berechnet), „115 Google-Bewertungen“, „5,0 von 5 Sternen“ (Stand 30.09.2026).
 - „Was wir für Sie bauen“: sieben Bereiche, darunter Treppen als eigene Leistung.
 - „Vom Entwurf zum Werkstück“: die Skizze wird beim Scrollen zum Foto.

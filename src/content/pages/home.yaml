@@ -8,18 +8,19 @@ seo:
 
 hero:
   eyebrow: 'Meisterbetrieb in Mannheim · seit 2010'
-  h1Before: 'Ihr Experte für'
-  h1Em: 'umwelt­bewusstes'
-  h1After: 'Holzhandwerk'
+  h1Before: 'Ihr Schreinermeister für'
+  # U+00A0 keeps the accent on one line: 'Ihr Schreinermeister / für Holz nach Maß / in Mannheim'.
+  h1Em: 'Holz nach Maß'
+  h1After: 'in Mannheim'
   review: needs-review
-  note: 'Slogan der Altseite. „Umweltbewusst“ ist eine allgemeine Umweltaussage (UWG / EU 2024/825, seit 27.09.2026) und braucht Belege oder eine Umformulierung. Bis zur Rechtsprüfung bleibt er als Demo-Standard; Alternative ohne Umweltaussage siehe alternativeH1.'
-  alternativeH1:
-    h1Before: 'Ihr Schreinermeister für'
-    h1Em: 'Holz nach Maß'
-    h1After: 'in Mannheim'
-    note: 'Vorschlag ohne Umweltaussage, falls der Slogan nach der Rechtsprüfung nicht bleibt. Belegt durch Meisterbrief 2010 und Standort.'
-  lead: 'Möbel, Böden, Treppen, Türen und Fenster: mit Ihnen geplant, in unserer Werkstatt gefertigt und von uns montiert. Seit 2010 als Meisterbetrieb.'
-  ctaPrimary: 'In 3 Minuten zum Angebot'
+  note: 'Neuer Vorschlag ohne Umweltaussage (Entscheidung 2026-10-19, docs/owner-checklist.md). Belegt durch Meisterbrief 2010 und Standort. Der Slogan der Altseite steht unter legacyH1 bereit, falls der Inhaber ihn nach der Rechtsprüfung behalten will.'
+  legacyH1:
+    h1Before: 'Ihr Experte für'
+    h1Em: 'umwelt­bewusstes'
+    h1After: 'Holzhandwerk'
+    note: 'Slogan der Altseite. „Umweltbewusst“ ist eine allgemeine Umweltaussage (UWG / EU 2024/825, seit 27.09.2026) und braucht Belege (FSC/PEFC, Naturöle) oder eine Umformulierung.'
+  lead: 'Möbel, Böden, Treppen, Türen und Fenster: mit Ihnen geplant, in unserer Werkstatt gefertigt und von uns montiert. Seit 2010 als Meisterbetrieb, ein Ansprechpartner von der ersten Skizze bis zur Pflege.'
+  ctaPrimary: 'In 3 Minuten zum Angebot'
   ctaSecondary: 'Referenzen ansehen'
 
 stats:
