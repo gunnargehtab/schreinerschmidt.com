@@ -51,7 +51,7 @@
     "@types/three": "0.186.0",
     "chrome-launcher": "1.2.2",
     "fast-check": "4.10.2",
-    "html-validate": "11.16.2",
+    "html-validate": "11.17.0",
     "lighthouse": "13.5.0",
     "linkinator": "8.1.0",
     "node-html-parser": "9.0.4",
