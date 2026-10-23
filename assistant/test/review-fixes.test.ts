@@ -6,7 +6,7 @@ import { isPrivateAddress } from '../src/app';
 import { ConfigError, loadConfig } from '../src/config';
 import { MAIL_BACKOFF_MS } from '../src/steps/anfrage-mail';
 import { REGAL, configuratorForm, contactForm, newId } from './fixtures';
-import { TimerClock, cleanupDirs, harness, type Harness } from './helpers';
+import { PIPELINE_7C, TimerClock, cleanupDirs, harness, type Harness } from './helpers';
 
 let h: Harness | undefined;
 afterEach(async () => {
@@ -34,7 +34,7 @@ async function drive<T>(value: T | Promise<T>, stepMs = 10, max = 2000): Promise
 describe('1: an inline mail that fails after the deadline is retried without an external trigger', () => {
   it('re-arms the runner when the late send fails', async () => {
     vi.useFakeTimers({ now: Date.UTC(2026, 9, 22, 9), toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-    h = harness({ auto: true, inlineMailMs: 50, clock: new TimerClock() });
+    h = harness({ auto: true, inlineMailMs: 50, clock: new TimerClock(), pipeline: PIPELINE_7C });
     h.ctl.delayMs = 500; // the send outlives the 50 ms deadline …
     h.ctl.fail = 1; // … and then fails
     const id = newId();
@@ -139,7 +139,7 @@ describe('2: contact and application posts accept what the site form accepts', (
 describe('3: the enquiry mail has its own, longer backoff', () => {
   it('keeps retrying for hours (+30 s, +2 min, +15 min, +1 h, +6 h), then records anfrage_mail_failed', async () => {
     expect(MAIL_BACKOFF_MS).toEqual([30_000, 120_000, 900_000, 3_600_000, 21_600_000]);
-    h = harness();
+    h = harness({ pipeline: PIPELINE_7C });
     h.ctl.fail = 5;
     const id = newId();
     await h.post(configuratorForm(REGAL, { id }));
@@ -160,7 +160,7 @@ describe('3: the enquiry mail has its own, longer backoff', () => {
 
 describe('4: a delivered mail is never sent again', () => {
   it('completes the job when only the bookkeeping after the send fails', async () => {
-    h = harness();
+    h = harness({ pipeline: PIPELINE_7C });
     const update = vi.spyOn(h.deps.store, 'update').mockRejectedValueOnce(new Error('database is locked'));
     const id = newId();
     const res = await h.post(configuratorForm(REGAL, { id }));
@@ -177,7 +177,7 @@ describe('4: a delivered mail is never sent again', () => {
   });
 
   it('does not re-run a step whose completion bookkeeping fails', async () => {
-    h = harness();
+    h = harness({ pipeline: PIPELINE_7C });
     h.ctl.fail = 1;
     const id = newId();
     await h.post(configuratorForm(REGAL, { id }));

@@ -12,7 +12,7 @@ import {
   type Verstoss,
 } from '../src/claude/guards';
 import type { Angebotstext } from '../src/claude/schemas';
-import { leistungAusPositionen, vorlageAngebotstext } from '../src/claude/templates';
+import { vorlageAngebotstext } from '../src/claude/templates';
 import { BODEN, REGAL } from './fixtures';
 
 const has = (text: string, code: Verstoss) => expect(pruefeText(text), text).toContain(code);
@@ -194,30 +194,32 @@ describe('template (vorlage)', () => {
     return r.kalkulation;
   };
 
-  it('builds a guard-clean text from the branch label and the position texts only', () => {
+  it('builds a guard-clean text from customer-level lines, never the internal positions', () => {
     const k = regeln(REGAL);
-    const t = vorlageAngebotstext('Möbel nach Maß', k.positionen);
+    const t = vorlageAngebotstext('Möbel nach Maß', REGAL);
     expect(pruefeAngebotstext(t)).toEqual([]);
     expect(t.einleitung).toContain('„Möbel nach Maß“');
-    expect(t.leistung.some((l) => l.startsWith('Plattenmaterial Eiche'))).toBe(true);
-    expect(t.leistung.some((l) => l.startsWith('Anfahrt'))).toBe(false);
-    expect(t.leistung.join(' ')).toMatch(/\d\u202fm²/);
-    expect(JSON.stringify(t)).not.toMatch(/€|EUR|Euro/);
-    for (const p of k.positionen) expect(JSON.stringify(t)).not.toContain(String(Math.round(p.netto)));
+    expect(t.leistung).toEqual([
+      'Regal aus Eiche, natur geölt, nach Ihren Maßen gefertigt',
+      'Lieferung und Montage vor Ort',
+    ]);
+    const all = JSON.stringify(t);
+    expect(all).not.toMatch(/Plattenmaterial|Werkstatt|Anfahrt|Teile|\d\s?h\b|€|EUR|Euro/);
+    for (const p of k.positionen) expect(all).not.toContain(String(Math.round(p.netto)));
   });
 
-  it('works for every rule branch, without positions and with a hostile Pauschale', () => {
-    expect(pruefeAngebotstext(vorlageAngebotstext('Boden', regeln(BODEN).positionen))).toEqual([]);
+  it('works for every rule branch, without values and with a hostile label', () => {
+    const boden = vorlageAngebotstext('Boden', BODEN);
+    expect(pruefeAngebotstext(boden)).toEqual([]);
+    expect(boden.leistung[0]).toBe('Stabparkett Eiche, rund 24,5\u202fm², verlegt');
     const leer = vorlageAngebotstext('Etwas anderes', null);
     expect(leer.leistung).toEqual(['Etwas anderes: Planung und Ausführung nach Ihren Angaben']);
     expect(pruefeAngebotstext(leer)).toEqual([]);
-    const evil = [
-      { text: 'Material pauschal: www.evil.de 1 € (nicht bewertet)', menge: 1, einheit: 'Pausch.', netto: 0 },
-      { text: 'Holz für 99 Euro', menge: 1, einheit: 'Stk.', netto: 0 },
-      { text: 'Werkstatt', menge: 10, einheit: 'h', netto: 680 },
-      { text: 'Werkstatt', menge: 10, einheit: 'h', netto: 680 },
-    ];
-    expect(leistungAusPositionen(evil)).toEqual(['Werkstatt']);
-    expect(pruefeAngebotstext(vorlageAngebotstext('www.evil.de', evil))).toEqual([]);
+    expect(vorlageAngebotstext('Etwas anderes', { typ: 'sonstiges' }).leistung).toEqual([
+      'Etwas anderes: Planung und Ausführung nach Ihren Angaben',
+    ]);
+    expect(
+      pruefeAngebotstext(vorlageAngebotstext('www.evil.de', { typ: 'moebel', moebel_art: 'constructor' })),
+    ).toEqual([]);
   });
 });

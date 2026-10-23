@@ -22,7 +22,7 @@ import { MengenFehler, preiseMengen } from '../../../src/lib/configurator/pricin
 import { serviceArea } from '../../../src/lib/configurator/service-area';
 import { klassifiziere, type ClaudeClient, type KiErgebnis } from '../claude/client';
 import { pruefeAngebotstext, pruefeRueckfragen, saubereRueckfragen, type Verstoss } from '../claude/guards';
-import { angebotstextInput, bewertenInput, kalkulationOf, typLabel, type FallKalkulation } from '../claude/input';
+import { angebotstextInput, bewertenInput, typLabel, type FallKalkulation } from '../claude/input';
 import { budgetErschoepft, verbuche } from '../claude/kosten';
 import { toPricingMengen, type Angebotstext, type Bewertung } from '../claude/schemas';
 import { vorlageAngebotstext } from '../claude/templates';
@@ -174,7 +174,6 @@ async function bewerten(ctx: StepContext, fall: Fall, claude: ClaudeClient | nul
 
 /** Phase 2: the Angebot text (Claude through the guards, or the template). */
 async function angebot(ctx: StepContext, fall: Fall, rec: BewertungRecord, claude: ClaudeClient | null) {
-  const k = kalkulationOf(fall.kalkulation);
   const save = async (a: Omit<AngebotRecord, 'v' | 'at'>): Promise<void> => {
     await ctx.store.update(fall.id, { angebot: { v: 1, ...a, at: iso(ctx.clock.now()) } satisfies AngebotRecord });
     await event(ctx, `angebot_${a.pfad}`, a.grund);
@@ -182,7 +181,7 @@ async function angebot(ctx: StepContext, fall: Fall, rec: BewertungRecord, claud
   };
   const vorlage = (grund: string, verstoesse: Verstoss[] = [], model: string | null = null) =>
     save({
-      text: vorlageAngebotstext(typLabel(fall.payload.values['typ']), k?.positionen),
+      text: vorlageAngebotstext(typLabel(fall.payload.values['typ']), fall.payload.values),
       pfad: 'vorlage',
       grund,
       verstoesse,

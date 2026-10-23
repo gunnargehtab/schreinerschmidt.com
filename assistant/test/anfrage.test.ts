@@ -1,7 +1,7 @@
 // POST /anfrage contract (docs/assistant.md §2.2, §8; docs/angebot.md §2.1, §11).
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BODEN, CONTACT, REGAL, SONSTIGES, configuratorForm, contactForm, exe, jpeg, newId, svg } from './fixtures';
-import { NEXT, SITE, cleanupDirs, harness, header, type Harness } from './helpers';
+import { NEXT, PIPELINE_7C, SITE, cleanupDirs, harness, header, type Harness } from './helpers';
 
 let h: Harness;
 afterEach(async () => {
@@ -331,7 +331,7 @@ describe('idempotency', () => {
   });
 
   it('a retry after a failed mail sends the owed mail with its attachments, once', async () => {
-    h = harness();
+    h = harness({ pipeline: PIPELINE_7C });
     const id = newId();
     h.ctl.fail = 1;
     const a = await h.post(configuratorForm(REGAL, { id, files: [{ name: 'fotos[]', file: jpeg() }] }));

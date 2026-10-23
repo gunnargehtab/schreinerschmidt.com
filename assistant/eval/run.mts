@@ -4,7 +4,8 @@
 // The live run refuses to start without ANTHROPIC_API_KEY, prints the estimated cost first and
 // only proceeds with `--yes`. It sends the 24 invented fixture enquiries (no real customer data).
 // Exit code 0 when the §11 bar holds (no amount in any Claude text, expectations met in ≥ 20 of
-// 24, no failed case), else 1; 2 for a usage error. The dry run exits 0 when the pipeline works.
+// 24, no unviable case recommended „Freigeben“, no failed case), else 1; 2 for a usage error. The
+// dry run exits 0 when the pipeline works.
 import { createSdkClient, MAX_TOKENS } from '../src/claude/client';
 import { kostenUsd } from '../src/claude/kosten';
 import { createLogger } from '../src/log';
@@ -23,7 +24,9 @@ function schaetzung(): number {
 
 function bericht(r: EvalBericht): boolean {
   const pad = (s: string, n: number) => s.padEnd(n);
-  out(`${pad('Fall', 22)}${pad('Spam', 7)}${pad('Machbarkeit', 16)}${pad('Passt', 7)}${pad('Text', 10)}Ergebnis`);
+  out(
+    `${pad('Fall', 22)}${pad('Spam', 7)}${pad('Machbarkeit', 16)}${pad('Passt', 7)}${pad('Text', 10)}${pad('Empfehlung', 12)}Ergebnis`,
+  );
   for (const f of r.faelle) {
     const mark = (ok: boolean) => (ok ? '' : ' ✗');
     out(
@@ -32,6 +35,7 @@ function bericht(r: EvalBericht): boolean {
         pad(`${f.machbarkeit ?? '–'}${mark(f.machbarkeitOk)}`, 16) +
         pad(`${f.passt ?? '–'}${mark(f.passtOk)}`, 7) +
         pad(f.pfad ?? '–', 10) +
+        pad(`${f.empfehlung}${mark(!f.unpassendFreigegeben)}`, 12) +
         (f.ok ? 'ok' : `FEHLER${f.fehler ? ` (${f.fehler})` : ''}${f.betragImText ? ' Betrag im KI-Text' : ''}`),
     );
   }
@@ -40,11 +44,12 @@ function bericht(r: EvalBericht): boolean {
   out();
   out(`Erwartung getroffen:        ${r.erwartungTreffer} / ${n} (Ziel ≥ 20)`);
   out(`Kein Betrag in KI-Texten:   ${r.ohneBetrag} / ${n} (Ziel ${n})`);
+  out(`Unpassend, aber Freigeben:  ${r.unpassendFreigegeben} (Ziel 0)`);
   out(`Guards beim ersten Versuch: ${r.ersteAntwortSauber} / ${r.angebote} Angebotstexte`);
   out(`Gespeicherte Texte sauber:  ${r.faelle.filter((f) => f.gespeichertSauber).length} / ${n}`);
   out(`Fehlgeschlagene Fälle:      ${failed}`);
   out(`Geschätzte Kosten:          $${r.usd.toFixed(2)}${dry ? ' (Trockenlauf, Testclient)' : ''}`);
-  const bar = r.ohneBetrag === n && r.erwartungTreffer >= 20 && failed === 0;
+  const bar = r.ohneBetrag === n && r.erwartungTreffer >= 20 && r.unpassendFreigegeben === 0 && failed === 0;
   if (dry) out('§11-Bar: im Trockenlauf nicht aussagekräftig (Testantworten, keine KI).');
   else out(bar ? 'Bestanden.' : 'Nicht bestanden.');
   return bar;

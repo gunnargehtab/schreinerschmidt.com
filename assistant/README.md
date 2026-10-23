@@ -7,8 +7,9 @@ posts, delivers the enquiry mail to the owner and runs the Angebot pipeline. Spe
 Phase 7b: Hono server, `POST /anfrage` (form.taxi-compatible), server-side validation against
 `src/lib/configurator/fields.ts`, SQLite store, job runner with the `preis` step, the enquiry mail
 and `SEND_MODE`. Phase 7c: the `bewertung` step after `preis` (Claude's assessment, Mengen pricing
-for free-text projects, the Angebot text through the output guards; `src/claude/`). The TL;DR
-mail, review page and customer mails (7d) come later.
+for free-text projects, the Angebot text through the output guards; `src/claude/`). Phase 7d: the
+owner's side (the recommendation, the TL;DR mail, the review page with its actions, the customer
+mails with the PDF, reminders, expiry and retention).
 
 It is its own npm package (Node 24, ESM, TypeScript 6.0.3) and imports the shared configurator
 code from `../src/lib/configurator/` by relative path; the production bundle inlines it.
@@ -17,17 +18,17 @@ code from `../src/lib/configurator/` by relative path; the production bundle inl
 
 Run them in `assistant/`:
 
-| Command                 | What it does                                                  |
-| ----------------------- | ------------------------------------------------------------- |
-| `npm ci`                | Install the pinned dependencies                               |
-| `npm run dev`           | Dev server with reload (`tsx watch`), reads `.env` if present |
-| `npm run typecheck`     | `tsc --noEmit` with the site's strictness                     |
-| `npm test`              | Vitest, in-process, a temp data directory per test            |
-| `npm run build`         | esbuild bundle `dist/server.mjs` (npm packages stay external) |
-| `npm start`             | Run the bundle (`npm ci --omit=dev` is enough on the host)    |
-| `npm run brief`         | Regenerate `src/claude/brief.generated.ts` from `src/content` |
-| `npm run eval`          | Quality eval against Claude (key, cost estimate, `--yes`)     |
-| `npm run eval -- --dry` | The same eval against the in-process fake (no key, no cost)   |
+| Command                 | What it does                                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `npm ci`                | Install the pinned dependencies                                                                                |
+| `npm run dev`           | Dev server with reload (`tsx watch`), reads `.env` if present                                                  |
+| `npm run typecheck`     | `tsc --noEmit` with the site's strictness                                                                      |
+| `npm test`              | Vitest, in-process, a temp data directory per test                                                             |
+| `npm run build`         | esbuild bundle `dist/server.mjs` (npm packages stay external)                                                  |
+| `npm start`             | Run the bundle (`npm ci --omit=dev` is enough on the host)                                                     |
+| `npm run brief`         | Regenerate `src/claude/brief.generated.ts` (brief, confirmed shop contact) and `src/pdf/wordmark.generated.ts` |
+| `npm run eval`          | Quality eval against Claude (key, cost estimate, `--yes`)                                                      |
+| `npm run eval -- --dry` | The same eval against the in-process fake (no key, no cost)                                                    |
 
 `GET /health` answers `204`. Outside production and in `dry-run`, `GET /dev/outbox` lists the outbox.
 
@@ -61,6 +62,31 @@ one corrective retry, then a neutral template.
   `ki_budget`). Set a spend limit in the Claude Console too; the estimate is not the bill.
 - The shop brief in the system prompt comes from confirmed content only. After the owner confirms
   entries in `src/content`, run `npm run brief` and commit the result (a test fails on drift).
+
+## Owner side (phase 7d)
+
+Spec and decisions in `docs/angebot.md` §3, §5, §7 and §8. All German copy lives in
+`src/texte/inhaber.ts` (owner) and `src/texte/kunde.ts` (customer, `needs-review`).
+
+- **Recommendation** (`src/empfehlung.ts`): Absagen empfohlen, Prüfen or Freigeben empfohlen, with a
+  reason per flag. Computed in code, never by Claude; a case without AI is at most „Prüfen“.
+- **TL;DR** (step `tldr`, after `bewertung`, also for a failed case): a reply to the enquiry mail
+  with the recommendation, range, assessment and one link
+  `PUBLIC_BASE_URL/angebot/<id>?t=<token>`. Only the token's SHA-256 is stored; the link is valid
+  `TOKEN_TTL_DAYS` days.
+- **Review page** `GET /angebot/:id?t=…`: server-rendered, no JS, strict CSP, `noindex`. Forms:
+  Freigeben (range and text editable, confirm step), Ablehnen (selbst kalkulieren, Rückfragen or
+  call, Absage with an internal reason), „Eigener Preisrahmen“ after selbst kalkulieren or a
+  failed assessment. `GET` never changes anything; each POST checks Origin, token, version and
+  content type, so a double click sends one mail.
+- **Customer mails** go through the same `SEND_MODE`, from `MAIL_FROM` with a BCC to the owner;
+  the Angebot carries `Angebot-<Vorgangsnummer>.pdf` with the Angebotsnummer `A-YYYY-NNNN`.
+  The preview `GET /angebot/:id/vorschau.pdf?t=…` has a „Vorschau“ watermark.
+- **Optional PIN:** set `OWNER_PIN` and `SESSION_SECRET` (≥ 32 random characters). The owner
+  enters the PIN once per 12 h; 5 attempts per 15 minutes.
+- **Timers** (on the runner's minute tick): one reminder after 2 working days (BW holidays
+  2026–2027, placeholder list), `abgelaufen` after the link's validity, and daily retention (90
+  days for Absage/expired, 12 months otherwise; content only, the row and range stay).
 
 ## SEND_MODE
 

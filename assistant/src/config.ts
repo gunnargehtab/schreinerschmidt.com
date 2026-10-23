@@ -44,7 +44,12 @@ export interface Config {
   anthropicApiKey: string | null;
   /** Optional monthly cap of the estimated Claude spend in USD; null: no cap (claude/kosten.ts). */
   claudeMonthlyLimitUsd: number | null;
+  /** Optional review-page PIN (§7.4); needs SESSION_SECRET. */
   ownerPin: string | null;
+  /** HMAC key of the owner's session cookie; required when OWNER_PIN is set. */
+  sessionSecret: string | null;
+  /** Absage mail names the Innung's Betriebssuche (§8.2; placeholder, off by default). */
+  innungHinweis: boolean;
 }
 
 export class ConfigError extends Error {
@@ -78,6 +83,8 @@ const Env = z.object({
   SEND_MODE: opt(z.enum(['dry-run', 'allowlist', 'live'])),
   SEND_ALLOWLIST: opt(z.string().max(10000)),
   OWNER_PIN: opt(z.string().min(4).max(64)),
+  SESSION_SECRET: opt(z.string().min(32).max(1024)),
+  INNUNG_HINWEIS: opt(z.enum(['0', '1', 'true', 'false'])),
   DATA_DIR: opt(z.string().max(1024)),
   TOKEN_TTL_DAYS: opt(z.coerce.number().int().min(1).max(90)),
   TRUST_PROXY: opt(z.enum(['0', '1', 'true', 'false'])),
@@ -123,6 +130,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
   if (allowlist.some((a) => !EMAIL.test(a))) missing.push('SEND_ALLOWLIST');
+  // The PIN session cookie is HMAC-signed; without a secret there is no session (§7.4).
+  if (e.OWNER_PIN !== undefined && e.SESSION_SECRET === undefined) missing.push('SESSION_SECRET');
   if (missing.length) throw new ConfigError(missing);
 
   const port = e.PORT ?? 8787;
@@ -147,6 +156,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     anthropicApiKey: e.ANTHROPIC_API_KEY ?? null,
     claudeMonthlyLimitUsd: e.CLAUDE_MONTHLY_LIMIT_USD ?? null,
     ownerPin: e.OWNER_PIN ?? null,
+    sessionSecret: e.SESSION_SECRET ?? null,
+    innungHinweis: e.INNUNG_HINWEIS === '1' || e.INNUNG_HINWEIS === 'true',
   };
 }
 
@@ -160,5 +171,6 @@ export const describeConfig = (c: Config) => ({
   claude: c.anthropicApiKey !== null,
   claudeLimit: c.claudeMonthlyLimitUsd !== null,
   pin: c.ownerPin !== null,
+  innung: c.innungHinweis,
   trustProxy: c.trustProxy,
 });

@@ -4,9 +4,13 @@
 // after 30 s and 2 min); a step may bring its own, longer schedule (the enquiry mail). While it
 // runs by itself, the runner never sleeps longer than MAX_SLEEP_MS, so a `pending` row written by
 // another code path (a late inline mail) is picked up without an external trigger. A pipeline step that fails for good moves the case to `bewertung_fehlgeschlagen` with
-// a content-free event; the steps run in PIPELINE order (`preis`, then `bewertung` (7c); 7d adds
-// `tldr`). Side jobs (the enquiry-mail retry) are registered steps outside the pipeline. An error
-// with `permanent: true` (PermanentStepError, a non-retryable KiFehler) skips the remaining attempts.
+// a content-free event; the steps run in PIPELINE order (`preis`, then `bewertung` (7c), then
+// `tldr` (7d): the owner's TL;DR mail). When a step before `tldr` fails for good, `tldr` is enqueued
+// anyway, so the owner hears about every case („Bewertung fehlgeschlagen – bitte selbst
+// kalkulieren“). Side jobs (the enquiry-mail retry) are registered steps outside the pipeline. An
+// error with `permanent: true` (PermanentStepError, a non-retryable KiFehler) skips the remaining
+// attempts. 7d also hangs the timers (reminder, expiry, retention; timers.ts) on the runner's tick:
+// `periodic` runs after a drain, at most once per MAX_SLEEP_MS.
 import type { ClaudeClient } from './claude/client';
 import type { Config } from './config';
 import type { Logger } from './log';
@@ -61,8 +65,11 @@ export interface StepDef {
 
 export type StepRegistry = Readonly<Record<string, StepDef>>;
 
+/** The TL;DR step (7d): the last pipeline step, also enqueued after a failed case. */
+export const TLDR_STEP = 'tldr';
+
 /** Pipeline steps in order; each one is enqueued when the previous one is done. */
-export const PIPELINE: readonly string[] = ['preis', 'bewertung'];
+export const PIPELINE: readonly string[] = ['preis', 'bewertung', TLDR_STEP];
 
 export interface RunnerDeps {
   store: Store;
@@ -76,12 +83,15 @@ export interface RunnerDeps {
   pipeline?: readonly string[];
   /** Schedule runs by itself (server). Tests turn it off and call runDue(). */
   auto?: boolean;
+  /** Timers (7d): run after a drain, at most once per MAX_SLEEP_MS of the clock. Never throws. */
+  periodic?: () => Promise<void>;
 }
 
 export class JobRunner {
   private chain: Promise<number> = Promise.resolve(0);
   private timer: NodeJS.Timeout | null = null;
   private stopped = false;
+  private lastPeriodic = Number.NEGATIVE_INFINITY;
   readonly pipeline: readonly string[];
 
   constructor(private readonly d: RunnerDeps) {
@@ -133,6 +143,14 @@ export class JobRunner {
       for (const j of jobs) {
         if (this.stopped) break;
         if (await this.runOne(j)) n++;
+      }
+    }
+    if (this.d.periodic && !this.stopped && this.d.clock.now() - this.lastPeriodic >= MAX_SLEEP_MS) {
+      this.lastPeriodic = this.d.clock.now();
+      try {
+        await this.d.periodic();
+      } catch (e) {
+        this.d.log.error('periodic_failed', { code: errorCode(e) });
       }
     }
     await this.schedule();
@@ -191,7 +209,13 @@ export class JobRunner {
         await store.event(fall.id, `${job.step}_failed`, code, clock.now());
         try {
           if (step.exhausted) await step.exhausted({ ...ctx, fall: (await store.get(fall.id)) ?? fall }, code);
-          if (this.pipeline.includes(job.step)) await markFailed(ctx, code);
+          if (this.pipeline.includes(job.step)) {
+            await markFailed(ctx, code);
+            // The owner still gets a TL;DR for the failed case (an existing tldr row is left alone).
+            if (job.step !== TLDR_STEP && this.pipeline.includes(TLDR_STEP)) {
+              await store.enqueue(fall.id, TLDR_STEP, clock.now(), clock.now());
+            }
+          }
         } catch (e2) {
           log.error('job_exhausted_handler', { fall: fall.id, step: job.step, code: errorCode(e2) });
         }
