@@ -15,7 +15,8 @@ const homeSchema = z.object({
     lead: z.string(),
     ctaPrimary: z.string(),
     ctaSecondary: z.string(),
-    alternativeH1: z
+    /** The old site's slogan, kept until the owner decides (docs/owner-checklist.md). Not rendered. */
+    legacyH1: z
       .object({ h1Before: z.string(), h1Em: z.string(), h1After: z.string(), note: z.string().optional() })
       .optional(),
   }),

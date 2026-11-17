@@ -415,6 +415,16 @@ html:has(#site-menu:popover-open) { overflow: hidden; }
 - **Annotations:** decorative SVG annotations draw once over the image.
 - **PageHero contents:** h1 `.page-title` + Breadcrumbs + lead + optional media.
 
+#### Video hero (optional, proposal 2026-10-19, not built)
+A short workshop clip behind the home panorama, if the owner shoots one (docs/owner-checklist.md). It adds warmth that a still cannot: hands, shavings, oil soaking into oak. Stock footage is excluded (the old site's watermarked Adobe Stock clip, plan §0). Spec, so the budget below is testable:
+- **Markup:** a `<video class="hero__video" muted loop playsinline disablepictureinpicture aria-hidden="true" preload="none">` inside `.hero__media`, layered under the Maßlinie annotations and over the `<picture>`. No `<source>` in the HTML: the `<picture>` stays the LCP element and the poster, and nothing competes with it.
+- **Gate (JS, `src/lib/inline-scripts.mjs`, ≤ 0.4 KB gz):** after the window `load` event, only when `(min-width: 48em)`, `(prefers-reduced-motion: no-preference)` and `(prefers-reduced-data: no-preference)` all match, `navigator.connection?.saveData` is not set, and the hero is in the viewport; then set `src` and call `play()`. Otherwise the video element stays empty and the photo hero is the finished state. Without JS: the photo hero.
+- **Pause:** a visible „Video anhalten / abspielen“ button (≥ 44 px, in the Schriftfeld corner) is required by WCAG 2.2.2 for motion longer than 5 s. The paused state is session state (`sessionStorage`, allowed by the storage rule). The clip has no audio track.
+- **Clip:** 6–8 s seamless loop, 21:9 crop, 1280 px wide, 24 fps, a static camera; one take, no faces (consent). Encodes: AV1 in MP4 first, H.264 fallback chosen with `canPlayType`. Encoded with `ffmpeg` in a `scripts/` step, like the textures.
+- **Budget:** one encode ≤ 900 KB; the home page after a full scroll on desktop ≤ 1.5 MB with the video (mobile unchanged at ≈ 600 KB, because the gate never loads it there); first load unchanged at ≈ 150–250 KB (nothing loads before `load`); LCP ≤ 2.0 s and Lighthouse Performance ≥ 95 must still hold in the audit build. `check-budgets.mjs` gets a `media` row for the home route when the clip lands.
+- **Fallbacks:** Firefox and WebKit play it (no scroll-driven dependency). On `hero-open` the clip opens with the photo, because both sit inside the clipped `.hero__media`.
+
+
 ### Cards
 - **ServiceCard:**
   - Structure: `<article>` → sketch → `h3` with a stretched `<a>`; the "Mehr erfahren" hint is `aria-hidden`.
@@ -674,7 +684,7 @@ html:has(#site-menu:popover-open) { overflow: hidden; }
 1. Demo banner and header.
 2. **Hero:**
    - Eyebrow: "Meisterbetrieb in Mannheim · seit 2010".
-   - h1: "Ihr Experte für *umwelt­bewusstes* Holzhandwerk".
+   - h1: "Ihr Schreinermeister für *Holz nach Maß* in Mannheim" (the old slogan "Ihr Experte für *umwelt­bewusstes* Holzhandwerk" stays in `home.yaml` as `legacyH1` until the owner decides, docs/owner-checklist.md).
    - Lead.
    - CTAs: "In 3 Minuten zum Angebot" / "Referenzen ansehen".
    - RatingBadge.

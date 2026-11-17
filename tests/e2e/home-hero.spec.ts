@@ -60,8 +60,9 @@ test.describe('home hero @cross-engine', () => {
     await page.goto('');
     const h1 = page.getByRole('heading', { level: 1 });
     await expect(h1).toHaveCount(1);
-    await expect(h1).toContainText('Ihr Experte für');
-    await expect(h1).toContainText('Holzhandwerk');
+    await expect(h1).toContainText('Ihr Schreinermeister für');
+    await expect(h1).toContainText('in Mannheim');
+    await expect(h1.locator('em')).toHaveText('Holz nach Maß');
     await expect(h1.locator('em[data-review]')).toHaveCount(1);
     await expect(page.locator('.hero .eyebrow')).toContainText('seit 2010');
     await expect(page.getByRole('link', { name: /In 3.Minuten zum Angebot/ })).toHaveAttribute(

@@ -31,6 +31,7 @@ This repository holds an Astro 7 static site for a carpentry business in Mannhei
   - Configurator ≤ 11.25 KB initial + ≤ 8.75 KB for the Möbel preview + ≤ 1.5 KB for the 3D loader (`load3d`, loaded with the preview) (≤ 21.5 KB together; set 2026-10-10).
   - Configurator full flow (core + validation + summary + submit + payload, loaded on request) ≤ 19.0 KB; ≤ 29.0 KB with the Möbel preview and the 3D loader (raised from 18.75 / 28.75 for the demo snapshot, 2026-10-10).
   - three.js + viewer chunk ≤ 160 KB, loaded only on request (poster click or desktop auto-load).
+  - Optional home video hero (proposal, not built): one encode ≤ 900 KB, gate script ≤ 0.4 KB, desktop full scroll ≤ 1.5 MB, never before `load`, never on mobile, reduced motion or save-data (design-system §5 „Video hero“).
 - **Toolchain:** Node 24, npm, TypeScript pinned to 6.0.3 (`@astrojs/check` does not support TS 7).
 
 ## Commands
