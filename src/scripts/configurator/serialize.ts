@@ -17,14 +17,15 @@ export const SESSION_KEY = 'ss-konfigurator-v1';
 export const DRAFT_KEY = 'ss-konfigurator-entwurf-v1';
 export const DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
-const isStep = (s: unknown): s is StepId => typeof s === 'string' && (STEPS as readonly string[]).includes(s);
+const isStep = (s: unknown): s is StepId => STEPS.includes(s as StepId);
 const clamp = (x: number, [lo, hi]: [number, number]): number => Math.min(hi, Math.max(lo, x));
 
 /** Parses one raw value for a field; '' when it is invalid. Numbers are clamped per moebel_art. */
 function normalise(name: string, raw: string | string[] | undefined, v: Values): string | string[] {
   const f = FIELDS[name];
   if (!f) return '';
-  const s = Array.isArray(raw) ? raw.join(',') : (raw ?? '');
+  // A checkbox group reads as its comma-joined list (String() of an array).
+  const s = String(raw ?? '');
   switch (f.kind) {
     case 'enum': {
       const allowed = fieldValues(name, v);
@@ -51,15 +52,15 @@ function normalise(name: string, raw: string | string[] | undefined, v: Values):
  * the active branch whose value differs from its default. '' when no project type is chosen.
  */
 export function toQuery(values: Values, step?: StepId | null): string {
-  const typ = values['typ'];
-  if (typeof typ !== 'string' || !FIELDS['typ']?.values?.includes(typ)) return '';
+  const typ = values['typ'] as string;
+  if (!FIELDS['typ']!.values!.includes(typ)) return '';
   const q = new URLSearchParams({ v: URL_VERSION });
-  if (step && isStep(step)) q.set('schritt', step);
+  if (isStep(step)) q.set('schritt', step);
   const v: Values = { typ };
   for (const [name, f] of Object.entries(FIELDS)) {
     if (!f.share || f.pii || !visible(name, { ...values, ...v })) continue;
     const x = normalise(name, values[name], v);
-    const s = Array.isArray(x) ? x.join(',') : x;
+    const s = String(x);
     if (s === '' || s === fieldDefault(name, v)) continue;
     v[name] = x;
     // Decimals travel with a point, so the URL stays readable without %2C.
@@ -79,7 +80,7 @@ export function fromQuery(input: URLSearchParams | string): { values: Values; st
   for (const [name, f] of Object.entries(FIELDS)) {
     if (!f.share || f.pii || !q.has(name)) continue;
     const x = normalise(name, q.get(name) ?? '', values);
-    if (x === '' || (Array.isArray(x) && !x.length)) continue;
+    if (!x.length) continue;
     values[name] = x;
   }
   for (const name of Object.keys(values)) if (!visible(name, values)) delete values[name];
@@ -134,6 +135,7 @@ export function fromDraft(raw: unknown, now: number): Draft | null {
   const savedAt = (raw as Draft | null)?.savedAt;
   if (!snap || typeof savedAt !== 'string') return null;
   const t = Date.parse(savedAt);
-  if (Number.isNaN(t) || now - t > DRAFT_MAX_AGE_MS || t > now) return null;
+  // Also false for an unparsable date (NaN).
+  if (!(t <= now && now - t <= DRAFT_MAX_AGE_MS)) return null;
   return { ...snap, savedAt };
 }

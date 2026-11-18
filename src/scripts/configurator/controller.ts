@@ -36,7 +36,16 @@ import { createAnnouncer, type Announce } from './announce';
 import { clearDraft, clearSession, draftDate, loadDraft, loadSession, saveDraft, saveSession } from './draft';
 import { createHistory } from './history';
 import { fromQuery, toQuery, toSnapshot } from './serialize';
-import { MIN_FILL_MS, STATE_MSG, initialUi, reduce, type Action, type Effect, type WizardUi } from './state';
+import {
+  MIN_FILL_MS,
+  STATE_MSG,
+  initialUi,
+  reduce,
+  type Action,
+  type Effect,
+  type SubmitError,
+  type WizardUi,
+} from './state';
 import { createSteps, fill, type Msg } from './steps';
 import type { Submit } from './submit';
 import type { Item } from './summary';
@@ -65,6 +74,8 @@ export interface Wizard {
   /** Milliseconds since the first human interaction (or a restored session), or -1 (time-trap). */
   elapsed(): number;
   dispatch(a: Action): void;
+  /** Shows the error panel with the line of `reason` and dispatches FAILED. */
+  fail(reason: SubmitError): void;
   /** New request after a successful send. */
   reset(): void;
   /** Markup of the live drawing (Möbel) or ''. */
@@ -78,7 +89,7 @@ export interface Wizard {
 const PATH = `${import.meta.env.BASE_URL.replace(/\/*$/, '/')}konfigurator/`;
 const idx = (s: StepId) => STEPS.indexOf(s);
 /** Actions that validate (and therefore need the validation chunk). */
-const VALIDATES = new Set(['NEXT', 'GOTO', 'SUBMIT']);
+const VALIDATES = /NEXT|GOTO|SUBMIT/;
 
 /**
  * Values of every known control, disabled ones included (the branch may be about to activate).
@@ -116,8 +127,7 @@ export function init(root: HTMLElement): void {
   const form: HTMLFormElement = found;
   const $ = <T extends HTMLElement>(sel: string, from: ParentNode = root) => from.querySelector<T>(sel);
   const $$ = <T extends HTMLElement>(sel: string, from: ParentNode = form) => [...from.querySelectorAll<T>(sel)];
-  const msg: Msg = (key) =>
-    root.dataset[`msg${key.replace(/(^|-)(\w)/g, (_, __, c: string) => c.toUpperCase())}`] ?? '';
+  const msg: Msg = (key) => root.getAttribute(`data-msg-${key}`) ?? '';
   const live = root.dataset['mode'] === 'live';
   const announce = createAnnouncer($('[data-live="polite"]'), $('[data-live="assertive"]'));
   const steps = createSteps(root, form, msg);
@@ -198,8 +208,9 @@ export function init(root: HTMLElement): void {
     for (const fs of $$<HTMLFieldSetElement>('fieldset[data-branch]')) fs.disabled = fs.dataset['branch'] !== v['typ'];
     for (const el of $$('[data-when]')) {
       const on = active.has(el.dataset['when']!);
-      if (el instanceof HTMLFieldSetElement || el instanceof HTMLInputElement) el.disabled = !on;
-      else for (const c of $$<Control>('input,select,textarea', el)) c.disabled = !on;
+      // A fieldset or an input carries the state itself; any other wrapper passes it to its controls.
+      for (const c of el.matches('fieldset,input') ? [el as Control] : $$<Control>('input,select,textarea', el))
+        c.disabled = !on;
     }
     for (const el of $$<Control>('[data-required]')) if (el.dataset['required'] !== 'group') el.required = true;
     for (const n of $$<Control>('input[type="number"][name]')) {
@@ -220,8 +231,8 @@ export function init(root: HTMLElement): void {
   /** Defaults go only into EMPTY fields of the active configuration (§2 point 5). */
   function fillDefaults(): void {
     for (const name of Object.keys(FIELDS)) {
-      const x = v[name];
-      if ((x !== undefined && x !== '' && !(Array.isArray(x) && !x.length)) || !visible(name, v)) continue;
+      // Empty: undefined, '' or an empty checkbox group.
+      if (v[name]?.length || !visible(name, v)) continue;
       const d = fieldDefault(name, v);
       if (!d) continue;
       const radio = $<Control>(`input[type="radio"][name="${name}"][value="${d}"]`, form);
@@ -305,7 +316,7 @@ export function init(root: HTMLElement): void {
 
   // ---- the reducer and its effects -----------------------------------------------------------
   function dispatch(a: Action): void {
-    if (!val && VALIDATES.has(a.t)) {
+    if (!val && VALIDATES.test(a.t)) {
       void loadValidate().then(() => dispatch(a), loadFailed);
       return;
     }
@@ -348,24 +359,29 @@ export function init(root: HTMLElement): void {
           break;
         case 'send':
           // The submission (success view, live send, mailto) loads on request.
-          void loadSubmit().then((s) => s.send(), sendUnavailable);
+          void loadSubmit().then(
+            (s) => s.send(),
+            () => fail('network'),
+          );
           break;
       }
     }
   }
 
   /**
-   * The submit chunk could not load: the error panel (live) shows the network line, FAILED announces
-   * it (demo too); „Erneut senden“ (handled below while the chunk is missing) and the submit button retry.
+   * A failed submission: the error panel (live) shows the line of `reason`, FAILED announces it (demo
+   * too). submit.ts reports through it, and so does the controller when the submit chunk could not
+   * load ('network'); „Erneut senden“ (handled below while the chunk is missing) and the submit
+   * button retry.
    */
-  function sendUnavailable(): void {
+  function fail(reason: SubmitError): void {
     const p = $<HTMLElement>('[data-submit-error]', form);
     if (p) {
-      for (const r of $$('[data-reason]', p)) r.hidden = r.dataset['reason'] !== 'network';
+      for (const r of $$('[data-reason]', p)) r.hidden = r.dataset['reason'] !== reason;
       p.hidden = false;
       p.tabIndex = -1;
     }
-    dispatch({ t: 'FAILED', reason: 'network' });
+    dispatch({ t: 'FAILED', reason });
   }
 
   function focus(target: 'heading' | 'errors' | 'result'): void {
@@ -539,11 +555,12 @@ export function init(root: HTMLElement): void {
     ui: () => ui,
     values: () => v,
     items: () => items,
-    sections: () => sections().map((s) => [s.title, ...s.lines].join('\n')),
+    sections: () => sections().map((s) => sum!.toText([s])),
     text: () => (sum ? sum.toText(sections()) : ''),
     configUrl,
     elapsed: () => (first < 0 ? -1 : Date.now() - first),
     dispatch,
+    fail,
     // Only a live drawing counts; Bett/andere keep the build-time example sketch in the panel.
     drawing: () =>
       v['typ'] === 'moebel' && panel?.dataset['previewState'] === 'live'

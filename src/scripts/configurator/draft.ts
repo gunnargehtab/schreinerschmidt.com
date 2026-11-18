@@ -10,8 +10,8 @@ const local: Store = () => localStorage;
 
 function read(store: Store, key: string): unknown {
   try {
-    const raw = store().getItem(key);
-    return raw ? JSON.parse(raw) : null;
+    // A missing key parses to null; an empty or broken entry throws.
+    return JSON.parse(store().getItem(key) as string);
   } catch {
     return null;
   }
