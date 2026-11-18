@@ -2,9 +2,10 @@
 // `anfrage_json` (schema ss-anfrage@1), `zusammenfassung` (the same text as on screen, from
 // summary.ts), `_subject`, `_replyto`, `anfrage_id`, the SVG drawing as `zeichnung` and, once the 3D
 // view was loaded, its snapshot as `ansicht_3d` (ansicht_3d.webp, docs/configurator.md §4.12). Loaded on
-// request by submit.ts; the Möbel generator output comes from preview/info.ts (on request, with the
-// preview chunk), so no generator code sits in the flow budget. The pure parts (anfrageJson,
-// appendPayload) are covered by tests/unit/configurator/payload.test.ts.
+// request by submit.ts, which also loads the Möbel generator output from preview/info.ts (on request,
+// with the preview chunk) and passes it in: no generator code sits in the flow budget, and this
+// chunk has no import() of its own (each chunk with one carries Vite's dependency map). The pure
+// parts (anfrageJson, appendPayload) are covered by tests/unit/configurator/payload.test.ts.
 import { visible } from '../../lib/configurator/conditions';
 import { FIELDS, effectiveValues, type StepId, type Values } from '../../lib/configurator/fields';
 // From the validation chunk (loaded long before a submit), so the service area is bundled once.
@@ -91,9 +92,9 @@ export function appendPayload(fd: FormData, i: PayloadInput, json: Record<string
 export const photoNames = (fd: FormData): string[] =>
   fd.getAll(PHOTOS).flatMap((f) => (f instanceof File && f.size > 0 ? [f.name] : []));
 
-export async function buildPayload(form: HTMLFormElement, i: PayloadInput): Promise<FormData> {
+/** `moebel`: the generator output of a Möbel enquiry (preview/info.ts, loaded by submit.ts), else null. */
+export function buildPayload(form: HTMLFormElement, i: PayloadInput, moebel: MoebelInfo | null): FormData {
   const fd = new FormData(form);
   const input = { ...i, fotos: photoNames(fd) };
-  const moebel = i.values['typ'] === 'moebel' ? await (await import('./preview/info')).moebelInfo(i.values) : null;
   return appendPayload(fd, input, anfrageJson(input, moebel));
 }

@@ -21,7 +21,6 @@ export const STATE_MSG = {
   loadFailed:
     'Ein Teil des Konfigurators konnte nicht geladen werden. Bitte versuchen Sie es erneut oder laden Sie die Seite neu.',
 } as const;
-const MSG = STATE_MSG;
 
 /**
  * Time-trap (§5 "Live mode"): a submit less than this after the first human interaction is faked.
@@ -160,7 +159,7 @@ export function reduce(s: WizardUi, a: Action, ctx: Context): [WizardUi, Effect[
     case 'TYPE': {
       if (busy) return [s, []];
       const effects: Effect[] = [{ e: 'persist' }];
-      if (ctx.typ && ctx.typ !== a.typ) effects.unshift({ e: 'announce', text: MSG.typeChanged });
+      if (ctx.typ && ctx.typ !== a.typ) effects.unshift({ e: 'announce', text: STATE_MSG.typeChanged });
       return [{ ...s, errors: [] }, effects];
     }
     case 'SUBMIT': {
@@ -179,14 +178,14 @@ export function reduce(s: WizardUi, a: Action, ctx: Context): [WizardUi, Effect[
         { ...s, phase: 'done', errors: [] },
         [
           { e: 'focus', target: 'result' },
-          { e: 'announce', text: MSG.sent },
+          { e: 'announce', text: STATE_MSG.sent },
         ],
       ];
     case 'FAILED':
       return [
         { ...s, phase: 'failed' },
         [
-          { e: 'announce', text: MSG.sendFailed, level: 'assertive' },
+          { e: 'announce', text: STATE_MSG.sendFailed, level: 'assertive' },
           { e: 'focus', target: 'result' },
         ],
       ];

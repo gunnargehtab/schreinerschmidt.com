@@ -133,14 +133,10 @@ export function createSubmit(w: Wizard): Submit {
     w.dispatch({ t: 'SENT', id });
   }
 
+  /** The controller owns the error panel (it also reports this chunk failing to load). */
   function fail(reason: SubmitError): void {
     if (button) button.disabled = false;
-    if (panel) {
-      for (const p of panel.querySelectorAll<HTMLElement>('[data-reason]')) p.hidden = p.dataset['reason'] !== reason;
-      panel.hidden = false;
-      panel.tabIndex = -1;
-    }
-    w.dispatch({ t: 'FAILED', reason });
+    w.fail(reason);
   }
 
   async function sendLive(): Promise<void> {
@@ -154,22 +150,31 @@ export function createSubmit(w: Wizard): Submit {
     if (button) button.disabled = true;
     let reason: SubmitError = 'network';
     try {
-      const { buildPayload } = await import('./payload');
-      const drawing = w.drawing();
-      const body = await buildPayload(form, {
-        id,
-        short,
-        mode: 'live',
-        page: location.href,
-        configUrl: w.configUrl(),
-        values: w.values(),
-        items: w.items(),
-        text: w.text(),
-        subject: subject(),
-        svg: drawing,
-        // The 3D snapshot (§4.12) once 3D was loaded (Möbel only). Its demo download/preview is
-        // deferred: it does not fit the flow budget (docs/configurator.md §3).
-        snapshot: drawing ? await (await preview()).snapshot3d() : null,
+      // `.then()`, not a destructured `await import()`: Vite wraps that form in a second async function.
+      const body = await import('./payload').then(async (m) => {
+        const drawing = w.drawing();
+        const values = w.values();
+        return m.buildPayload(
+          form,
+          {
+            id,
+            short,
+            mode: 'live',
+            page: location.href,
+            configUrl: w.configUrl(),
+            values,
+            items: w.items(),
+            text: w.text(),
+            subject: subject(),
+            svg: drawing,
+            // The 3D snapshot (§4.12) once 3D was loaded (Möbel only). Its demo download/preview is
+            // deferred: it does not fit the flow budget (docs/configurator.md §3).
+            snapshot: drawing ? await (await preview()).snapshot3d() : null,
+          },
+          // The generator output (cut list, description) of a Möbel enquiry: a chunk of the preview
+          // world, imported here so that the payload chunk needs no dependency map of its own.
+          values['typ'] === 'moebel' ? await import('./preview/info').then((x) => x.moebelInfo(values)) : null,
+        );
       });
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
