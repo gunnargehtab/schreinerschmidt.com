@@ -41,14 +41,14 @@
     "@fontsource-variable/red-hat-display": "5.3.0",
     "astro": "7.4.12",
     "roughjs": "4.6.6",
-    "three": "0.186.1"
+    "three": "0.187.0"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
     "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.65.1",
     "@types/node": "26.6.6",
-    "@types/three": "0.186.0",
+    "@types/three": "0.187.0",
     "chrome-launcher": "1.2.2",
     "fast-check": "4.10.2",
     "html-validate": "11.18.0",
